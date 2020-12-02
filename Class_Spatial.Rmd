@@ -1,0 +1,59 @@
+---
+title: "ClassApril29"
+author: "Gustavo Facincani Dourado"
+date: "4/29/2020"
+output: html_document
+---
+
+```{r}
+library(rgdal)
+library(maps)
+library(maptools)
+wrld <- map("world",interior=FALSE,xlim=c(-179,179),ylim=c(-89,89),plot=FALSE)
+wrld_p <- pruneMap(wrld,xlim=c(-179,179))
+llCRS <- CRS("+proj=longlat +ellps=WGS84")
+wrld_sp <- map2SpatialLines(wrld_p,proj4string=llCRS)
+prj_new <- CRS("+proj=moll")
+
+wrld_proj <- spTransform(wrld_sp,prj_new)
+summary(wrld_proj)
+```
+
+```{r}
+c(-179,seq(-150,150,50),179.5)
+seq(-75,75,15)
+```
+
+```{r}
+wrld_grd <- gridlines(wrld_sp,easts=c(-179,seq(-150,150,50),179.5),
+        norths=seq(-75,75,15),ndiscr=100)
+```
+
+```{r}
+wrld_grd_proj <- spTransform(wrld_grd,prj_new)
+?gridat
+at_sp <- gridat(wrld_sp,easts=0,norths=seq(-75,75,15),offset=0.3)
+at_sp@data # These are the labels we are going to use.
+```
+
+```{r}
+at_proj <- spTransform(at_sp,prj_new)
+
+plot(wrld_proj,col="blue")
+plot(wrld_grd_proj,add=TRUE,lty=3,col="black")
+text(coordinates(at_proj),pos=at_proj$pos,offset=at_proj$offset,
+        labels=parse(text=as.character(at_proj$labels)),cex=0.6)
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+

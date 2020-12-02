@@ -1,0 +1,82 @@
+---
+title: "Howerwork_3"
+author: "Gustavo Facincani Dourado"
+date: "2/12/2020"
+output: html_document
+---
+
+Exercise 4.
+
+```{r}
+#Getting the data 
+
+library(tidyverse)
+LakeErie <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/LakeErie1.csv")
+
+head(LakeErie)
+```
+
+```{r}
+#Comands for testing the TP distribution:
+
+ggplot(data=as.data.frame(qqnorm(LakeErie$TP , plot=F)), mapping=aes(x=x, y=y)) + geom_point() + geom_smooth(method="lm", se=FALSE)
+
+```
+TP does not match the normal distribution, requiring non-parametric tests.
+```{r}
+
+#Comands for testing the chla distribution:
+
+qqnorm(log(LakeErie$chla))
+qqline(log(LakeErie$chla), col = 'red')
+
+```
+The chlorophil A distribution is close to normal, but not normal even in log scale, being a little bit skewed.
+
+```{r}
+#Comands to plot TP data using lattice
+
+
+library(lattice)
+qqmath(~TP | factor(Year), data = LakeErie, distribution = qnorm, panel = function(x, ...){
+    panel.qqmath(x, ...)
+    panel.qqmathline(x, ...)
+}) 
+       f.value = ppoints(100)
+qqmath(~TP | TP, LakeErie, groups = Year, aspect = "xy",
+       f.value = ppoints(100), auto.key = list(space = "right"))
+xlab = "QNorm",
+ylab = "TP")
+```
+The only year that can be plotted is 2013, as the others have no data and the data is still skewed.
+
+```{r}
+#Comands to plot chla data using lattice
+
+library(lattice)
+qqmath(~chla | factor(Year), data = LakeErie, distribution = qnorm, panel = function(x, ...){
+    panel.qqmath(x, ...)
+    panel.qqmathline(x, ...)
+}) 
+       f.value = ppoints(100))
+qqmath(~chla | TP, LakeErie, groups = Year, aspect = "xy",
+       f.value = ppoints(100), auto.key = list(space = "right")),
+xlab = "QNorm",
+ylab = "chla")
+```
+<span style="color: green"> All years have data that are still skewed.</span>
+
+Exercise 3.1. Helsel & Hirsch
+
+```{r}
+#Getting granodiorite data
+
+x <- c(6.0, 0.5, 0.4, 0.7, 0.8, 6.0, 5.0, 0.6, 1.2, 0.3, 0.2, 0.5, 0.5, 10, 0.2, 0.2, 1.7, 3.0 )
+x
+
+```
+
+Non-parametric 95% interval
+
+<span style="color: green"> The granodiorite is a small set of data (18 samples), using the equations R l =  x' + 1 and Ru =  n − x' = x . </span>
+

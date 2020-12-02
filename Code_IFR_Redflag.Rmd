@@ -1,0 +1,425 @@
+---
+title: "Code_IFR_Redflag"
+author: "Gustavo Facincani Dourado"
+date: "6/26/2020"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(lfstat)
+library(reshape2)
+```
+
+```{r}
+#Read data for Merced basin
+#IFR actual flow
+Livneh_Redflag_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_Mer$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_Mer
+
+
+CanESM2_RedFlag_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+
+CanESM2_RedFlag_Mer$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_Mer
+
+CNRM_RedFlag_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] 
+
+CNRM_RedFlag_Mer$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_Mer
+
+
+HadGEM2_RedFlag_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+
+HadGEM2_RedFlag_Mer$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_Mer 
+
+MIROC5_RedFlag_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] 
+
+MIROC5_RedFlag_Mer$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_Mer
+
+Flow_Mer <- rbind(Livneh_Redflag_Mer, CanESM2_RedFlag_Mer, CNRM_RedFlag_Mer,HadGEM2_RedFlag_Mer, MIROC5_RedFlag_Mer)
+Flow_Mer
+```
+
+
+```{r}
+Livneh_Redflag_Mer2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_Mer2$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_Mer2
+
+
+CanESM2_RedFlag_Mer2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+
+CanESM2_RedFlag_Mer2$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_Mer2
+
+CNRM_RedFlag_Mer2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] 
+
+CNRM_RedFlag_Mer2$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_Mer2
+
+
+HadGEM2_RedFlag_Mer2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+
+HadGEM2_RedFlag_Mer2$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_Mer2 
+
+MIROC5_RedFlag_Mer2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)] 
+
+MIROC5_RedFlag_Mer2$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_Mer2
+
+MinFlow_Mer <- rbind(Livneh_Redflag_Mer2, CanESM2_RedFlag_Mer2, CNRM_RedFlag_Mer2,HadGEM2_RedFlag_Mer2, MIROC5_RedFlag_Mer2)
+```
+
+
+```{r}
+#Read data for tuolumne basin
+#IFR actual flow
+Livneh_Redflag_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_Tuo$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_Tuo
+
+
+CanESM2_RedFlag_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)]
+
+CanESM2_RedFlag_Tuo$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_Tuo
+
+CNRM_RedFlag_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)] 
+
+CNRM_RedFlag_Tuo$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_Tuo
+
+
+HadGEM2_RedFlag_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)]
+
+HadGEM2_RedFlag_Tuo$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_Tuo 
+
+MIROC5_RedFlag_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)] 
+
+MIROC5_RedFlag_Tuo$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_Tuo
+
+Flow_Tuo <- rbind(Livneh_Redflag_Tuo, CanESM2_RedFlag_Tuo, CNRM_RedFlag_Tuo,HadGEM2_RedFlag_Tuo, MIROC5_RedFlag_Tuo)
+Flow_Tuo
+```
+
+
+```{r}
+Livneh_Redflag_Tuo2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2, 6, 10, 14)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_Tuo2$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_Tuo2
+
+
+CanESM2_RedFlag_Tuo2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2, 6, 10, 14)]
+
+CanESM2_RedFlag_Tuo2$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_Tuo2
+
+CNRM_RedFlag_Tuo2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2, 6, 10, 14)] 
+
+CNRM_RedFlag_Tuo2$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_Tuo2
+
+
+HadGEM2_RedFlag_Tuo2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2, 6, 10, 14)]
+
+HadGEM2_RedFlag_Tuo2$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_Tuo2 
+
+MIROC5_RedFlag_Tuo2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2, 6, 10, 14)] 
+
+MIROC5_RedFlag_Tuo2$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_Tuo2
+
+MinFlow_Tuo <- rbind(Livneh_Redflag_Tuo2, CanESM2_RedFlag_Tuo2, CNRM_RedFlag_Tuo2,HadGEM2_RedFlag_Tuo2, MIROC5_RedFlag_Tuo2)
+MinFlow_Tuo
+```
+
+
+```{r}
+#Read data for Stanislaus basin
+#IFR actual flow
+Livneh_Redflag_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_Stn$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_Stn
+
+
+CanESM2_RedFlag_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)]
+
+CanESM2_RedFlag_Stn$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_Stn
+
+CNRM_RedFlag_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)] 
+
+CNRM_RedFlag_Stn$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_Stn
+
+
+HadGEM2_RedFlag_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)]
+
+HadGEM2_RedFlag_Stn$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_Stn 
+
+MIROC5_RedFlag_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)] 
+
+MIROC5_RedFlag_Stn$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_Stn
+
+Flow_Stn <- rbind(Livneh_Redflag_Stn, CanESM2_RedFlag_Stn, CNRM_RedFlag_Stn,HadGEM2_RedFlag_Stn, MIROC5_RedFlag_Stn)
+Flow_Stn
+```
+
+
+```{r}
+#MIFs for STN are in two different files
+Livneh_Redflag_Stn2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18, 22,26,30,34,38,42,46,50)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+Livneh_Redflag_Stn2
+
+Livneh_Redflag_Stn3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/InstreamFlowRequirement_Requirement_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 6, 10, 14, 18, 22)]%>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+Livneh_Redflag_Stn3 
+
+Livneh_Redflag_Stn2 <- cbind(Livneh_Redflag_Stn3, Livneh_Redflag_Stn2[-1]) %>%
+  mutate(GCM = as.factor("Livneh (Historical)"))
+Livneh_Redflag_Stn2
+
+CanESM2_RedFlag_Stn2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18, 22,26,30,34,38,42,46,50)]
+CanESM2_RedFlag_Stn2
+
+CanESM2_RedFlag_Stn3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/InstreamFlowRequirement_Requirement_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 6, 10, 14, 18, 22)]
+CanESM2_RedFlag_Stn3 
+
+CanESM2_RedFlag_Stn2 <- cbind(CanESM2_RedFlag_Stn3[-1], CanESM2_RedFlag_Stn2) %>%
+  mutate(GCM = as.factor("CanESM2"))
+CanESM2_RedFlag_Stn2
+
+
+CNRM_RedFlag_Stn2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18, 22,26,30,34,38,42,46,50)] 
+
+CNRM_RedFlag_Stn3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Requirement_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 6, 10, 14, 18, 22)]
+CanESM2_RedFlag_Stn3 
+
+CNRM_RedFlag_Stn2 <- cbind(CNRM_RedFlag_Stn3[-1], CNRM_RedFlag_Stn2) %>%
+  mutate(GCM = as.factor("CNRM-CM5"))
+CNRM_RedFlag_Stn2
+
+HadGEM2_RedFlag_Stn2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18, 22,26,30,34,38,42,46,50)]
+
+HadGEM2_RedFlag_Stn3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Requirement_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 6, 10, 14, 18, 22)]
+HadGEM2_RedFlag_Stn3 
+
+HadGEM2_RedFlag_Stn2 <- cbind(HadGEM2_RedFlag_Stn3[-1], HadGEM2_RedFlag_Stn2) %>%
+  mutate(GCM = as.factor("HadGEM2-ES"))
+HadGEM2_RedFlag_Stn2 
+
+MIROC5_RedFlag_Stn2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18, 22,26,30,34,38,42,46,50)] 
+
+MIROC5_RedFlag_Stn3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/InstreamFlowRequirement_Requirement_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 6, 10, 14, 18, 22)]
+MIROC5_RedFlag_Stn3
+
+MIROC5_RedFlag_Stn2 <- cbind(MIROC5_RedFlag_Stn3[-1], MIROC5_RedFlag_Stn2) %>%
+  mutate(GCM = as.factor("MIROC5"))
+MIROC5_RedFlag_Stn2 
+
+
+MinFlow_Stn <- rbind(Livneh_Redflag_Stn2, CanESM2_RedFlag_Stn2, CNRM_RedFlag_Stn2,HadGEM2_RedFlag_Stn2, MIROC5_RedFlag_Stn2)
+MinFlow_Stn
+```
+
+```{r}
+#Read data for upper_san_joaquin basin
+#IFR actual flow
+Livneh_Redflag_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_USJ$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_USJ
+
+
+CanESM2_RedFlag_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)]
+
+CanESM2_RedFlag_USJ$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_USJ
+
+CNRM_RedFlag_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] 
+
+CNRM_RedFlag_USJ$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_USJ
+
+
+HadGEM2_RedFlag_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)]
+
+HadGEM2_RedFlag_USJ$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_USJ 
+
+MIROC5_RedFlag_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp85/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] 
+
+MIROC5_RedFlag_USJ$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_USJ
+
+Flow_USJ <- rbind(Livneh_Redflag_USJ, CanESM2_RedFlag_USJ, CNRM_RedFlag_USJ,HadGEM2_RedFlag_USJ, MIROC5_RedFlag_USJ)
+Flow_USJ
+```
+
+
+
+```{r}
+Livneh_Redflag_USJ2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] %>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Redflag_USJ2$GCM <- as.factor("Livneh (Historical)")
+Livneh_Redflag_USJ2
+
+
+CanESM2_RedFlag_USJ2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)]
+
+CanESM2_RedFlag_USJ2$GCM <- as.factor("CanESM2")
+CanESM2_RedFlag_USJ2
+
+CNRM_RedFlag_USJ2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] 
+
+CNRM_RedFlag_USJ2$GCM <- as.factor("CNRM-CM5")
+CNRM_RedFlag_USJ2
+
+
+HadGEM2_RedFlag_USJ2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)]
+
+HadGEM2_RedFlag_USJ2$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_RedFlag_USJ2 
+
+MIROC5_RedFlag_USJ2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)] 
+
+MIROC5_RedFlag_USJ2$GCM <- as.factor("MIROC5")
+MIROC5_RedFlag_USJ2
+
+MinFlow_USJ <- rbind(Livneh_Redflag_USJ2, CanESM2_RedFlag_USJ2, CNRM_RedFlag_USJ2,HadGEM2_RedFlag_USJ2, MIROC5_RedFlag_USJ2)
+```
+
+
+```{r}
+#Function to create the tibble containing the redflags
+
+IFR_Redflag <- function(Flow, MinFlow, Basin, Scenario) {
+  
+IFR <- merge(Flow, MinFlow,by=c("node", "GCM")) #merging Flows and MIFs
+#as the columns have the same name, they receive and .x and .y at the end
+IFR2 <- IFR[, grepl("*\\.x$",names(IFR))] - IFR[,grepl("*\\.y$",names(IFR))] #subtracting each column with its respective match in each data frame
+
+IFR_redflag<- cbind(IFR[,1:2, drop=FALSE], IFR2) #bind Flows and MIFs
+
+names(IFR_redflag) <- gsub(pattern = ".x", replacement = "", x = names(IFR_redflag))  #remove all ".x" at once
+
+IFR_redflag[,3:ncol(IFR_redflag)] <- lapply(IFR_redflag[,3:ncol(IFR_redflag)], function(x) ifelse(x < -0.0123348, 1,0)) 
+
+IFR_redflag <- IFR_redflag %>% #condition for considering the days with flow below 0
+  #below -5 cfs, as Josh recommended
+    dplyr::transmute(WaterYear = as.factor(lfstat::water_year(node, origin= "usgs")), 
+                     #column for WY
+         "Basin" = as.factor(Basin), #column for basin
+         "Scenario" = as.factor(Scenario),!!!.) #Column for scenario
+IFR_redflag
+   IFR_redflag <- melt(IFR_redflag, id = c("WaterYear", "GCM", "Scenario","node", "Basin")) %>%
+     #Rearranging the columns
+                       group_by(WaterYear, GCM, Scenario, Basin, variable) %>% #grouping to summarize
+     dplyr::summarize(Total = sum(value)) #summing up all the days in a year
+
+   #Orderding the Climate scenarios for plotting
+IFR_redflag$GCM <- factor(IFR_redflag$GCM, levels = c("Livneh (Historical)","HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5")) 
+  
+IFR_redflag #result
+
+}
+```
+
+```{r}
+IFR_redflag_Mer <- IFR_Redflag(Flow_Mer, MinFlow_Mer, "Merced River", "RCP 8.5")
+IFR_redflag_Mer
+
+IFR_redflag_Tuo <- IFR_Redflag(Flow_Tuo, MinFlow_Tuo, "Tuolumne River", "RCP 8.5")
+IFR_redflag_Tuo
+
+IFR_redflag_Stn <- IFR_Redflag(Flow_Stn, MinFlow_Stn, "Stanislaus River", "RCP 8.5")
+IFR_redflag_Stn
+
+IFR_redflag_USJ <- IFR_Redflag(Flow_USJ, MinFlow_USJ, "Upper San Joaquin River", "RCP 8.5")
+IFR_redflag_USJ
+```
+
+
+```{r}
+#Function for figures
+
+IFR_Deficit <- function(data, title, subtitle) {
+ggplot(data) +
+     theme_bw(base_size=18, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Total, fill = variable), color = "black", position = "stack", stat = "identity") +
+ggthemes::scale_colour_colorblind() +
+   scale_y_continuous(expand = c(0, NA)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", "2010", 
+                              "2031", "2036", "2041", "2046", "2051", "2056", "2059"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~ GCM, ncol =1, scales = "free_x", strip.position = 'left') +
+  
+  labs(title = title,
+       subtitle = subtitle,
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Instream Flow Requirement Gross Deficit (days)") +
+ theme(legend.title = element_blank(),
+       legend.key.size = unit(0.75,"line"), #change the size of icons
+    legend.position = "bottom",
+     legend.text = element_text(size = 9),
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+      guides(fill = guide_legend(ncol = 2)) #change number of columns in the legend
+                                 
+
+}
+
+```
+
+```{r}
+IFR_Deficit(IFR_redflag_Stn, "Stanislaus River", "RCP 8.5 Scenario") +
+png("Stn_IFR_Deficit.png", units ="in", width=6.1, height=13, res = 300)
+```
+
+```{r}
+IFR_Deficit(IFR_redflag_Tuo, "Tuolumne River", "RCP 8.5 Scenario") +
+png("Tuo_IFR_Deficit.png", units ="in", width=6.1, height=13, res = 300)
+```
+
+```{r}
+IFR_Deficit(IFR_redflag_Mer, "Merced River", "RCP 8.5 Scenario") +
+png("Mer_IFR_Deficit.png", units ="in", width=6.1, height=13, res = 300)
+```
+
+```{r}
+IFR_Deficit(IFR_redflag_USJ, "Upper San Joaquin River", "RCP 8.5 Scenario") +
+png("USJ_IFR_Deficit.png", units ="in", width=6.1, height=13, res = 300)
+```
+
+```

@@ -1,0 +1,686 @@
+---
+title: "Livneh vs Observed"
+author: "Gustavo Facincani Dourado"
+date: "5/14/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+library(dplyr)
+library(eia)
+
+#Color blind 
+#cbbPalette <- c("#000000" #black, #999999 #grey, "#E69F00" #orange, "#56B4E9" blue, "#009E73" #green, "#F0E442" #yellow, "#0072B2" #darkblue, "#D55E00" #red, "#CC79A7" #pink)
+
+#Code for generating .png images:
+#png("name_image.png", units ="in", width=8, height=5, res = 300)
+```
+#Function to extract and deal with data from CDDEC 
+#Codes for each basin: MRC = Merced, SNS = Stanislaus, TLG = Tuolumne, SJF = Upper San Joaquin
+CDEC <- function(code) { 
+basin <- cder::cdec_query(code, 65, "M", "1980-10-01", "2010-09-30") #Code, ID, time (monthly data), start and end dates
+basin$DateTime <- base::as.Date(basin$DateTime, format = "%Y/%m/%d") #change to date format
+
+basin$Value <- basin$Value/810.71318210885 #divide by 810.71318210885 instead, to get million
+
+basin <- basin %>%
+  dplyr::select(DateTime, Value) %>% #select only the columns we'll use
+  dplyr::rename(date1 = DateTime, #rename columns to match those of the GCMs
+                "Observed (CDEC)" = Value)
+  
+
+basin
+}
+MRC.CDEC <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/MRC_natural_flow_monthly_mcm.csv")
+
+TLG.CDEC <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/TLG_natural_flow_monthly_mcm.csv")
+
+SNS.CDEC <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/SNS_natural_flow_monthly_mcm.csv")
+
+SJF.CDEC <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/SJF_natural_flow_monthly_mcm.csv")
+
+names(SNS.CDEC)[2] <- "SNS_flow"
+names(TLG.CDEC)[2] <- "TLG_flow"
+names(SJF.CDEC)[2] <- "SJF_flow"
+names(MRC.CDEC)[2] <- "MRC_flow"
+
+head(SNS.CDEC)
+#rbind(MRC.CDEC, TLG.CDEC, SNS.CDEC, SJF.CDEC)
+
+
+```{r}
+#Getting observed data from CDEC for each basin, selecting only water years between 1950 and 2013
+SNS.obs <- cdec_query("SNS", 65, "M", "1950-10-01", "2013-09-30")
+SNS.obs$DateTime <- as.Date(SNS.obs$DateTime, format = "%Y/%m/%d")
+
+MRC.obs <- cdec_query("MRC", 65, "M", "1950-10-01", "2013-09-30")
+MRC.obs$DateTime <- as.Date(MRC.obs$DateTime, format = "%Y/%m/%d")
+
+TLG.obs <- cdec_query("TLG", 65, "M", "1950-10-01", "2013-09-30")
+TLG.obs$DateTime <- as.Date(TLG.obs$DateTime, format = "%Y/%m/%d")
+
+SJF.obs <- data.frame(cdec_query("SJF", 65, "M", "1950-10-01", "2013-09-30"))
+SJF.obs$DateTime <- as.Date(SJF.obs$DateTime, format = "%Y/%m/%d")
+
+#Converting the flows in Acre-feet to million acre-feet
+SJF.obs$Value <- SJF.obs$Value/1000000        #or divide by 810.71318210885 instead, to get million cubic meters
+SNS.obs$Value <- SNS.obs$Value/1000000        #or divide by 810.71318210885 instead, to get million cubic meters
+MRC.obs$Value <- MRC.obs$Value/1000000        #or divide by 810.71318210885 instead, to get million cubic meters
+TLG.obs$Value <- TLG.obs$Value/1000000        #or divide by 810.71318210885 instead, to get million cubic meters
+
+#Binding the stations together
+Obs <- rbind(SNS.obs, TLG.obs, SJF.obs, MRC.obs)
+Obs
+```
+
+```{r}
+#Reading in Livneh data of each basin filtering only water years between 1950 and 2013
+SNS.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/SNS_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-10-01") & date <= as.Date("2013-09-30"))
+MRC.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/MRC_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-10-01") & date <= as.Date("2013-09-30"))
+TLG.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/TLG_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-10-01") & date <= as.Date("2013-09-30"))
+SJF.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/sJF_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-10-01") & date <= as.Date("2013-09-30"))
+
+#Transform from million cubic meters to million acre feet
+SJF.sim$flow <- SJF.sim$flow*0.00081071318210885             
+SNS.sim$flow <- SNS.sim$flow*0.00081071318210885                
+MRC.sim$flow <- MRC.sim$flow*0.00081071318210885                
+TLG.sim$flow <- TLG.sim$flow*0.00081071318210885                
+
+
+Sim <- rbind(SNS.sim, TLG.sim, SJF.sim, MRC.sim)
+Sim
+```
+
+```{r}
+#Creating one tibble
+fulldataset <- cbind(Sim, Obs)
+head(fulldataset)
+```
+
+```{r}
+#Selecting only the data that is interesting
+dataset <- fulldataset[c("StationID", "DateTime", "Value", "flow")] %>%
+  ungroup %>%
+  dplyr::rename(Sim_flow = flow, Obs_flow = Value, Date = DateTime) %>%
+  mutate(Date = as.Date(Date, format = "%Y/%m/%d"),
+  Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B")), 
+  Year = as.Date(cut(Date, breaks = "year")))%>% #create year column to facilitate plotting
+  group_by(Year, StationID) %>%
+    mutate(Obs_annual_flow = sum(Obs_flow)) %>%
+    mutate(Sim_annual_flow = sum(Sim_flow))
+   
+    
+
+
+dataset
+
+dataset$Month <- factor(dataset$Month,
+                        level= c("January","February","March","April","May","June","July","August","September","October","November","December"))
+```
+
+```{r}
+calc_pbias <- function(df) {
+  100*(sum(df[["Sim_flow"]] - df[["Obs_flow"]])/sum((df[["Obs_flow"]]), na.rm =TRUE))
+}
+
+calc_rsr <- function(df) {
+  sqrt( mean( (df[["Sim_flow"]] - df[["Obs_flow"]])^2, na.rm = TRUE))/sd(df[["Obs_flow"]])
+}
+
+calc_nse <- function(df) {
+  1 - sum((df[["Obs_flow"]] - df[["Sim_flow"]])^2)/sum((df[["Obs_flow"]] - mean(df[["Obs_flow"]]))^2)
+}
+```
+
+```{r}
+dataset <- dataset %>%
+  group_by(StationID, Month) %>%
+  nest() %>%
+  mutate(pbias_monthly = map(data, calc_pbias),
+         rsr_monthly = map(data, calc_rsr),
+         nse_monthly = map(data, calc_nse)) %>%
+  unnest(cols = c(data, pbias_monthly, rsr_monthly, nse_monthly))
+dataset
+```
+
+```{r}
+# We are using mean here to reduce {statistic}_monthly into a single value
+# this is acceptable because the {statistic}_monthly columns have the same
+# value for each site-month pair
+
+dataset_labels <- dataset %>%
+  group_by(StationID, Month) %>%
+  summarize(pbias = mean(pbias_monthly),
+            rsr = mean(rsr_monthly),
+            nse = mean(nse_monthly)) %>%
+  mutate(label = paste0("RSR= ", sprintf("%.3f", round(rsr, digits=3)), "\nPBIAS = ", sprintf("%.3f",round(pbias, digits=3)),"\nNSE = ", sprintf("%.3f",round(nse, digits=3))))
+  
+dataset_labels
+```
+
+```{r}
+model.assess <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Obs)[1])
+  }    
+  rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) ) #Formula to calculate RMSE
+  RSR <- rmse / sd(Obs) #object producing RSR test from the RMSE formula
+  PBIAS <- 100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)) #object producing PBIAS test
+  NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #object producing NSE test
+  stats <- print(paste0("RSR = ", sprintf("%.3f", round(RSR, digits=3)), "    PBIAS = ", sprintf("%.3f",round(PBIAS, digits=3)),"    NSE = ", sprintf("%.3f",round(NSE, digits=3))))  
+  return(stats) #returns the results of the tests
+}
+
+```
+
+```{r}
+model.assess2 <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Obs)[1])
+  }    
+  rss <- sum((Sim - Obs) ^ 2)  ## residual sum of squares
+  tss <- sum((Obs - mean(Obs)) ^ 2)  ## total sum of squares
+  rsq <- 1 - rss/tss
+  PBIAS <- 100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)) #object producing PBIAS test
+  NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #object producing NSE test
+  stats <- print(paste0("R\u00B2= ", sprintf("%.3f", round(rsq, digits=3)), "    PBIAS = ", sprintf("%.3f",round(PBIAS, digits=3)),"    NSE = ", sprintf("%.3f",round(NSE, digits=3))))  
+  return(stats) #returns the results of the tests
+}
+
+```
+
+```{r}
+ll <- data.frame(Month=c(),label=c())
+nM <- length(Month)
+lapply(1:nM, function(i){
+  a <- Sim_flow*i*i*0.5
+  b <- Obs_flow*i
+  m <- model.assess(a,b)
+  ll <<- rbind(ll,data.frame(Month=Month[i],label=m))
+})
+labels <- ll
+```
+
+```{r}
+
+#Model assessment of each basin
+#Merced
+MRC.ma <- data.frame(model.assess(MRC.sim$flow, MRC.obs$Value))
+MRC.ma
+#Tuolumne
+TLG.ma <- data.frame(model.assess(TLG.sim$flow, TLG.obs$Value))
+TLG.ma
+#Stanislaus
+SNS.ma <- data.frame(model.assess(SNS.sim$flow, SNS.obs$Value))
+SNS.ma 
+#Upper San Joaquin
+SJF.ma <- data.frame(model.assess(SJF.sim$flow, SJF.obs$Value))
+SJF.ma
+```
+
+```{r}
+MRC.ma <- model.assess(MRC.sim$flow, MRC.obs$Value)
+MRC.ma
+a <- 100 *sum(MRC.sim$flow - MRC.obs$Value)/sum(MRC.obs$Value)
+a
+
+MRCp <- dataset %>%
+  filter(StationID == "MRC")
+b <- 100 *sum(dataset$Obs_flow - dataset$Sim_flow)/sum(dataset$Sim_flow)
+b
+
+MRCp
+MRC.sim
+MRC.obs
+
+```
+
+
+```{r}
+#Merced
+MRC <-  dataset %>%
+  filter(StationID == "MRC") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07")) +
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "2 years", 
+                  date_labels = "%b/%Y",
+                  limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                      labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River", #title
+       x = element_blank(), 
+       y = "Monthly full natural Flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+MRC
+#MRC + annotate("text", as.Date("1987-07-01"), y = 600, label = "RSR = 0.32\nPBIAS = 0.03\nNSE = 0.90",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman")
+```
+
+```{r}
+#Creating a function
+
+Merced <- function(X, Y) {dataset %>%
+  filter(StationID == X) %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07")) +
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "2 years", 
+                  date_labels = "%b/%Y",
+                  limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                      labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = Y, #title
+       x = element_blank(), 
+       y = "Monthly full natural Flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5))
+}
+
+
+Merced(Y = "shut the fuck up", X = "MRC")
+
+```
+
+```{r}
+#Stanislaus
+SNS <- dataset %>%
+  filter(StationID == "SNS") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "2 years", 
+                  date_labels = "%b/%Y",
+                  limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Stanislaus River", #title
+       x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+SNS + annotate("text", as.Date("1987-07-01"), y = 600, label = "RSR = 0.29\nPBIAS = -0.01\nNSE = 0.91",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman") 
+
+```
+
+
+
+```{r}
+#Upper San Joaquin
+SJF <- dataset %>%
+  filter(StationID == "SJF") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "2 years",
+                  date_labels = "%b/%Y",
+                  limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Upper San Joaquin River", #title
+       x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+SJF + annotate("text", as.Date("1987-07-01"), y = 900, label = "RSR = 0.45\nPBIAS = 0.01\nNSE = 0.80",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman") 
+
+```
+
+```{r}
+#Tuolumne
+
+TLG <- dataset %>%
+  filter(StationID == "TLG") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "2 years",
+                  date_labels = "%b/%Y",
+                  limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Tuolumne River", #title
+       x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+TLG + annotate("text", as.Date("1987-07-01"), y = 1000, label = "RSR = 0.42\nPBIAS = 0.00\nNSE = 0.83",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman")
+```
+
+```{r}
+#Merced full dataset
+MRC.full <- dataset %>%
+  filter(StationID == "MRC") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "10 years",
+                  date_labels = "%b/%Y",
+                 # limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+    x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+MRC.full + annotate("text", as.Date("1960-07-01"), y = 700, label = "RSR = 0.32\nPBIAS = 0.3\nNSE = 0.90",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman") +
+
+```
+
+```{r}
+#Stanislaus full dataset
+SNS.full <- dataset %>%
+  filter(StationID == "SNS") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "10 years",
+                  date_labels = "%b/%Y",
+                 # limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Stanislaus River",
+    x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+SNS.full + annotate("text", as.Date("1960-07-01"), y = 700, label = "RSR = 0.29\nPBIAS = -0.01\nNSE = 0.91",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman")
+
+```
+
+```{r}
+#Tuolumne full data set
+TLG.full <- dataset %>%
+  filter(StationID == "TLG") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "10 years", 
+                  date_labels = "%b/%Y",
+                 # limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title= "Tuolumne River",
+    x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+TLG.full + annotate("text", as.Date("1960-07-01"), y = 1500, label = "RSR = 0.42\nPBIAS = 0.00\nNSE = 0.83",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman")
+
+```
+
+```{r}
+#Upper San Joaquin full data set
+SJF.full <- dataset %>%
+  filter(StationID == "SJF") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "10 years", 
+                  date_labels = "%b/%Y",
+                 # limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title= "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+SJF.full + annotate("text", as.Date("1959-07-01"), y = 1350, label = "RSR = 0.45\nPBIAS = 0.01\nNSE = 0.80",  collapse = "\n", hjust = 0, size=4, family= "Times New Roman")
+```
+
+```{r}
+#Upper San Joaquin full data set
+SJF.full <- dataset %>%
+  filter(StationID == "SJF") %>%
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "10 years", 
+                  date_labels = "%b/%Y",
+                 # limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title= "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+SJF.full + facet_wrap(~ Month, ncol=3, scales = "free")
+```
+
+
+grid.arrange(MRC.full, SNS.full, TLG.full, SJF.full, ncol=2)
+
+grid.arrange(MRC, SNS, TLG, SJF, ncol=2)
+
+
+```{r}
+#Creating observed vs. simulated
+#Scatterplot
+note <- data.frame(x = c(as.Date("1961-02-01"), as.Date("1961-02-01"), as.Date("1961-02-01"), as.Date("1961-02-01")),
+                   y = c(1.15, 1.15, 1.15, 1.15), #adding where to add text 
+                   label = c(paste(MRC.ma), paste(SJF.ma), paste(SNS.ma), paste(TLG.ma)),
+                   StationID = c("MRC", "SJF", "SNS", "TLG"))
+
+lm_eqn = function(df){
+  m = lm(y ~ x, df);
+  eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                   list(a = format(coef(m)[1], digits = 2), 
+                        b = format(coef(m)[2], digits = 2), 
+                        r2 = format(summary(m)$r.squared, digits = 3)))
+  as.character(as.expression(eq));                 
+}
+
+coefs <- coef(datas) # linear model coefficients
+b0 <- round(coefs[1], 2) # round for printing
+b1 <- round(coefs[2], 2) # round for printing
+r2 <- round(summary(mod1)$r.squared, 2) # r squared
+eqn <- bquote(italic(y) == .(b0) + .(b1)*italic(x) * "," ~~ r^2 == .(r2)) # formula and rsuared for printing
+```
+
+```{r}
+#all basins scatter plot with annual data
+
+note2 <-  data.frame(x = c(0.05, 0.05, 0.05, 0.05),
+                   y = c(1.15, 1.15, 1.15, 1.15), #adding where to add text 
+                   label = c(paste(MRC.ma), paste(SJF.ma), paste(SNS.ma), paste(TLG.ma)),
+                   StationID = c("MRC", "SJF", "SNS", "TLG"))
+
+
+ggplot(dataset, aes(x = Obs_annual_flow, y = Sim_annual_flow)) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.2)+ 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+ labs(x = "Observed full natural flow - CDEC (MAF)", 
+       y = "Simulated full natural flow - Livneh (MAF)") + #name of x axis
+  theme() +
+    stat_smooth(aes(x = Obs_annual_flow, y = Sim_annual_flow), 
+                method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+    scale_y_continuous(limits = c(0, 7),
+                       expand = c(0.005, 0.005)) +
+     scale_x_continuous(limits = c(0, 7),
+                        expand = c(0.005, 0.005)) +
+   stat_poly_eq(formula = "y~x", 
+             aes(label = paste0("atop(", ..eq.label.., ",", ..rr.label.., ")")), 
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 3.5, family= "Times New Roman")+
+   facet_wrap(~ StationID, ncol=2,  labeller = labeller(StationID = c("MRC" = "Merced River", "SJF"= "Upper San Joaquin River", "SNS" = "Stanislaus River", "TLG" = "Tuolumne River")), scales = "fixed") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#geom_text(note2, #adding where to add text 
+#              mapping = aes(x=, y=y, label = label), size=3, family= "Times New Roman") +
+png("allbasins_annualdata_scatterplot.png", units ="in", width=5, height=5, res = 300)
+```
+
+
+```{r}
+#all basins scatter plot with monthly data
+
+
+
+formula <- dataset$Sim_flow ~ dataset$Obs_flow
+
+ggplot(dataset, aes(x = Obs_flow, y = Sim_flow)) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.3)+ 
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+ labs(x = "Observed full natural flow - CDEC (MAF)", 
+       y = "Simulated full natural flow - Livneh (MAF)") + #name of x axis
+
+    stat_smooth(aes(x = Obs_flow, y = Sim_flow), method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+    scale_y_continuous(limits = c(0, 1.65),
+                       expand = c(0.005, 0.005)) +
+     scale_x_continuous(limits = c(0, 1.65),
+                        expand = c(0.005, 0.005)) +
+   stat_poly_eq(formula = "y~x", 
+             aes(label = paste0("atop(", ..eq.label.., ",", ..rr.label.., ")")), 
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.98, size = 3.5, family= "Times New Roman")+
+   facet_wrap(~ StationID, ncol=2,  labeller = labeller(StationID = c("MRC" = "Merced River", "SJF"= "Upper San Joaquin River", "SNS" = "Stanislaus River", "TLG" = "Tuolumne River")), scales = "fixed") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+png("allbasins_monthlydata_scatterplot.png", units ="in", width=5, height=5, res = 300)
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+MRC.obs$Year <- as.Date(cut(MRC.obs$DateTime, breaks = "year")) #create month column to facilitate plotting
+MRC.sim$Year <- as.Date(cut(MRC.sim$date, breaks = "year")) 
+
+
+MRC.com <- ggplot(x = MRC.obs$DateTime, y = MRC.sim$flow) + 
+   geom_point(aes(alpha=0.3, colorblind_pal())) +
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+      scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "4 years", 
+                  date_labels = "%Y",
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  labs(x = "Observed data (CDEC)", #name of x axis
+       y = "Modeled data (Livneh)") #name of x axis
+  
+MRC.com 
+```

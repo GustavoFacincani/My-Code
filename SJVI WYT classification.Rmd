@@ -1,0 +1,35 @@
+```{r}
+library(readr)
+library(dplyr)
+
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/common/hydrology/"
+
+#Historical SJVI
+SJVI_Livneh <- read_csv(paste(path,"historical/Livneh/SJVI.csv", sep="")) %>%
+  mutate(WYT = ifelse(`SJVI (maf)` >= 3.8, "Wet", ifelse(`SJVI (maf)` < 3.8 & `SJVI (maf)` > 3.1, "Above Normal", ifelse(`SJVI (maf)` <= 3.1 & `SJVI (maf)` > 2.5, "Below Normal", ifelse(`SJVI (maf)` <= 2.5 & `SJVI (maf)` > 2.1, "Dry", "Critical")))),
+         Scenario = "Livneh (Historical)")
+
+SJVI_Livneh
+
+#GCMs SJVI
+
+GCMs <- c("ACCESS1-0", "CanESM2", "CCSM4", "GFDL-CM3", "HadGEM2-ES", "HadGEM2-CC", "MIROC5", "CNRM-CM5", "CMCC-CMS", "CESM1-BGC")
+rcps <- c("rcp45", "rcp85")
+
+for(GCM in GCMs){
+  for(rcp in rcps){
+  
+SJVI_GCMs <- read_csv(paste(path,"gcms/",GCM,"_",rcp,"/SJVI.csv", sep="")) %>%
+  mutate(WYT = ifelse(`SJVI (maf)` >= 3.8, "Wet", ifelse(`SJVI (maf)` < 3.8 & `SJVI (maf)` > 3.1, "Above Normal", ifelse(`SJVI (maf)` <= 3.1 & `SJVI (maf)` > 2.5, "Below Normal", ifelse(`SJVI (maf)` <= 2.5 & `SJVI (maf)` > 2.1, "Dry", "Critical")))),
+         Scenario = GCM,
+         RCP = rcp)
+SJVI_GCMs
+  }
+}
+
+
+
+
+
+
+```

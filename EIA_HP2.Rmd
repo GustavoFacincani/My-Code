@@ -1,0 +1,293 @@
+---
+title: "EIA_Data"
+author: "Gustavo Facincani Dourado"
+date: "7/19/2020"
+output: html_document
+---
+
+```{r}
+library(raster)
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+library(dplyr)
+```
+
+
+```{r}
+#function to get start and end of non-NA values
+NonMissingStartEnd <- function(my.col, date.col, df){
+  start <- df[[date.col]][min(which(!is.na(df[[my.col]])))]
+  end <- df[[date.col]][max(which(!is.na(df[[my.col]])))]
+  data.frame(my.col = my.col, start=start, end=end)
+  
+}
+
+#Apply function to all columns
+x <-  lapply(names(EIA), NonMissingStartEnd, date.col = 'Date', df=EIA)
+EIA_TimeSpan <- do.call(rbind,x)
+EIA_TimeSpan
+```
+
+```{r}
+EIA_complete[[Date]][min(which(is.na(EIA_complete[[value]])))]
+```
+
+```{r}
+#get time span between to dates, 
+EIA2 <- reshape2::melt(EIA, id = "Date")
+EIA2
+
+EIA_manipulated <- merge(EIA2, EIA_TimeSpan, by.x = "variable", by.y = "my.col")
+EIA_manipulated
+
+EIA_complete <- data.table::as.data.table(EIA_manipulated[EIA_manipulated$Date >= EIA_manipulated$start & EIA_manipulated$Date <= EIA_manipulated$end,] %>%
+  mutate(`Time Span (years)` = time_length(difftime(as.Date(end), as.Date(start)), "years"),
+         `Time Span (years)` = time_length(difftime(as.Date(end), as.Date(start)), "months"),
+         value = as.numeric(value),
+     `Completeness (% NAs)` = sum(is.na(. %>% group_by(variable, value) %>% value)),
+     Complete = sum(!is.na(. %>% group_by(variable, value) %>% value))))
+    # Days = days_in_month(Date[(which(!is.na(df[[my.col]])))]))
+EIA_complete
+```
+
+```{r}
+sapply(EIA_complete$value, function(x) sum(!is.na (x)))
+#    year N
+```
+
+```{r}
+
+EIA <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/References/Electricity data/EIA data/monthly_hydro_1980_2018_MWh.csv")
+EIA #%>%
+  #mutate(`Period of record (years)` = lubridate::time_length(EIA$`A G Wishon`, unit = "year")) %>%
+  #dplyr::select(Date, `Period of record (years)`, everything())
+```
+
+```{r}
+#Create a column to sum up the total generation and total annaul generation per basin
+#Creating a function for that
+HP <- function(x, y, z) {
+x <- x %>%
+mutate(Year = lfstat::water_year(Date, origin = "usgs"))%>% #year column to facilitate plotting
+  group_by(Year) %>%
+  summarize_each(funs(sum), y) %>%
+  mutate(`Total generation (MWh)` = dplyr::select(., y) %>% rowSums(., na.rm = TRUE),
+         Basin = z)
+
+#rearranging the data
+x <- reshape2::melt(x, id = c("Year", "Total generation (MWh)", "Basin")) %>%
+  dplyr::rename(`Powerhouse generation (MWh)` = value, #rename monthly
+                `Powerhouse` = variable) #rename powerhouse
+x
+
+}
+```
+
+```{r}
+#Separating out Stanislaus powerhouses
+USJ <- EIA %>%
+  dplyr::select(Date, Portal, Mammoth, `Big Creek 1`, `Big Creek 2`, `Big Creek 8`, `J S Eastwood`, `Big Creek 2A`, `Big Creek 3`, `Big Creek 4`, `San Joaquin 3`, `San Joaquin 2`, `San Joaquin 1A`, `A G Wishon`, Kerckhoff, `Kerckhoff 2`, `Friant Hydro Facility`)
+USJ 
+
+#Separating out Merced powerhouses
+MRC <- EIA %>%
+  dplyr::select(Date, `Merced Falls`, McSwain, Exchequer)
+MRC
+
+#Separating out Upper San Joaquin powerhouses
+STN <- EIA %>%
+  dplyr::select(Date, `Spicer Meadow Project`, Donnells, Beardsley, `Sand Bar`, `Spring Gap`, `Collierville Powerhouse`, Stanislaus, Phoenix, Murphys, Angels, `New Melones`, Tulloch)
+STN 
+
+#Separating out Tuolumne powerhouses
+TUO <- EIA %>%
+  dplyr::select(Date, `Dion R Holm`, `R C Kirkwood`, Moccasin, `Don Pedro`)
+TUO 
+```
+
+```{r}
+#Applying the function to each basin
+#Upper San Joaquin River
+STN_HP <- HP(STN, 2:13, "Stanislaus River")
+STN_HP
+
+#Merced River
+MRC_HP <- HP(MRC, 2:4, "Merced River")
+MRC_HP
+
+#Merced River
+USJ_HP <- HP(USJ, 2:17, "Upper San Joaquin River")
+USJ_HP
+
+#Merced River
+TUO_HP <- HP(TUO, 2:5, "Tuolumne River")
+TUO_HP
+```
+
+
+```{r}
+#test figure without facets
+HP_Fig <- function(Data, Title) {
+ggplot(Data, aes(y = `Powerhouse generation (MWh)`/1000, x = `Total generation (MWh)`/1000,
+                   color = `Powerhouse`, shapes = `Powerhouse`)) + 
+  theme_bw(base_size=13.5, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.5)+
+    geom_smooth(method=lm)+ #, fullrange=TRUE) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+  viridis::scale_color_viridis(discrete = TRUE)+
+  scale_x_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+ labs(title = Title,
+   x = "Total Hydropower Generation (GWh)", #name of x axis
+       y = "Hydropower Generation per Powerhouse (GWh)")+ #name of y axis
+  
+       stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, size = 4, family= "Times New Roman")+
+  theme(#aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  
+}
+```  
+
+
+```{r}
+HP_Fig2 <- function(Data, Title) {
+ggplot(Data, aes(y = `Powerhouse generation (MWh)`/1000, x = `Total generation (MWh)`/1000)) + 
+  theme_bw(base_size=13.5, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.5, size = 2)+
+    geom_smooth(method=lm)+ #, fullrange=TRUE) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", alpha = 0.5) +
+    scale_x_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+ labs(title = Title,
+   x = "Total Hydropower Generation (GWh)", #name of x axis
+       y = "Hydropower Generation (GWh)")+ #name of y axis
+    
+  stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 4, family= "Times New Roman")+
+       stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, size = 4, label.x.npc = 0.05, 
+             label.y.npc = 0.85, family= "Times New Roman")+
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  
+}
+```  
+ 
+
+```{r}
+HP_Fig2(MRC_HP, "Merced River") +
+  scale_x_continuous(limits = c(0, 800))+
+    scale_y_continuous(limits = c(0, 800))+
+    facet_wrap(~`Powerhouse`, scales = "fixed", ncol = 4)+
+  png("Mer_AnnualHP.png", units ="in", width=6.5, height=6.5, res = 300)
+```
+
+```{r}
+HP_Fig2(TUO_HP, "Tuolumne River") +
+    scale_x_continuous(limits = c(0, 3750))+
+    scale_y_continuous(limits = c(0, 3750))+
+    facet_wrap(~`Powerhouse`, scales = "fixed", ncol = 4)+
+  png("Tuo_AnnualHP.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+```{r}
+HP_Fig2(USJ_HP, "Upper San Joaquin River")+
+scale_x_continuous(limits = c(0, 3000))+
+    scale_y_continuous(limits = c(0, 3000))+
+  facet_wrap(~`Powerhouse`, scales = "fixed")+
+    png("USJ_AnnualHP.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+```{r}
+HP_Fig2(STN_HP, "Stanislaus River")+
+scale_x_continuous(limits = c(0, 6300))+
+    scale_y_continuous(limits = c(0, 6300))+
+  facet_wrap(~Powerhouse, scales = "fixed")+
+  png("STN_AnnualHP.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+
+
+```{r}
+library(broom)
+library(dplyr)
+library(ModelMetrics)
+
+#Merging the basins into one object
+all_PH <- rbind(STN_HP, TUO_HP, MRC_HP, USJ_HP)
+
+#create function to prepare the table
+#Power <- function(data) {
+all_Power <- all_PH %>%
+  group_by(Powerhouse, Basin) %>% #grouping by facility and basin to summarize
+  summarise(`Rsquare` = cor(`Powerhouse generation (MWh)`, `Total generation (MWh)`, use = "na.or.complete")^2, #R squared
+            #min, mean, median, max and quantile for PH and total generation
+            
+            `Minimum Generation (MWh)` = min(`Powerhouse generation (MWh)`, na.rm=TRUE),
+            `1st Qu. Generation (MWh)` = quantile(`Powerhouse generation (MWh)`, 0.25, na.rm=TRUE),
+            `Mean Generation (MWh)` = mean(`Powerhouse generation (MWh)`, na.rm=TRUE),
+            `Median Generation (MWh)` = median(`Powerhouse generation (MWh)`, na.rm=TRUE),
+            `3rd Qu. Generation (MWh)` = quantile(`Powerhouse generation (MWh)`, 0.75, na.rm=TRUE),
+            `Maximum Generation (MWh)` = max(`Powerhouse generation (MWh)`, na.rm=TRUE),
+            
+            `Minimum Total Generation (MWh)` = min(`Total generation (MWh)`, na.rm=TRUE), 
+            `1st Qu. Total Generation (MWh)` = quantile(`Total generation (MWh)`, 0.25, na.rm=TRUE),
+            `Mean Total Generation (MWh)` = mean(`Total generation (MWh)`, na.rm=TRUE), 
+            `Median Total Generation (MWh)` = median(`Total generation (MWh)`, na.rm=TRUE),
+            `3rd Qu. Total Generation (MWh)` = quantile(`Total generation (MWh)`, 0.75, na.rm=TRUE),
+            `Maximum Total Generation (MWh)` = max(`Total generation (MWh)`, na.rm=TRUE)) %>%
+  group_by(Basin) %>%
+  mutate(Rank = rank(-`Mean Generation (MWh)`),
+         `Contribution (%)`= `Mean Generation (MWh)` / `Mean Total Generation (MWh)`*100) %>%
+  dplyr::select(Rank, Powerhouse, Basin, `Contribution (%)`, everything()) %>%
+  dplyr::select(Rank, everything()) %>%
+   group_by(Basin) %>%
+  arrange(Basin,Rank) %>%
+  ungroup()
+
+
+#all_Power$Rank <- rank(-all_Power$`Mean generation (MWh)`) #create rank
+#all_Power <- all_Power %>% #arrange rank in order of importance
+#arrange(all_Power$Rank) 
+all_Power
+
+```
+
+```{r}
+all_PH
+```
+
+```{r}
+#creating a csv file
+readr::write_csv(all_Power, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Annual_Stats_HPGen_Historical2.csv")
+```
+

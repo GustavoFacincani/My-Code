@@ -1,0 +1,273 @@
+```{r}
+#Loading packages to be used
+library(tidyverse)
+library(readr)
+library(extrafont)
+library(ggplot2)
+library(ggthemes)
+library(stringr)
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(lubridate)
+library(cder)
+
+#Getting observed data from CDEC for each basin using CDEC's package
+#Stanislaus
+#SNS.obs <- cdec_query("SNS", "65", "M", "1950-01-01", "2013-12-01")
+#SNS.obs$DateTime <- as.Date(SNS.obs$DateTime, format = "%Y/%m/%d")
+#Merced
+Obs <- cdec_query("MRC", 65, "M",  "1950-01-01", "2013-12-01")
+Obs
+Obs$DateTime <- as.Date(Obs$DateTime, format = "%Y/%m/%d")
+#Tuolumne
+#TLG.obs <- cdec_query("TLG", 65, "M", "1950-01-01", "2013-12-01")
+#TLG.obs$DateTime <- as.Date(TLG.obs$DateTime, format = "%Y/%m/%d")
+#Upper San Joaquin
+#SJF.obs <- data.frame(cdec_query("SJF", 65, "M", "1950-01-01", "2013-12-01"))
+#SJF.obs$DateTime <- as.Date(SJF.obs$DateTime, format = "%Y/%m/%d")
+
+#Converting the flows in Acre-feet to million cubic meters
+#SJF.obs$Value <- SJF.obs$Value/810.71318210885
+#SNS.obs$Value <- SNS.obs$Value/810.71318210885
+
+Obs$Value <- Obs$Value/810.71318210885
+#TLG.obs$Value <- TLG.obs$Value/810.71318210885
+Obs <- Obs %>%mutate(month = month(DateTime), year = year(DateTime)) #%>%
+#  group_by(month, year)
+Obs
+```
+
+```{r}
+#Binding the 4 stations together into one object
+#Obs <- rbind(SNS.obs, TLG.obs, SJF.obs, MRC.obs)
+ #checking if it is all right
+
+#Reading in Livneh data of each basin from each csv file
+#SNS.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/SNS_natural_flow_monthly_mcm.csv")
+Sim1 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb01_mcm.csv")
+Sim2 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb02_mcm.csv") %>%
+  mutate(flow2 = flow)
+Sim3 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb03_mcm.csv") %>%
+  mutate(flow3 = flow)
+Sim4 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb04_mcm.csv") %>%
+  mutate(flow4 = flow)
+Sim5 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb05_mcm.csv") %>%
+  mutate(flow5 = flow)
+Sim6 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb06_mcm.csv") %>%
+  mutate(flow6 = flow)
+
+Sim <- cbind(Sim1, Sim2[3], Sim3[3], Sim4[3], Sim5[3], Sim6[3])
+#TLG.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/TLG_natural_flow_monthly_mcm.csv")
+#SJF.sim <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Livneh/sJF_natural_flow_monthly_mcm.csv")
+Sim
+#Binding the 4 stations together into one object
+#Sim <- rbind(SNS, TLG, SJF, MRC)
+Sim <- Sim %>%
+  mutate(sum = rowSums(.[2:7]))#checking if it is all right
+#Creating one tibble with the whole data set from both objects
+```
+
+```{r}
+Sim2 <- Sim[c(1,8)] %>%
+  mutate(monthyear = as.character(format(Date, "%Y-%m"))) %>%
+          arrange(Date) %>% 
+          group_by(monthyear) %>%
+          summarise(Date=Date[1], flow = sum(sum))
+Sim2
+```
+
+```{r}
+fulldataset <- cbind(Sim2[2:3], Obs[7])
+fulldataset
+```
+
+```{r}
+
+#Creating function to calculate RSR, SNE and PBIAS
+model.assess <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Obs)[1])
+  }    
+  rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) ) #Formula to calculate RMSE
+  RSR <- rmse / sd(Obs) #object producing RSR test from the RMSE formula
+  PBIAS <- 100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)) #object producing PBIAS test
+  NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #object producing NSE test
+  Values <- c(RSR, PBIAS, NSE) #Creates a column for the results of the tests
+  Test <- c('RSR', 'PBIAS', 'NSE') #Creates a column for the name of the tests
+  stats <- tibble(Test, Values) #Creates a tibble of the final products of the tests, giving numeric values for each test in this order: RSR, PBIAS, NSE
+  return(stats) #returns a tibble as a result, which can be used in graphs or tables
+}
+```
+
+```{r}
+#Cleaning the data
+
+#Selecting only the data that is interesting into
+dataset <- fulldataset[c("StationID", "DateTime", "Value", "flow")] %>% #Columns with the name of the river, date, observed and simulated flows
+  ungroup %>%
+  rename(Sim_flow = flow, Obs_flow = Value, Date = DateTime) %>% #renaming columns to identify them easily
+  mutate(Date = as.Date(Date, format = "%Y/%m/%d")) %>% #reading date as date
+  mutate(Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B"))) #creating a Month column to facilitate creating facets by month
+head(dataset)
+```
+
+```{r}
+
+dataset <- fulldataset %>%
+  mutate(Date = as.Date(Date, format = "%Y/%m/%d")) %>% #reading date as date
+  mutate(Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B")))
+
+dataset$Month <- factor(dataset$Month, #set months as factors, to be able to create facets by month
+                        level = c("January", "February", "March", "April", "May", "June", "July",
+                                  "August", "September", "October", "November", "December"))
+```
+
+
+```{r}
+#Model assessment of each basin
+#Merced
+MRC.ma <- data.frame(model.assess(dataset$flow, dataset$Value))
+MRC.ma
+```
+#Tuolumne
+TLG.ma <- data.frame(model.assess(TLG.sim$flow, TLG.obs$Value))
+TLG.ma
+#Stanislaus
+SNS.ma <- data.frame(model.assess(SNS.sim$flow, SNS.obs$Value))
+SNS.ma 
+#Upper San Joaquin
+SJF.ma <- data.frame(model.assess(SJF.sim$flow, SJF.obs$Value))
+SJF.ma
+
+```{r}
+#Creating figures
+
+#Merced time series
+MRC <-  dataset %>%
+  filter(StationID == "MRC") %>% #selecting the data only from Merced
+  ggplot() +  #plotting it
+  theme_bw(base_size=12, base_family='Times New Roman') + #changing font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #selecting observed data in greenish blue
+  geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+ #selecting simulated data in orange
+  scale_y_continuous(expand = c(0, 0))+ #removing blank space in the borders of the plotting area
+  scale_x_date(date_breaks = "2 years", #setting the tick values of x axis
+               date_labels = "%b/%Y", #setting label to written abbreviation of months and 4-digit years
+               limits = as.Date(c('1985-01-01','2000-12-31')), #setting limits for x axis
+               expand = c(0, 0)) + #removing empty space in the plotting area
+  scale_color_identity(name = element_blank(), #no name for legend
+                       labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables for each line
+                       guide = "legend")+ #creating legend
+  labs(title = "Merced River", #creating title
+       x = element_blank(), #empty x label
+       y = "Monthly full natural Flow (mcm)") + #name of y axis
+  theme(legend.position = "bottom", #position of the legend
+        legend.direction = "horizontal", #direction of the legend
+        legend.box.margin = margin(t = -19), #location of the legend
+        plot.title = element_text(hjust = 0.5)) #centering the title
+
+MRC + annotate("text", as.Date("1987-07-01"), y = 600, #adding where to add text 
+               label = "RSR = 0.32\nPBIAS = 0.03\nNSE = 0.90",  #adding manually results of statistical tests
+               collapse = "\n", hjust = 0, size=4, family= "Times New Roman") +
+
+png("mer_timeseries.png", units ="in", width=8, height=5, res = 300) #creating the figure
+
+#To use these commands for other rivers, just change the name of the object, the StationID in line 103, and the title in line 116, and the test results in line 125
+
+#Merced full time series
+#Same comands as the above, just changing date_breaks interval and date_lablels (lines 109-110), and removing data limits (line 111)
+MRC.full <- dataset %>%
+  filter(StationID == "MRC") %>% #selecting the data only from Merced
+  ggplot() + #plotting it
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #selecting observed data in greenish blue
+  geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+ #selecting simulated data in orange
+  scale_y_continuous(expand = c(0, 0))+ #removing empty space in the plotting area
+  scale_x_date(date_breaks = "10 years", #setting the tick values of x axis
+               date_labels = "%Y", #setting label to 4-digit years
+               expand = c(0, 0)) + #removing empty space in the plotting area
+  scale_color_identity(name = element_blank(), #no name for legend
+                       labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables for each line
+                       guide = "legend")+ #creatinng legend
+  labs(title = "Merced River", #creating title
+       x = element_blank(), #empty x label
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom", #position of the legend
+        legend.direction = "horizontal",#direction of the legend
+        legend.box.margin = margin(t = -19),#location of the legend
+        plot.title = element_text(hjust = 0.5)) #centering the title
+
+MRC + annotate("text", as.Date("1987-07-01"), y = 600, #adding where to add text 
+               label = "RSR = 0.32\nPBIAS = 0.03\nNSE = 0.90",  #adding manually results of statistical tests
+               collapse = "\n", hjust = 0, size=4, family= "Times New Roman") +
+
+png("mer_full_timeseries.png", units ="in", width=8, height=5, res = 300) #creating the figure
+
+#To use these commands for other rivers, just change the name of the object, the StationID in line 133, and the title in line 145, and the test results in line 156
+
+
+#Creating a figure with facets by month
+
+#Merced full monthly time series
+#Same comands as the above, just changing date_breaks interval (line 141), and without plotting test results (lines 155-157)
+MRC.monthly <- dataset %>% 
+  filter(StationID == "MRC") %>% #selecting the data only from Merced
+  ggplot() + #plotting it
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #selecting observed data in greenish blue
+  geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+ #selecting simulated data in orange
+  scale_y_continuous(expand = c(0, 0))+ #removing empty space in the plotting area
+  scale_x_date(date_breaks = "15 years", #setting the tick values of x axis
+               date_labels = "%Y", #setting label to 4-digit years
+               expand = c(0, 0)) +#removing empty space in the plotting area
+  scale_color_identity(name = element_blank(), #no name for legend
+                       labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables for each line
+                       guide = "legend")+ #creatinng legend
+  labs(title = "Merced River", #creating title
+       x = element_blank(), #empty x label
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom", #position of the legend
+        legend.direction = "horizontal",#direction of the legend
+        legend.box.margin = margin(t = -19),#location of the legend
+        plot.title = element_text(hjust = 0.5)) #centering the title
+
+MRC.monthly + facet_wrap(~ Month, ncol=4, scales = "free") + #creating facets by month
+  
+png("mer_montlhy_timeseries.png", units ="in", width=8, height=5, res = 300) #creating the figure
+
+#To use these commands for other rivers, just change the name of the object, the StationID in line 167
+
+
+#Full monthly time series of all basins
+#Same comands as the above, just removing filter by StationID (line 197) and removing the title (line 210)
+all.basins <- dataset %>%
+  filter(StationID == "MRC") %>% #selecting the data only from Merced
+  ggplot() + #plotting it
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Obs_flow, colour = "#00AFBB"))+ #selecting observed data in greenish blue
+  geom_line(aes(x = Date, y = Sim_flow, colour = "#FC4E07"))+ #selecting simulated data in orange
+  scale_y_continuous(expand = c(0, 0))+ #removing empty space in the plotting area
+  scale_x_date(date_breaks = "15 years", #setting the tick values of x axis
+               date_labels = "%Y", #setting label to 4-digit years
+               expand = c(0, 0)) + #removing empty space in the plotting area
+  scale_color_identity(name = element_blank(), #no name for legend
+                       labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables for each line
+                       guide = "legend")+ #creatinng legend
+  labs(title = "Merced River", #creating title
+       x = element_blank(), #empty x label
+       y = "Monthly full natural flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom", #position of the legend
+        legend.direction = "horizontal",#direction of the legend
+        legend.box.margin = margin(t = -19),#location of the legend
+        plot.title = element_text(hjust = 0.5)) #centering the title
+
+all.basins + facet_wrap(~ Month, ncol=4, scales = "free") + #creating facets by month
+  
+  png("mer_montlhy_timeseries.png", units ="in", width=8, height=5, res = 300) #creating the figure
+
+```

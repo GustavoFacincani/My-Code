@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "9/24/2020"
+output: html_document
+---
+
+```{r}
+library(readr)
+library(raster)
+```
+
+```{r}
+
+wrangling <- function(basin, shape, GCM){
+
+#basin <- "MERR"
+#shape <- "Mer.shp"
+#GCM <- "HadGEM2-CC"
+
+#output folder
+finalpath <- paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/bias correction/",basin,"/","Catchment_RO_woBC/", sep="")
+ if (!dir.exists(finalpath)){
+    dir.create(file.path(finalpath), recursive = TRUE)
+  }
+
+
+raw <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/bias correction/NetCDF output/",GCM,"_allbasins.csv", sep = ""))
+raw
+
+#colnames <- c("MER", "STN", "TUO", "SJN")
+
+#for(colname in colnames){
+
+
+#colname <- raw[c(1,grep(paste("^",colname, sep =""), colnames(raw)))]
+
+Mer <- raw[c(1,grep("^MER", colnames(raw)))]
+Mer
+j <- Mer
+#USJ <- raw[c(1,grep("^SJN", colnames(raw)))]
+#USJ
+
+#Stn <- raw[c(1,grep("^STN", colnames(raw)))]
+#Stn
+
+#Tuo <- raw[c(1,grep("^TUO", colnames(raw)))]
+#Tuo
+
+#Starting loops
+
+#watersheds <- c(Mer, Tuo, USJ, Stn)
+
+#for(j in watersheds) {
+for(i in c(2:ncol(j))){
+#write_csv(Mer[c(1,i)], file = paste0(Mer[i], ".csv", sep = "")) }
+  
+  
+  #using the area found in the shapefile
+  Shp_file <- shapefile(paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/raw_data/Shapefiles/",shape, sep = ""))
+  Shp_file$AREA <- area(Shp_file)          #area function gives area in square meters
+            
+            
+  
+Subbasin <- Mer[c(1,i)] %>%
+    rename(Date = dates,
+           flow = colnames(Mer[i])) %>%
+  mutate(flow = (flow/1000/86400)*Shp_file$AREA[Shp_file$SUBWAT == colnames(Mer[i])])
+
+  write.table(Subbasin, #vector we want to save
+            file= paste0(finalpath,GCM,"_rcp85/tot_runoff2_sb",i-1,".csv", sep = ""), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0("tot_runoff2_sb",i-1,".csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE) 
+}
+}
+```
+
+```{r}
+
+wrangling("MERR", "Mer.shp", "GFDL-CM3")
+#wrangling("TUOR", "TUO.shp", "CCSM4")
+#wrangling("TUOR", "TUO.shp", "HadGEM2-CC")
+#wrangling("TUOR", "TUO.shp", "CMCC-CMS")
+#wrangling("TUOR", "TUO.shp", "CESM1-BGC")
+#wrangling("TUOR", "TUO.shp", "ACCESS1-0")
+```
+
+
+
+
+
+

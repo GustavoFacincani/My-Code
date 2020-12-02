@@ -1,0 +1,180 @@
+```{r}
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(readr)
+```
+
+
+```{r}
+Energy <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/consolidated_results/Hydropower_Energy_MWh.csv") %>%
+  filter(basin == "tuolumne"| basin == "upper_san_joaquin") %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))%>%
+  filter(between(date, as.Date("1991-10-01"), as.Date("2011-09-29")))# %>%
+  # mutate(WaterYear= paste(water_year(date)))
+  #seq along dates starting with the beginning of your water year
+ # mutate(CDate=as.Date(paste0(ifelse(month(Date) < 10, "1901", "1900"),
+             #                 "-", month(Date), "-", day(Date))))
+  
+Energy
+```
+
+```{r}
+Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/consolidated_results/Reservoir_Storage_mcm.csv") %>%
+  filter(basin == "tuolumne"| basin == "upper_san_joaquin") %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))%>%
+  filter(between(date, as.Date("1991-10-01"), as.Date("2011-09-29")))# %>%
+  # mutate(WaterYear= paste(water_year(date)))
+  #seq along dates starting with the beginning of your water year
+ # mutate(CDate=as.Date(paste0(ifelse(month(Date) < 10, "1901", "1900"),
+             #                 "-", month(Date), "-", day(Date))))
+  
+Storage
+```
+
+```{r}
+IFR <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/consolidated_results/InstreamFlowRequirement_Flow_mcm.csv") %>%
+  filter(basin == "tuolumne"| basin == "upper_san_joaquin") %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))%>%
+  filter(between(date, as.Date("1991-10-01"), as.Date("2011-09-29")))# %>%
+  # mutate(WaterYear= paste(water_year(date)))
+  #seq along dates starting with the beginning of your water year
+ # mutate(CDate=as.Date(paste0(ifelse(month(Date) < 10, "1901", "1900"),
+             #                 "-", month(Date), "-", day(Date))))
+  
+IFR
+```
+
+```{r}
+Output <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/consolidated_results/Output_Flow_mcm.csv") %>%
+  filter(basin == "tuolumne"| 
+           basin == "upper_san_joaquin") %>%
+  mutate(date = as.Date(date, format = "%m/%d/%Y"))%>%
+  filter(between(date, as.Date("1991-10-01"), as.Date("2011-09-29")))# %>%
+  # mutate(WaterYear= paste(water_year(date)))
+  #seq along dates starting with the beginning of your water year
+ # mutate(CDate=as.Date(paste0(ifelse(month(Date) < 10, "1901", "1900"),
+             #                 "-", month(Date), "-", day(Date))))
+  
+Output
+```
+
+```{r}
+names <- unique(Energy$resource)
+  
+plotting  <- function(data, title, i) { 
+data %>%
+    filter(resource == i) %>%
+  ggplot(.) + 
+    geom_line(aes(x = date, y = Simulated/1000, color = "Simulated"), alpha =0.75)  + 
+    geom_line(aes(x = date, y = Observed/1000, color = "Observed"), alpha = 0.75) + 
+  scale_color_manual(values = c("Simulated" = "dodgerblue2", "Observed" = "tomato3"))+
+    ggtitle(paste(i, " - Post-Bias Correction (moving average)", sep="")) + 
+
+    ylab(paste(title)) +# xlab("Water Year")+
+    scale_x_date(breaks = as.Date(c("1991-10-01", "1993-10-01", "1995-10-01", "1997-10-01", "1999-10-01", "2001-10-01", "2003-10-01",  "2005-10-01", "2007-10-01", "2009-10-01")),
+#                 minor_breaks = as.Date(c("1997-10-01", "1998-10-01", "1999-10-01", "2000-09-01",                                          "2002-10-01", "2003-10-01", "2004-10-01", "2005-09-01",                                          "2007-10-01", "2008-10-01", "2009-10-01", "2010-09-01")), 
+                 expand = c(0, 0),
+                 date_labels = "%b %Y")+
+#ate_breaks = "3 years", 
+                 #date_minor_breaks = "1 year", 
+                 #date_labels = "%Y") + 
+  #  scale_y_continuous(expand = c(0, 0), breaks = seq(10, 1000, by = 20), minor_breaks = 5) +
+        theme_bw(base_size=13, base_family='Times New Roman') + 
+  theme(plot.title = element_text(hjust = 0.5),
+     #     axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -30))+
+#    plot.margin=grid::unit(c(0,7,0,0), "mm"))+
+  ggsave(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/figures/timeseries/",i, "_monthly_generation3.png", sep=""), units ="in", width=12, height=4, dpi = 300) 
+
+}
+  
+```
+
+
+```{r}
+plotting2  <- function(data, title, i) { 
+data %>%
+    filter(resource == i) %>%
+  ggplot(.) + 
+    geom_line(aes(x = date, y = Simulated, color = "Simulated"), alpha =0.75)  + 
+    geom_line(aes(x = date, y = Observed, color = "Observed"), alpha = 0.75) + 
+  scale_color_manual(values = c("Simulated" = "dodgerblue2", "Observed" = "tomato3"))+
+    ggtitle(paste(i, " - Post-Bias Correction (moving average)", sep="")) + 
+
+    ylab(paste(title)) + xlab("Water Year")+
+    scale_x_date(breaks = as.Date(c("1991-10-01", "1993-10-01", "1995-10-01", "1997-10-01", "1999-10-01", "2001-10-01", "2003-10-01",  "2005-10-01", "2007-10-01", "2009-10-01")),
+#                 minor_breaks = as.Date(c("1997-10-01", "1998-10-01", "1999-10-01", "2000-09-01",                                          "2002-10-01", "2003-10-01", "2004-10-01", "2005-09-01",                                          "2007-10-01", "2008-10-01", "2009-10-01", "2010-09-01")), 
+                 expand = c(0, 0),
+                 date_labels = "%b %Y")+
+#ate_breaks = "3 years", 
+                 #date_minor_breaks = "1 year", 
+                 #date_labels = "%Y") + 
+  #  scale_y_continuous(expand = c(0, 0), breaks = seq(0, 1000, by = 2)) +
+        theme_bw(base_size=13, base_family='Times New Roman') + 
+  theme(plot.title = element_text(hjust = 0.5),
+     #     axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -30))+
+#    plot.margin=grid::unit(c(0,7,0,0), "mm"))+
+  ggsave(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/calibration/figures/timeseries/",i, "_meanmonthly_IFR3.png", sep=""), units ="in", width=12, height=4, dpi = 300) 
+
+}
+```
+
+
+```{r}
+for(i in names){
+
+plotting(Energy, "Energy (GWh/month)", i)
+
+}
+```
+
+````{r}
+names <- unique(IFR$resource)
+for(i in names){
+
+plotting2(IFR, "Mean IFR (cfs)", i)
+
+}
+```
+
+```{r}
+
+names <- unique(Storage$resource)
+for(i in names){
+
+plotting2(Storage, "Mean Storage (TAF)", i)
+
+}
+```
+
+
+```{r}
+names <- unique(Output$resource)
+for(i in names){
+
+plotting2(Output, "Mean Outflow (cfs)", i)
+
+}
+
+
+
+```
+
+
+```{r}
+```
+

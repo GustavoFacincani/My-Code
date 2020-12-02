@@ -1,0 +1,124 @@
+
+library(data.table)
+library(purrr)
+library(dplyr)
+library(lubridate)
+library(tidyverse)
+
+
+
+number <- c("sb01", "sb02", "sb03", "sb04" ,"sb05", "sb06")#, "sb07", "sb08", "sb09", "sb10" ,"sb11", "sb12", "sb13", "sb14", "sb15", "sb16" ,"sb17", "sb18", "sb19", "sb20", "sb21", "sb22" ,"sb23", "sb24", "sb25")#, "sb26", "sb27", "sb28" ,"sb29", "sb30", "sb31", "sb32", "sb33", "sb34" ,"sb35", "sb36", "sb37", "sb38")
+rcp <- "rcp85"
+GCMs <- c("CMCC-CMS", "ACCESS1-0", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "CESM1-BGC")
+basin <- "Stanislaus River"
+basin2 <- "STNR"
+for(GCM in GCMs){
+for (i in number) {
+csv <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/bias correction/",basin2,"/Catchment_RO_BC/",GCM,"_",rcp,"/tot_runoff_",i,".csv", sep = ""))
+csv
+
+
+#Shp_file <- raster::shapefile("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/common/hydrology/Shapefiles/Mer.shp")
+
+#Shp_file$SUBWAT <- gsub("^.{0,4}", "sb", Shp_file$SUBWAT) #switch names in the attribute table of the shp file
+#Shp_file$AREA <- area(Shp_file)
+
+csv$flow <- (csv$flow*86400)/1000000
+csv
+
+csv_path <- paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/runoff")
+#if the directory doesn't exist, make it!
+if (!dir.exists(csv_path)){
+  dir.create(file.path(csv_path), recursive = TRUE)
+}
+  
+write.csv(csv,file= paste(csv_path,"/","tot_runoff_", i,"_mcm.csv", sep = ""), row.names=F)}
+}
+
+
+
+```{r}
+
+
+rcp <- "rcp85"
+GCM <- "ACCESS1-0"
+basin <- "Upper San Joaquin River"
+#GCMs<- c("CMCC-CMS", "ACCESS1-0", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "CESM1-BGC")
+#for(GCM in GCMs){
+
+
+#McClure_path <- paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/runoff/")
+
+temp <- list.files(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/runoff/", sep =""), "\\.csv$", full.names = TRUE)
+temp
+
+myfiles <- lapply(temp, read_csv)
+
+myfiles
+```
+
+```{r}
+temp %>%
+  map(., fread, select = 'flow') %>%
+      bind_cols %>%
+  mutate(Total = rowSums(.))
+
+total_flow <- temp %>%
+  map(., fread, select = 'flow') %>%
+      bind_cols %>%
+  mutate(Total = rowSums(.),
+         Date = as.Date(myfiles[[1]]$Date, format = "%Y-%m-%d")) %>%
+  dplyr::select(Date, Total) %>%
+  rename(flow = Total)
+total_flow
+
+
+```
+
+```{r}
+total_monthly <- total_flow %>%
+   mutate(month = month(Date),
+          year = year(Date)) %>%
+  dplyr::select(month, year, flow) %>%
+  group_by(year, month) %>%
+  summarise(flow = sum(flow)) 
+
+
+total_monthly$Date <- ymd(paste(total_monthly$year,'-',total_monthly$month,"-01", sep = ""))
+total_monthly$year <- NULL
+total_monthly$month <- NULL
+total_monthly
+
+total_WY <- total_flow %>%
+  mutate(WY = lfstat::water_year(.$Date),
+         Date = NULL) %>%
+   dplyr::select(WY, flow) %>%
+  group_by(WY) %>%
+  summarise(flow = sum(flow))
+total_WY
+```           
+
+```{r}
+#Lakename <- "Lake McClure Inflow mcm.csv"
+Lakename2 <- "full_natural_flow_daily_mcm.csv"
+Lakename3 <- "full_natural_flow_monthly_mcm.csv"
+Lakename4 <- "full_natural_flow_annual_mcm.csv"
+
+#csv_path2 <- paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/runoff_aggregated/")
+#if the directory doesn't exist, make it!
+#if (!dir.exists(csv_path2)){
+#  dir.create(file.path(csv_path2), recursive = TRUE)
+#}
+  
+#write.csv(total_flow,file= paste(csv_path2,"/",Lakename,".csv", sep = ""), row.names=F)
+
+csv_path3 <- paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/preprocessed/")
+#if the directory doesn't exist, make it!
+if (!dir.exists(csv_path3)){
+  dir.create(file.path(csv_path3), recursive = TRUE)
+}
+  
+write.csv(total_flow,file= paste(csv_path3,"/",Lakename2,".csv", sep = ""), row.names=F)
+write.csv(total_monthly,file= paste(csv_path3,"/",Lakename3,".csv", sep = ""), row.names=F)
+write.csv(total_WY,file= paste(csv_path3,"/",Lakename4,".csv", sep = ""), row.names=F)
+```

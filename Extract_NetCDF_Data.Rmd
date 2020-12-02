@@ -1,0 +1,602 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "8/10/2020"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(raster)
+library(ncdf4)
+library(maptools)
+library(foreign)
+library(RNetCDF)
+library(rgdal)
+library(lubridate)
+library(tidyverse)
+```
+
+```{r}
+file2<- nc_open("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+file2$var$runoff_plus_baseflow
+```
+
+
+```{r}
+file<- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+#extent(file)
+
+# number of layers
+names(file)
+nl <- nlayers(file)
+
+# begin of loop
+for (i in 1:nl){
+  
+  # Extract the raster file of layers
+  r <- raster(file, layer = i)
+  
+  # Extract relevant information from shapefile
+  Mer_shp <- shapefile("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/MER_04.shp")
+  Mer <-Mer_shp["SUBWAT"]
+  
+  # Ensure command extract is from raster package
+  extract <- raster::extract
+  # Extract the mean value of cells within AMC polygon
+  # Alternative: look to "mask" function ?mask
+  masked_file<-extract(r, 
+                       Mer, #shapefile
+                       fun = mean, #the mean observed values in the region
+                       na.rm=TRUE, 
+                       df=T, #as a dataframe
+                       small=T, 
+                       sp=T,  
+                       weights=TRUE, 
+                       normalizedweights=TRUE)
+  
+  # Generate variable depicting the date
+  # Extract the information about the time
+  date <- r@z[[1]]
+  date
+  date <- as.Date(date, origin = "1800-01-01")
+  
+  # Compile the codes for AMC and time variable in one dataframe
+  df <- data.frame(date, masked_file)
+  
+  
+  
+  # rename last variable that represents the extracted values
+  #colnames(df)[3] <- "Total Runoff" 
+  
+  # save data as .csv
+  setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/")
+  
+  
+  write.csv(df, 
+            paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/", date , "total_runoff.csv"), 
+            row.names = TRUE,
+  ) # overwrites
+  
+  # print
+  #print(i)
+  #print(date)
+  # end of loop
+}
+```
+
+
+```{r}
+#Trying it with one file - daily total runoff for the year 2007
+file<- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0_rcp45_tot_runoff_out.nc")
+#extent(file)
+# number of layers
+names(file)
+nl <- nlayers(file)
+df = list() #make the dataframe we'll produce as a list
+```
+
+```{r}
+# begin of loop
+for (i in 1:nl){
+  # Extract the raster file of layers
+  r <- raster(file, layer = i)
+  # Extract relevant information from shapefile
+  #Using Merced as an example, this is a shapefile with multiple polygons
+  #the basin is divided into 6 subwatersheds
+  Mer_shp <- shapefile("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/Mer.shp")
+  Mer <-Mer_shp["SUBWAT"] #attribute to divide the subwatersheds
+  # Ensure command extract is from raster package
+  extract <- raster::extract
+  # Extract the mean value of cells within AMC polygon
+  # Alternative: look to "mask" function ?mask
+  masked_file<-extract(r, 
+                       Mer, #shapefile
+                       fun = mean, #the mean observed values in the region
+                       #if I don't use the mean, I'll get the data from each point and respective weights of each point
+                       na.rm=TRUE, 
+                       df=T, #as a dataframe
+                       small=T, 
+                       sp=T,  
+                       weights=TRUE, 
+                       normalizedweights=TRUE)
+  # Generate variable depicting the date
+  # Extract the information about the time
+  date <- r@z[[1]] #x and y are lat-long, z = time
+  date
+  date <- as.Date(date, origin = "1800-01-01") #dates in NetCDF files are numbers that represent daily count of days since 01-01-1800, so let's read it as date
+  # Compile the codes for variable and time in one dataframe
+  df <- data.frame(date, masked_file)
+  colnames(df)[3] <- "total_runoff" #rename the column with the variable
+  #set directory where it's going to be saved
+  setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/")
+  # save data as .csv
+  #If I use write.csv, I get one csv per day, so I used write.table with append = TRUE to save it all as one file
+  #in this case, if we use the shape with multiple polygons, each subbasin will be repeated per row
+  #if we use individual polygons, then we have individual csvs per subbasin
+  write.table(df,file="df3.csv", append=TRUE,sep=",",col.names=FALSE,row.names=FALSE) 
+}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+#REAL
+#Create function to extract all data from a basin
+#The function will be based only in the shape file of a basin
+#Shapefiles for which I'll use this function are: "Mer.shp", "Tuo.shp", "Stn.shp", "USJ.shp", which are files that contain multiple polygons (subbasins)
+#If you want just one GCM, one RCP scenario or one variable, you can just "mute" (#) the undesired ones in the first lines of this function, before the loop for the years
+
+NetCDF_Extract <- function(shapefile, basin) {
+  
+  #Set directory where files are going to be saved
+  wd <- setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/")
+  
+  #Path to shapefiles that are used
+  shp_path <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/"
+  
+  #Path to save the csv files
+  
+  finalpath <- paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/","hydrology/gcms","/",GCM,"_",rcp,"/",sep="" )
+  #if the directory doesn't exist, make it!
+  if (!dir.exists(finalpath)){
+    dir.create(file.path(finalpath), recursive = TRUE)
+  }
+  
+  
+  #Let's define what we want to read
+  rcps <- c("rcp45", "rcp85") #both emission scenarios
+  variables <- c(#"ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", 
+    "tot_runoff")
+  GCMs <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5",  #these we already have
+            #"ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3",
+    "HadGEM2-CC")#all 10 GCMs
+  
+  
+  #Let's loop through 2006-2100
+  
+  #set final path 
+  for (GCM in GCMs){
+    for(rcp in rcps) {
+      for(variable in variables) {
+        for(year in 2006:2099){
+          #read in the netCDF data 
+          dpath <- paste0(wd,"/",GCM, "/",rcp,"/",variable,".",
+                          as.character(year),".v0.CA_NV.nc", sep="")
+          
+          file <- brick(dpath)
+          nl<-nlayers(file) #give me the number of layers in netCDF data 
+          
+          df = list() #set the dataframe we want, to be a list, in order to store all results of the loops
+          subbasin = list() #set the dataframe we want, to be a list, in order to store all results of the loops
+          
+          # begin of loop
+          for (i in 1:nl){
+            
+            # Extract the raster file of layers
+            r <- raster(file, layer = i)
+            
+            
+            # Extract relevant information from shapefile
+            Shp_file <- shapefile(paste0(shp_path,shapefile, sep = ""))
+            Shp_file$SUBWAT <- gsub("^.{0,4}", "sb", Shp_file$SUBWAT) #switch names in the attribute table of the shp file
+            #these shapefiles have basin names as MER_01, MER_02, etc. So, here I'm selecting the first 4 digits, and switching them for "sb", so that I can use this attributes later to split the .csv file directly by subbasin, already with the same labels we currently have on Box
+            Shp <-Shp_file["SUBWAT"]
+            
+            # Ensure command extract is from raster package
+            extract <- raster::extract
+            # Extract the mean value of cells within AMC polygon
+            # Alternative: look to "mask" function ?mask
+            masked_file<-extract(r, 
+                                 Shp, #shapefile
+                                 fun = mean, #this gives the mean observed values in the region, if fun = NULL, we will have values for each point, with the respective weight for each point
+                                 na.rm=TRUE, 
+                                 df=T, #as a dataframe
+                                 small=T, #return a number, also when the buffer does not include the center of a single cell
+                                 sp=T,  #extracted values are added to the data.frame
+                                 weights=TRUE, #the function returns, for each polygon, a matrix with the cell values and the approximate fraction of each cell that is covered by the polygon
+                                 normalizedweights=TRUE) #weights are normalized (they add up to 1 for each polygon)
+            
+            # Generate variable depicting the date
+            # Extract the information about the time
+            Date <- r@z[[1]] #same name as the other files we have on Box
+            Date
+            Date <- as.Date(Date, origin = "1800-01-01")
+            
+            
+            # Compile the codes for AMC and time variable in one dataframe
+            df <- data.frame(Date, masked_file)
+            
+            # rename column with the variable that represents the extracted values
+            colnames(df)[3] <- "flw" #same name as the one we have on Box 
+            
+            for(j in unique(df$SUBWAT)) { #select the data for each subbasin separately
+              
+              subbasin <- subset(df, SUBWAT == j) #subsetting per basin
+              subbasin <- subbasin[-2] #as we already used the column with the subbasin name, we can remove it
+              
+              # save data as .csv
+              write.table(subbasin, #vector we want to save
+                          file= paste0(finalpath, "tot_runoff_",j,"_mcm.csv"), #save csv files per basin
+                          append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+                          sep=",",
+                          col.names=!file.exists(paste0(finalpath,"tot_runoff_",j,"_mcm.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+                          row.names=FALSE, #no names for rows
+                          quote = FALSE) #no column with quotes
+              
+            }
+          }
+        }
+      }
+    }
+    
+  }
+}
+
+```
+
+```{r}
+#TEST
+#NetCDF_Extract <- function(shapefile, basin) {
+
+#Set directory where files are going to be saved
+wd <- setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/")
+
+#Path to shapefiles that are used
+shp_path <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/"
+
+#Path to save the csv files
+
+#Let's define what we want to read
+rcp <- "rcp45" #both emission scenarios
+variable <- #"ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", 
+  "tot_runoff"
+GCM <- "CanESM2" #, "CNRM-CM5", "HadGEM2-ES","MIROC5",  #these we already have
+#"ACCESS1‐0" #,"CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC"
+#all 10 GCMs
+
+
+#Let's loop through 2006-2100
+
+#set final path 
+
+for(year in 2006:2007){
+  #read in the netCDF data 
+  dpath <- paste0(wd,"/",GCM, "/",rcp,"/",variable,".",
+                  as.character(year),".v0.CA_NV.nc", sep="")
+  basin <- "Merced"
+  file <- brick(dpath)
+  nl<-nlayers(file) #give me the number of layers in netCDF data 
+  
+  finalpath <- paste(wd,basin,"/",GCM,"/",rcp,"/",sep="" )
+  #if the directory doesn't exist, make it!
+  if (!dir.exists(finalpath)){
+    dir.create(file.path(finalpath), recursive = TRUE)
+  }
+  
+  #file<- brick("C:/Users/gusta/Downloads/tot_runoff.1950.v0.nc")
+  #extent(file) #this checks min and max long and lat
+  
+  # number of layers
+  #names(file)
+  #nl <- nlayers(file)
+  
+  df = list() #set the dataframe we want, to be a list, in order to store all results of the loops
+  sb = list() #set the dataframe we want, to be a list, in order to store all results of the loops
+  
+  # begin of loop
+  for (i in 1:nl){
+    
+    # Extract the raster file of layers
+    r <- raster(file, layer = i)
+    
+    shapefile <- "Mer.shp"
+    # Extract relevant information from shapefile
+    Shp_file <- shapefile(paste0(shp_path,shapefile, sep = ""))
+    Shp_file$SUBWAT <- gsub("^.{0,4}", "sb", Shp_file$SUBWAT) #switch names in the attribute table of the shp file
+    #these shapefiles have basin names as MER_01, MER_02, etc. So, here I'm selecting the first 4 digits, and switching them for "sb", so that I can use this attributes later to split the .csv file directly by subbasin, already with the same labels we currently have on Box
+    Shp <-Shp_file["SUBWAT"]
+    
+    # Ensure command extract is from raster package
+    extract <- raster::extract
+    # Extract the mean value of cells within AMC polygon
+    # Alternative: look to "mask" function ?mask
+    masked_file<-extract(r, 
+                         Shp, #shapefile
+                         fun = mean, #this gives the mean observed values in the region, if fun = NULL, we will have values for each point, with the respective weight for each point
+                         na.rm=TRUE, 
+                         df=T, #as a dataframe
+                         small=T, #return a number, also when the buffer does not include the center of a single cell
+                         sp=T,  #extracted values are added to the data.frame
+                         weights=TRUE, #the function returns, for each polygon, a matrix with the cell values and the approximate fraction of each cell that is covered by the polygon
+                         normalizedweights=TRUE) #weights are normalized (they add up to 1 for each polygon)
+    
+    # Generate variable depicting the date
+    # Extract the information about the time
+    Date <- r@z[[1]] #same name as the other files we have on Box
+    Date
+    Date <- as.Date(Date, origin = "1800-01-01")
+    
+    
+    # Compile the codes for AMC and time variable in one dataframe
+    df <- data.frame(Date, masked_file)
+    
+    # rename column with the variable that represents the extracted values
+    colnames(df)[3] <- "flw" #same name as the one we have on Box 
+    
+    for(j in unique(df$SUBWAT)) { #select the data for each subbasin separately
+      
+      subbasin <- df %>% 
+        subset(., SUBWAT == j) %>% #subsetting per subbasin
+        mutate(flw = (flw/1000*area(Shp_file["SUBWAT" == j])[j]/1000000),
+               SUBWAT = NULL) #as we already used the column with the subbasin name, we can remove it
+      # save data as .csv
+      write.table(subbasin, #vector we want to save
+                  file= paste0(finalpath, "tot_runoff_",j,"_mcm.csv"), #save csv files per basin
+                  append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+                  sep=",",
+                  col.names=!file.exists(paste0(finalpath,"tot_runoff3_",j,"_mcm.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+                  row.names=FALSE, #no names for rows
+                  quote = FALSE) 
+      
+      #         write.csv(sb, "~/tot_runoff_sb",j,"_mcm.csv", append=TRUE,sep=",",col.names=FALSE,row.names=FALSE, quote = FALSE) 
+    }}}
+
+```
+
+
+```{r}
+NetCDF_Extract("Mer.shp", "Merced")
+```
+
+
+```{r}
+NetCDF_Extract("Tuo.shp", "Tuolumne")
+NetCDF_Extract("USJ.shp", "Upper San Joaquin River")
+NetCDF_Extract("Stn.shp", "Stanislaus River")
+```
+
+
+```{r}
+sb1 <- df %>%
+  filter(SUBWAT == "MER_01")
+write.csv(sb1, "Mer_sb1.csv")
+```
+
+write.csv(all_df, 
+paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/", "total_runoff.csv"), 
+row.names = TRUE,
+) # overwrites
+
+# print
+#print(i)
+#print(date)
+# end of loop
+
+
+
+#for(i in seq_along(df))
+#{
+#  write.table(
+#    df[[i]], 
+#    "total_runoff.csv", 
+#    append    = i > 1, 
+#    sep       = ",", 
+#    row.names = FALSE,
+#    col.names = i == 1
+#  )
+#}
+write.csv(big_data, 
+paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/", "total_runoff.csv"), 
+row.names = F,
+) # overwrites
+
+# print
+#print(i)
+#print(date)
+# end of loop
+}
+
+```{r}
+#NetCDF_stack <- function(shapefile, basin) {
+
+#Set directory where files are going to be saved
+wd <- setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/")
+
+
+#Let's define what we want to read
+rcp <- "rcp45" #both emission scenarios
+variable <- #"ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", 
+  "tot_runoff"
+GCM <- #"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5",  #these we already have
+  "ACCESS1‐0" #,"CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC"
+#all 10 GCMs
+
+
+#Let's loop through 2006-2100
+
+#set final path 
+#for (GCM in GCMs){
+# for(rcp in rcps) {
+#  for(variable in variables) {
+for(year in 2006:2100){
+  #read in the netCDF data 
+  dpath <- paste0(wd,"/",GCM, "/",rcp,"/",variable,".",
+                  as.character(year),".v0.CA_NV.nc", sep="")
+  
+  x <- stack(
+    raster(paste0(wd,"/",GCM, "/",rcp,"/",variable,".",
+                  as.character(year),".v0.CA_NV.nc", sep="")))
+  names(x) <- c(as.character(year))
+  
+  writeRaster(x = x, 
+              filename = paste0(GCM,"_",rcp,"_",variable, '_out2.nc'),
+              overwrite = TRUE, 
+              format = 'CDF')
+}
+
+```
+
+```{r}
+# example raster
+fileone <- raster("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+# clip all rasters to this extent
+ex <- extent(fileone)
+time <- 2006:2100
+pnew <- list()
+for (i in seq_along(time)){
+  rnew <- raster(paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.", time[[i]], ".v0.CA_NV.nc"))
+  pnew[i] <- crop(rnew, ex)
+}
+# make a stack from 1915-2015
+pstack <- do.call(stack, pnew)
+writeRaster(pstack,filename = paste0(GCM,"_",rcp,"_",variable, '_out.nc'), format="CDF", overwrite=TRUE)
+```
+
+```{r}
+library(caladaptr)
+
+cap1 <- ca_loc_pt(coords = c(-121.4687, 38.5938)) %>%
+  ca_gcm(gcms[1:10]) %>%
+  ca_scenario(scenarios[1:2]) %>%
+  ca_period("day") %>%
+  ca_years(start = 2040, end = 2060) %>%
+  ca_cvar(c("tasmax", "pr"))
+
+cap1
+
+cap1_vals_df <- ca_getvals(cap1) %>% ca_vals2tbl()
+dim(cap1_vals_df)
+#> [1] 336   7
+head(cap1_vals_df)
+```
+
+```{r}
+library(rgdal)
+library(ncdf4)
+library(raster)
+filetwo <- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+
+Mer = spTransform(Mer, crs(filetwo))
+
+crs(filetwo)
+crs(Mer)
+
+Mer <- shapefile("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/Mer.shp")
+extract <- raster::extract
+masked_file<-extract(filetwo, 
+                     Mer, #shapefile
+                     fun = mean, #the mean observed values in the region
+                     #if I don't use the mean, I'll get the data from each point and respective weights of each point
+                     na.rm=TRUE, 
+                     df=T, #as a dataframe
+                     small=T, 
+                     sp=T,  
+                     weights=TRUE, 
+                     normalizedweights=TRUE)
+
+```
+
+```{r}
+
+#Trying it with one file - daily total runoff for the year 2007
+file<- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+#extent(file)
+# number of layers
+names(file)
+nl <- nlayers(file)
+df = list() #make the dataframe we'll produce as a list
+```
+
+```{r}
+# begin of loop
+for (i in 1:nl){
+  # Extract the raster file of layers
+  r <- raster(file, layer = i)
+  # Extract relevant information from shapefile
+  #Using Merced as an example, this is a shapefile with multiple polygons
+  #the basin is divided into 6 subwatersheds
+  Mer_shp <- shapefile("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/Mer.shp")
+  Mer <-Mer_shp["SUBWAT"] #attribute to divide the subwatersheds
+  # Ensure command extract is from raster package
+  extract <- raster::extract
+  # Extract the mean value of cells within AMC polygon
+  # Alternative: look to "mask" function ?mask
+  masked_file<-extract(r, 
+                       Mer, #shapefile
+                       fun = mean, #the mean observed values in the region
+                       #if I don't use the mean, I'll get the data from each point and respective weights of each point
+                       na.rm=TRUE, 
+                       df=T, #as a dataframe
+                       small=T, 
+                       sp=T,  
+                       weights=TRUE, 
+                       normalizedweights=TRUE)
+  # Generate variable depicting the date
+  # Extract the information about the time
+  date <- r@z[[1]] #x and y are lat-long, z = time
+  date
+  date <- as.Date(date, origin = "1800-01-01") #dates in NetCDF files are numbers that represent daily count of days since 01-01-1800, so let's read it as date
+  # Compile the codes for variable and time in one dataframe
+  df <- data.frame(date, masked_file)
+  df}
+```
+
+```{r}
+
+nc <- nc_open("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+names(nc[['var']])
+```
+
+```{r}
+plot(r)
+```
+
+```{r}
+brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0_rcp45_tot_runoff_out.nc")
+```
+
+```{r}
+raster("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2006.v0.CA_NV.nc", varname = "runoff_plus_baseflow")
+```
+```{r}
+
+
+for(year in 2006:2100) {
+  x <- list()
+  x <- stack(raster(paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.",year,".v0.CA_NV.nc", sep = ""), varname = "runoff_plus_baseflow"))
+  
+  names(x) <- year
+  
+  
+  writeRaster(x = x, 
+              filename = 'NetCDF_out.nc',
+              overwrite = TRUE, 
+              format = 'CDF')
+}
+```

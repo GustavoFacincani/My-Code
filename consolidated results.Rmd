@@ -1,0 +1,185 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "11/10/2020"
+output: html_document
+---
+```{r}
+library(readr)
+library(dplyr)
+library(reshape2)
+library(lubridate)
+library(data.table)
+```
+
+```{r}
+Basins <- c("stanislaus","tuolumne","merced","upper_san_joaquin")
+metrics_hydro <- list()
+for(Basin in Basins){
+finalpath <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs"
+  
+metrics_hydro <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline/", Basin,"/historical/Livneh/Hydropower_Energy_MWh.csv", sep="")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-01")) %>%
+      melt(., id = "Date") %>%
+  rename(date = Date,
+         resource = variable,
+         Simulated = value) %>%
+  mutate(date = floor_date(date, "month"),
+         basin = factor(Basin, levels = c("stanislaus", "tuolumne", "merced", "upper_san_joaquin")),
+         resource = as.character(resource))
+
+
+metrics_hydro <- metrics_hydro %>%
+  group_by(basin, resource, date) %>% 
+  summarise(Simulated = sum(Simulated))
+
+#Final_hydro <-  rbind_list(metrics_hydro[tuolumne])
+ write.table(metrics_hydro, #vector we want to save
+            file= paste0(finalpath, "/hydropower.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(finalpath,"/hydropower.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE)
+}
+
+
+```
+
+
+```{r}
+Basins <- c("stanislaus","tuolumne","merced","upper_san_joaquin")
+metrics_hydro <- list()
+for(Basin in Basins){
+finalpath <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs"
+  
+metrics_flow <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline/", Basin,"/historical/Livneh/Hydropower_Flow_mcm.csv", sep="")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-01")) %>%
+      melt(., id = "Date") %>%
+  rename(date = Date,
+         resource = variable,
+         Simulated = value) %>%
+  mutate(date = floor_date(date, "month"),
+         basin = factor(Basin),
+         resource = as.character(resource))
+
+
+metrics_flow <- metrics_flow %>%
+  filter(!basin == "merced") %>%
+  group_by(basin, resource, date) %>% 
+  summarise(Simulated = mean(Simulated*(1/0.0864 * 35.315)))
+
+#Final_hydro <-  rbind_list(metrics_hydro[tuolumne])
+ write.table(metrics_flow, #vector we want to save
+            file= paste0(finalpath, "/hydroflow.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(finalpath,"/hydroflow.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE)
+}
+```
+
+```{r}
+Basins <- c("stanislaus","tuolumne","merced","upper_san_joaquin")
+metrics_IFR <- list()
+for(Basin in Basins){
+finalpath <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs"
+  
+metrics_IFR <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline/", Basin,"/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", sep="")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-01")) %>%
+      melt(., id = "Date") %>%
+  rename(date = Date,
+         resource = variable,
+         Simulated = value) %>%
+  mutate(date = floor_date(date, "month"),
+         basin = factor(Basin, levels = c("stanislaus", "tuolumne", "merced", "upper_san_joaquin")),
+         resource = as.character(resource))
+
+
+metrics_IFR <- metrics_IFR %>%
+  filter(!basin == "merced") %>%
+  group_by(basin, resource, date) %>% 
+  summarise(Simulated = mean(Simulated*(1/0.0864 * 35.315)))
+
+#Final_hydro <-  rbind_list(metrics_hydro[tuolumne])
+ write.table(metrics_IFR, #vector we want to save
+            file= paste0(finalpath, "/IFR.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(finalpath,"/IFR.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            
+            quote = FALSE)
+}
+
+
+```
+
+```{r}
+Basins <- c("stanislaus","tuolumne","merced","upper_san_joaquin")
+metrics_out <- list()
+for(Basin in Basins){
+finalpath <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs"
+  
+metrics_out <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline/", Basin,"/historical/Livneh/Output_Flow_mcm.csv", sep="")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-01")) %>%
+      melt(., id = "Date") %>%
+  rename(date = Date,
+         resource = variable,
+         Simulated = value) %>%
+  mutate(date = floor_date(date, "month"),
+         basin = factor(Basin, levels = c("stanislaus", "tuolumne", "merced", "upper_san_joaquin")),
+         resource = as.character(resource))
+
+
+metrics_out <- metrics_out %>%
+  group_by(basin, resource, date) %>% 
+  summarise(Simulated = mean(Simulated*(1/0.0864 * 35.315)))
+
+#Final_hydro <-  rbind_list(metrics_hydro[tuolumne])
+ write.table(metrics_out, #vector we want to save
+            file= paste0(finalpath, "/output.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(finalpath,"/output.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE)
+}
+
+
+```
+
+```{r}
+Basins <- c("stanislaus","tuolumne","merced","upper_san_joaquin")
+metrics_storage <- list()
+for(Basin in Basins){
+finalpath <- "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs"
+  
+metrics_storage <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline/", Basin,"/historical/Livneh/Reservoir_Storage_mcm.csv", sep="")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-01")) %>%
+      melt(., id = "Date") %>%
+  rename(date = Date,
+         resource = variable,
+         Simulated = value) %>%
+  mutate(date = floor_date(date, "month"),
+         basin = factor(Basin, levels = c("stanislaus", "tuolumne", "merced", "upper_san_joaquin")),
+         resource = as.character(resource))
+
+
+metrics_storage <- metrics_storage %>%
+  group_by(basin, resource, date) %>% 
+  summarise(Simulated = mean(Simulated*(1 / 1.2335)))
+
+#Final_hydro <-  rbind_list(metrics_hydro[tuolumne])
+ write.table(metrics_storage, #vector we want to save
+            file= paste0(finalpath, "/storage.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(finalpath,"/storage.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE)
+}
+
+
+```

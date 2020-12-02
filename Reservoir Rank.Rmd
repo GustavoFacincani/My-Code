@@ -1,0 +1,463 @@
+---
+title: "Storage_GCMs"
+author: "Gustavo Facincani Dourado"
+date: "7/24/2020"
+output: html_document
+---
+
+---
+title: "Reservoir_Rank"
+author: "Gustavo Facincani Dourado"
+date: "7/21/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(gridExtra)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+#Functions to read the data for each basin
+#Merced
+Mer <- function(location) { GCM <- read_csv(location, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+
+GCM
+} 
+
+Tuo <- function(location) { GCM <- read_csv(location, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10, 14)]
+
+GCM
+} 
+
+Stn <- function(location) { GCM <- read_csv(location, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] 
+
+GCM
+} 
+
+USJ <- function(location) { GCM <- read_csv(location, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] 
+
+GCM
+} 
+
+```
+
+```{r}
+#Read the data of all basins
+#CanESM2 - RCP 8.5
+CanESM2_Stor_Mer <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Mer
+
+CanESM2_Stor_Tuo <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Tuo
+
+
+CanESM2_Stor_Stn <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Stn
+
+
+CanESM2_Stor_USJ <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_USJ
+
+```
+
+
+```{r}
+#CanESM2 - RCP 4.5
+CanESM2_Stor_Mer2 <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Mer2
+
+CanESM2_Stor_Tuo2 <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Tuo2
+
+
+CanESM2_Stor_Stn2 <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_Stn2
+
+
+CanESM2_Stor_USJ2 <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")
+CanESM2_Stor_USJ2
+
+```
+
+```{r}
+#CNRM-CM5 - RCP 8.5
+CNRMCM5_Stor_Mer <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Mer
+
+CNRMCM5_Stor_Tuo <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Tuo
+
+
+CNRMCM5_Stor_Stn <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Stn
+
+
+CNRMCM5_Stor_USJ <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_USJ
+
+```
+
+
+```{r}
+#CNRM-CM5 - RCP 4.5
+CNRMCM5_Stor_Mer2 <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Mer2
+
+CNRMCM5_Stor_Tuo2 <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Tuo2
+
+
+CNRMCM5_Stor_Stn2 <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_Stn2
+
+
+CNRMCM5_Stor_USJ2 <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")
+CNRMCM5_Stor_USJ2
+
+```
+
+```{r}
+#HadGEM2-ES - RCP 8.5
+HadGEM2ES_Stor_Mer <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Mer
+
+HadGEM2ES_Stor_Tuo <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Tuo
+
+
+HadGEM2ES_Stor_Stn <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Stn
+
+
+HadGEM2ES_Stor_USJ <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_USJ
+
+```
+
+
+```{r}
+#HadGEM2-ES - RCP 4.5
+HadGEM2ES_Stor_Mer2 <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Mer2
+
+HadGEM2ES_Stor_Tuo2 <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Tuo2
+
+
+HadGEM2ES_Stor_Stn2 <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_Stn2
+
+
+HadGEM2ES_Stor_USJ2 <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")
+HadGEM2ES_Stor_USJ2
+
+```
+
+```{r}
+#MIROC5 - RCP 8.5
+MIROC5_Stor_Mer <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Mer
+
+MIROC5_Stor_Tuo <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Tuo
+
+
+MIROC5_Stor_Stn <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Stn
+
+
+MIROC5_Stor_USJ <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_USJ
+
+```
+
+
+```{r}
+#MIROC5 - RCP 4.5
+MIROC5_Stor_Mer2 <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Mer2
+
+MIROC5_Stor_Tuo2 <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Tuo2
+
+
+MIROC5_Stor_Stn2 <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_Stn2
+
+
+MIROC5_Stor_USJ2 <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")
+MIROC5_Stor_USJ2
+
+```
+
+```{r}
+x <- function(s, b) {
+  z=1 + s + b
+  z
+}
+
+x(1, 1)
+
+c <- function(a, c) {
+  c = x(1, 1) + a + c
+  c
+}
+c(1,1)
+```
+
+
+```{r}
+#Create columns to sum up the total storage of each reservoir and total annual storage per basin
+#Creating a function for that
+Storage <- function(data, interval, basin, GCMs, RCP) {
+x <- data %>%
+mutate(Year = lfstat::water_year(node, origin = "usgs"))%>% #year column to facilitate plotting
+  group_by(Year) %>%
+  summarize_each(funs(sum), interval) %>%
+  mutate(`Total Storage (mcm)` = dplyr::select(., interval) %>% rowSums(., na.rm = TRUE),
+         Basin = basin,
+         GCM = GCMs,
+         Scenario = RCP)
+
+#rearranging the data
+x <- reshape2::melt(x, id = c("Year", "Total Storage (mcm)", "Basin", "GCM", "Scenario")) %>%
+  dplyr::rename(`Storage (mcm)` = value, #rename monthly
+                `Reservoir` = variable) #rename powerhouse
+x
+
+}
+
+
+#Function to apply the function Storage to all basins at once
+Storage_GCMs <- function(Can, CNR, Had, MIR, interval, river, RCP) {
+
+Can <- Storage(Can, interval, river, "CanESM2", RCP)
+Can
+
+CNR <- Storage(CNR, interval, river, "CNRM-CM5", RCP)
+CNR
+
+Had <- Storage(Had, interval, river, "HadGEM2-ES", RCP)
+Had
+
+Mir <- Storage(MIR, interval, river, "MIROC5", RCP)
+Mir
+
+Result <- rbind(Can, CNR, Had, Mir)
+Result
+}
+```
+
+```{r}
+#Create columns to sum up the total storage of each reservoir and total annual storage per basin
+#Creating a function for that
+Storage <- function(data, interval, basin) {
+x <- data %>%
+mutate(Year = lfstat::water_year(node, origin = "usgs"))%>% #year column to facilitate plotting
+  group_by(Year) %>%
+  summarize_each(funs(sum), interval) %>%
+  mutate(`Total Storage (mcm)` = dplyr::select(., interval) %>% rowSums(., na.rm = TRUE),
+         Basin = basin)
+
+#rearranging the data
+x <- reshape2::melt(x, id = c("Year", "Total Storage (mcm)", "Basin", "GCM", "Scenario")) %>%
+  dplyr::rename(`Storage (mcm)` = value, #rename monthly
+                `Reservoir` = variable) #rename powerhouse
+x
+
+}
+#Function to apply the function Storage to all basins at once
+Storage_GCMs <- function(Mer, Tuo, Stn, USJ, 
+                         interval1, interval2, interval3, interval4, 
+                         GCMs, RCP) {
+
+Merced <- Storage(Mer, interval1, "Merced River")
+Merced
+
+Tuolumne <- Storage(Tuo, interval2, "Tuolumne River")
+Tuolumne
+
+Stanislaus <- Storage(Stn, interval3, "Stanislaus River")
+Stanislaus
+
+UpperSJ <- Storage(USJ, interval4, "Upper San Joaquin River")
+UpperSJ
+
+Result <- rbind(Merced, Tuolumne, Stanislaus, UpperSJ) %>%
+  mutate(GCM = GCMs,
+         Scenario = RCP)
+Result
+}
+```
+
+```{r}
+#RCP 4.5
+Storage_CanESM2 <- Storage_GCMs(CanESM2_Stor_Mer, CanESM2_Stor_Tuo, CNRMCM5_Stor_Mer, HadGEM2ES_Stor_Mer, MIROC5_Stor_Mer, 2:3, "Merced River", "RCP 4.5")
+Storage_CanESM2
+
+Storage_Tuo <- Storage_GCMs(CanESM2_Stor_Tuo, CNRMCM5_Stor_Tuo, HadGEM2ES_Stor_Tuo, MIROC5_Stor_Tuo, 2:5, "Tuolumne River", "RCP 4.5")
+Storage_Tuo
+
+Storage_Stn <- Storage_GCMs(CanESM2_Stor_Stn, CNRMCM5_Stor_Stn, HadGEM2ES_Stor_Stn, MIROC5_Stor_Stn, 2:11, "Stanislaus River", "RCP 4.5")
+Storage_Stn
+
+Storage_USJ <- Storage_GCMs(CanESM2_Stor_USJ, CNRMCM5_Stor_USJ, HadGEM2ES_Stor_USJ, MIROC5_Stor_USJ, 2:10, "Upper San Joaquin River", "RCP 4.5")
+Storage_USJ
+
+```
+
+```{r}
+#RCP 8.5
+Storage_Mer2 <- Storage_GCMs(CanESM2_Stor_Mer2, CNRMCM5_Stor_Mer2, HadGEM2ES_Stor_Mer2, MIROC5_Stor_Mer2, 2:3, "Merced River", "RCP 8.5")
+Storage_Mer2
+
+Storage_Tuo2 <- Storage_GCMs(CanESM2_Stor_Tuo2, CNRMCM5_Stor_Tuo2, HadGEM2ES_Stor_Tuo2, MIROC5_Stor_Tuo2, 2:5, "Tuolumne River", "RCP 8.5")
+Storage_Tuo2
+
+Storage_Stn2 <- Storage_GCMs(CanESM2_Stor_Stn2, CNRMCM5_Stor_Stn2, HadGEM2ES_Stor_Stn2, MIROC5_Stor_Stn2, 2:11, "Stanislaus River", "RCP 8.5")
+Storage_Stn2
+
+Storage_USJ2 <- Storage_GCMs(CanESM2_Stor_USJ2, CNRMCM5_Stor_USJ2, HadGEM2ES_Stor_USJ2, MIROC5_Stor_USJ2, 2:10, "Upper San Joaquin River", "RCP 8.5")
+Storage_USJ2
+```
+
+
+```{r}
+Stor_Fig <- function(Data, Title) {
+ggplot(Data, aes(y = `Storage (mcm)`/1000, x = `Total Storage (mcm)`/1000)) + 
+  theme_bw(base_size=13.5, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.5, size = 2)+
+    geom_smooth(method=lm)+ #, fullrange=TRUE) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", alpha = 0.5) +
+    scale_x_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+ labs(title = Title,
+   x = "Total Storage (Thousand mcm)", #name of x axis
+       y = "Reservoir Storage (Thousand mcm)")+ #name of y axis
+    
+  stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 4, family= "Times New Roman")+
+       stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, size = 4, label.x.npc = 0.05, 
+             label.y.npc = 0.85, family= "Times New Roman")+
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  
+}
+```  
+
+```{r}
+Stor_Fig(MRC, "Merced River") +
+  scale_x_continuous(limits = c(0, 350))+
+    scale_y_continuous(limits = c(0, 350))+
+    facet_wrap(~Reservoir, scales = "fixed", ncol = 4)+
+  png("Mer_AnnualStorage.png", units ="in", width=4.5, height=4.5, res = 300)
+```
+
+```{r}
+Stor_Fig(TUO, "Tuolumne River") +
+    scale_x_continuous(limits = c(0, 1050))+
+    scale_y_continuous(limits = c(0, 1050))+
+    facet_wrap(~Reservoir, scales = "fixed", ncol = 4)+
+  png("Tuo_AnnualStorage.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+```{r}
+Stor_Fig(STN, "Stanislaus River")+
+scale_x_continuous(limits = c(0, 1000))+
+   scale_y_continuous(limits = c(0, 1000))+
+  facet_wrap(~Reservoir, scales = "fixed")+
+    png("Stn_AnnualStorage.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+```{r}
+Stor_Fig(USJ, "Upper San Joaquin River")+
+scale_x_continuous(limits = c(0, 450))+
+    scale_y_continuous(limits = c(0, 450))+
+  facet_wrap(~Reservoir, scales = "fixed")+
+    png("USJ_AnnualStorage.png", units ="in", width=8.5, height=8.5, res = 300)
+```
+
+
+```{r}
+library(broom)
+library(dplyr)
+library(ModelMetrics)
+
+#Merging the basins into one object
+
+Storage_table <- function(Mer, Tuo, Stn, USJ) {
+all_Reservoir <- rbind(Mer, Tuo, Stn, USJ)
+
+#create function to prepare the table
+#Power <- function(data) {
+all_Storage <- all_Reservoir %>%
+  group_by(Reservoir, Basin, GCM, Scenario) %>% #grouping by facility and basin to summarize
+  summarise(`Rsquare` = cor(`Storage (mcm)`, `Total Storage (mcm)`, use = "na.or.complete")^2, #R squared
+            #min, mean, median, max and quantile for PH and total storage
+            `Minimum Storage (mcm)` = min(`Storage (mcm)`, na.rm=TRUE),
+            `1st Qu. Storage (mcm)` = quantile(`Storage (mcm)`, 0.25, na.rm=TRUE),
+            `Mean Storage (mcm)` = mean(`Storage (mcm)`, na.rm=TRUE),
+            `Median Storage (mcm)` = median(`Storage (mcm)`, na.rm=TRUE),
+            `3rd Qu. Storage (mcm)` = quantile(`Storage (mcm)`, 0.75, na.rm=TRUE),
+            `Maximum Storage (mcm)` = max(`Storage (mcm)`, na.rm=TRUE),
+            
+            `Minimum Total Storage (mcm)` = min(`Total Storage (mcm)`, na.rm=TRUE), 
+            `1st Qu. Total Storage (mcm)` = quantile(`Total Storage (mcm)`, 0.25, na.rm=TRUE),
+            `Mean Total Storage (mcm)` = mean(`Total Storage (mcm)`, na.rm=TRUE), 
+            `Median Total Storage (mcm)` = median(`Total Storage (mcm)`, na.rm=TRUE),
+            `3rd Qu. Total Storage (mcm)` = quantile(`Total Storage (mcm)`, 0.75, na.rm=TRUE),
+            `Maximum Total Storage (mcm)` = max(`Total Storage (mcm)`, na.rm=TRUE)) %>%
+  group_by(GCM, Basin) %>%
+  mutate(Rank = rank(-`Mean Storage (mcm)`),
+         `Contribution (%)`= `Mean Storage (mcm)` / `Mean Total Storage (mcm)`*100) %>%
+  dplyr::select(Rank, Basin, GCM, Scenario, Reservoir, `Contribution (%)`, everything()) %>% #order of columns
+   group_by(GCM, Basin) %>%
+  arrange(GCM, Basin,Rank) %>%
+  ungroup()
+
+
+all_Storage
+}
+```
+
+```{r}
+#Table - RCP 4.5
+
+all_RCP45 <- Storage_table(Storage_Mer, Storage_Tuo, Storage_Stn, Storage_USJ)
+all_RCP45
+
+#Table - RCP 8.5
+
+all_RCP85 <- Storage_table(Storage_Mer2, Storage_Tuo2, Storage_Stn2, Storage_USJ2)
+all_RCP85
+
+```
+
+```{r}
+
+readr::write_csv(all_RCP45, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Annual_Stats_Storage_GCMs_RCP45.csv")
+
+readr::write_csv(all_RCP85, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Annual_Stats_Storage_GCMs_RCP85.csv")
+```

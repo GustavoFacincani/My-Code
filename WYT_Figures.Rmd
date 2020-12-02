@@ -1,0 +1,185 @@
+
+```{r}
+library(readr)
+```
+
+```{r}
+gcms <- c("ACCESS1-0", "CCSM4", "CanESM2", "HadGEM2-ES", "HadGEM2-CC", "GFDL-CM3", "MIROC5", "CESM1-BGC", "CNRM-CM5", "CMCC-CMS")
+for(gcm in gcms){
+
+WY_Type <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/",gcm,"_rcp85/preprocessed/WYT_P2005_P2130.csv", sep="")) %>%
+#  filter(WY >2029 & WY <2060) %>%
+  mutate(Scenario = "RCP 8.5") %>%
+  mutate(GCM = gcm)
+
+WY_Type$Type <- NA
+WY_Type$Type[WY_Type$WYT == 1] <- paste("Wet") #"Critically Dry") #'Driest WY'
+WY_Type$Type[WY_Type$WYT == 2] <- paste("Dry") #"Dry")#'2nd Driest WY'
+#WY_Type$Type[WY_Type$WYT == 3] <- paste("Dry") #"Normal-Dry")#'3rd Driest WY'
+#WY_Type$Type[WY_Type$WYT == 4] <- paste("Normal-Dry") #"Normal-Wet")#'4th Driest WY'
+#WY_Type$Type[WY_Type$WYT == 5] <- paste("Normal-Wet") #"Wet")#'Normal/Wet WY'
+#WY_Type$Type[WY_Type$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
+WY_Type
+
+write_csv(WY_Type, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/WYT_P2005_P2130/", gcm, "_rcp85_WYT_P2005_P2130.csv", sep=""))
+}
+```
+
+```{r}
+gcms2 <- c("ACCESS1-0", "CCSM4", "CanESM2", "HadGEM2-ES", "HadGEM2-CC", "GFDL-CM3", "MIROC5", "CESM1-BGC", "CNRM-CM5", "CMCC-CMS")
+for(gcm in gcms)
+
+WY_Type2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/Exchequer_WYT.csv") %>%
+  mutate(Scenario = "RCP 8.5") %>%
+  mutate(GCM = "Livneh (Historical)")
+
+WY_Type2$Type <- NA
+WY_Type2$Type[WY_Type2$WYT == 1] <- paste('Wet')
+WY_Type2$Type[WY_Type2$WYT == 2] <- paste('Dry')
+#WY_Type2$Type[WY_Type2$WYT == 3] <- paste('3rd Driest WY')
+#WY_Type2$Type[WY_Type2$WYT == 4] <- paste('4th Driest WY')
+#WY_Type2$Type[WY_Type2$WYT == 5] <- paste('Normal/Wet WY')
+#WY_Type2$Type[WY_Type2$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
+WY_Type2
+
+write_csv(WY_Type2, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/Livneh_Exchequer_WYT.csv", sep=""))
+
+```
+
+
+```{r}
+library(data.table)
+library(readr)
+library(tidyverse)
+library(extrafont)
+```
+
+```{r}
+#WYT
+
+WYT.GCMs <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/WYT_P2019/*")
+#WYT.GCMs2 <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/rcp45/*")
+
+WYT.Livneh <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/WYT_P2019/Livneh/*")
+
+WYTlist <- lapply(WYT.GCMs, read_csv)
+WYTlist
+
+
+
+WYT_GMCs <- rbindlist(WYTlist) %>%
+  ungroup() %>%
+  mutate(GCM = as.factor(GCM),
+         Scenario = as.factor(Scenario),
+         Type = as.factor(Type)) %>%
+  filter(`WY` %in% (2040:2059))
+
+
+
+WYT_GMCs
+
+```
+
+```{r}
+Ensemble <- WYT_GMCs %>%
+  group_by(`Water Year`) %>%
+  summarize(`SJVI (maf)` = mean(`SJVI (maf)`))
+
+write.csv(Ensemble, "C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/Ensemble_RCP8.5_SJI.csv")
+```
+
+
+```{r}
+WYTLivneh <- lapply(WYT.Livneh, read_csv)
+WYTLivneh
+
+WYT_Livneh <- rbindlist(WYTLivneh) %>%
+  ungroup() %>%
+  mutate(GCM = as.factor(GCM),
+         Scenario = as.factor(Scenario),
+         Type = as.factor(Type)) %>%
+  filter(`WY` %in% (1951:2013))
+#  filter(`Water Year` %in% (1981:2010))
+
+WYT_Livneh
+
+```
+
+
+```{r}
+WYT_SJVI <- rbind(WYT_Livneh, WYT_GMCs)
+
+#WYT_SJVI %>%
+#  group_by(GCM, Scenario) %>%
+#  table()
+
+WYT_SJVI$GCM <- factor(WYT_SJVI$GCM, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5"))
+WYT_SJVI$Type <- factor(WYT_SJVI$Type, levels = c(#"Dry", "Normal"))
+  #"Dry", "Wet"))
+  #"Critical-Low","Critical-High", "Dry", "Normal-Dry", "Normal-Wet", "Wet"))
+  #"Critically Dry","Dry", "Normal-Dry", "Normal-Wet", "Wet"))
+"Driest WY", "2nd Driest WY", "3rd Driest WY", "4th Driest WY", "Normal/Wet WY"))
+  #"Critical","Dry", "Below Normal", "Above Normal", "Wet"))
+
+WYT_SJVI
+```
+
+```{r}
+WYT_SJVI1 <- WYT_SJVI %>%
+  mutate(Count = 1) %>%
+    group_by(`WY`, Type, GCM, Scenario) %>%
+  summarize(Count = sum(Count)) %>%
+    group_by(Type, GCM, Scenario) %>%
+  mutate(perc = Count/sum(Count))
+
+WYT_SJVI1
+
+```
+
+
+```{r}
+WYT_SJVI1 %>%
+  filter(!Scenario == "RCP4.5" & !GCM == "Ensemble") %>%
+           #GCM == "Ensemble" & !GCM == "ACCESS1-0" & !GCM == "CMCC-CMS" & !GCM == "GFDL‐CM3" & !GCM == "CCSM4" & !GCM == "HadGEM2‐CC"& !GCM == "CESM1-BGC") %>%
+ggplot(., aes(fill=Type, y = Count, x=fct_rev(factor(GCM)))) + #fct_rev reverts the order
+#theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE))+
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels=scales::percent, #reverts the colors
+                     expand = c(0,NA)) +
+           
+  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+    #"Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+  labs(title = "Frequency of Water Year Types",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+   #                labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             #"C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  #facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = +0.5),
+          strip.placement = "outside",
+          legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"),
+        panel.margin = unit(1.5, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17),
+    legend.title.align = 0.5)+
+ coord_flip(clip = 'off') +
+   # facet_wrap(~ Scenario, ncol=1, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+ guides(fill=guide_legend(nrow=2,
+                          hjust=0.5))+
+png("WYT_Frequency_coordflip_yreversed_initials_10GCMs_WYT_P2019.png", units ="in", width=6, height=4, res = 300)
+
+```
+

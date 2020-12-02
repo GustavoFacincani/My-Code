@@ -1,0 +1,46 @@
+```{r}
+library(dplyr)
+library(RCurl) 
+library(rvest)
+library(utils)
+#set your output folder
+setwd("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/raw_data/NetCDF files")
+savepath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/raw_data/NetCDF files"
+GCM <- "Livneh"
+GCM_dir <- "http://albers.cnr.berkeley.edu/data/scripps/livneh_vic-output/"
+#rcps <- c("rcp45","rcp85") #emission scenarios we are interested in
+#variables <- c(#"ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", 
+#  "tot_runoff") #variables we are interested in
+#GCMs <- c( #all 10 GCMs we are interested in #these we already have
+ # "ACCESS1‐0", "CESM1-BGC","CMCC-CMS","CCSM4", "GFDL-CM3","HadGEM2-CC") #these are the ones we need
+
+#loop through 2006-2099
+#for (GCM in GCMs){
+ # for(rcp in rcps) {
+   # for(variable in variables) {
+      for ( year in 1950:2013){
+     #   GCM_dir <- paste(GCMs_loca,"/",GCM, sep = "") #setting the path to find the data online
+        doc <- xml2::read_html(GCM_dir)
+        filenames <- html_attr(html_nodes(doc, "a"), "href") #using the website's structure to select the data we want in the available links
+        filenames2 <- filenames[ #grepl(paste0("ET.2",year,sep=""), filenames) | grepl(paste0("Tair",year,sep=""), filenames)| grepl(paste0("baseflow" ,year,sep=""), filenames) | grepl(paste0("precip",year,sep="") , filenames) | grepl(paste0("rainfall" ,year,sep=""), filenames) | grepl(paste0("SWE",year,sep=""), filenames) | grepl(paste0("runoff",year,sep=""), filenames) | grepl(paste0("snow_melt",year,sep=""), filenames) | grepl(paste0("snowfall",year,sep=""), filenames) | 
+          grepl(paste0("baseflow",".",year,sep=""), filenames)] #selecting the names of each variable we want, so R downloads what we want
+        #print(filenames) #here I was checking what I got
+        #print(filenames2) #here I was checking what I got
+        
+        #loop through all of those files and save them to your working directory
+        for ( i in filenames2 ){ 
+          
+          #determine the GCM and RCP directory
+          pth <- paste( savepath,"/baseflow/", GCM,"/", sep="" )
+          #if the directory doesn't exist, make it!
+          if (!dir.exists(pth)){
+            dir.create(file.path(pth), recursive = TRUE)
+          }
+          download.file( paste( GCM_dir , i , sep="" ) , paste(savepath,"/baseflow/", GCM,"/" , i, sep="" ) , mode="wb" )
+        }	
+      }
+    
+  
+  #}
+
+```

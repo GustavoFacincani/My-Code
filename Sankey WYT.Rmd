@@ -1,0 +1,56 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "11/2/2020"
+output: html_document
+---
+
+```{r}
+library(xlsx)
+library(networkD3)
+
+links <- read.xlsx("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey Diagram WYT3.xlsx", sheetName = "links2")
+links
+
+nodes <-read.xlsx("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey Diagram WYT3.xlsx", sheetName = "nodes")
+nodes 
+
+my_color  <- JS('d3.scaleOrdinal() .domain(["Critical", "Dry", `Below-Normal`, `Above-Normal`, "Wet",  "Critically-Dry", "Normal-Dry", "Normal-Wet", `Driest-WY`, `Second-Driest-WY`, `Third-Driest-WY`,  `Fourth-Driest-WY`, "Normal/Wet-WY", "Critical-Low", "Critical-High",  "Normal"]) .range(["#CD2626","#ff8c00", "#ffd700", "#00cdcd", "#0084E9", "#CD2626", "#ffd700", "#00CDCD",  "#CD2626","#FF7F24", "#ffd700", "#00cdcd", "#0084E9", "#800000", "#CD2626", "#0084E9"])')
+
+
+#JS('d3.scaleOrdinal() .domain(["Critical", "Dry", "Below Normal", "Above Normal", "Wet", "Critically Dry", "Normal-Dry", "Normal-Wet", "Driest WY", "Second Driest WY", "Third Driest WY",  "Fourth Driest WY", "Normal/Wet WY", "Critical-Low", "Critical-High","Normal"]) .range(["#CD3333", "#FF7F24", "#FEDC56", "#00CDCD", "#0084E9", "#CD3333", "#FEDC56", "#00CDCD", "#CD3333", "#FF7F24", "#FEDC56", "#00CDCD", "#0084E9", "#8B2323", "#CD3333", "#0084E9"])')
+```
+
+```{r}
+
+sankey <- sankeyNetwork(Links = links, Nodes = nodes, Source = "source", Target = "target", Value = "value", NodeID = "name2", fontSize = 13, nodeWidth = 20, fontFamily = "Times New Roman", iterations = 0, units = "years", colourScale=my_color, width = 750, height = 450)# %>%
+#   ggsave("Sankey_WYT.png", units ="in", width=7.5, height=4, dpi = 300)
+#htmlwidgets::prependContent(sankey, htmltools::includeMarkdown("C:/Users/gusta/Desktop/group.txt"))
+sankey
+saveNetwork(sankey, "sankey.html")
+#webshot(`sankey.html, "C:/Users/gusta/Desktop/PhD/Classes/ES207/sankey_wyt_agu.png")
+```
+
+
+
+```{r}
+library(plotly)
+
+plot_ly(
+    type = "sankey",
+    link = list(
+        source = links$source,
+        target = links$target,
+        value =  links$value,
+        label =  nodes$name
+    ),
+    node = list(
+        label = nodes$name,
+        color = c("#CD2626","#ff8c00", "#ffd700", "#0084E9","#00cdcd", "#CD2626", "#0084E9","#ff8c00","#CD2626",  "#ffd700", "#0084E9","#00cdcd", "#FF7F24", "#CD2626","#ff8c00", "#ffd700", "#00cdcd", "#0084E9","#00cdcd", "#800000", "#CD2626","#ff8c00", "#ffd700", "#0084E9","#00cdcd", "#ffd700", "#00cdcd", "#0084E9", "#800000", "#CD2626", "#0084E9")
+    ),
+) %>% layout(
+    title = "   SJVI             New Exchequer       New Melones         New Melones            Millerton           Millerton",
+    font = list(
+        size = 10
+    ))
+```

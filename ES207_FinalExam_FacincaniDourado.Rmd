@@ -1,0 +1,449 @@
+---
+title: "ES207_FinalExam_FacincaniDourado"
+author: "Gustavo Facincani Dourado"
+date: "5/11/2020"
+output: html_document
+---
+
+```{r}
+#For this part of the exam, I'll keep the "simulated" and "observed" data I created/altered for the Part A.
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+library(base)
+library(gridExtra)
+library(extrafont)
+loadfonts()
+fonts()
+```
+Functional Programming
+
+Functions Part 1: Select a function you have written for this class that you think will be most useful to your research.
+
+I decided for this function from my homework 10, found here:
+https://github.com/GustavoFacincani/es207_hw4/blob/master/FacincaniDourado_HW4.html
+
+```{r}
+daily.mean <- function(df) { #function to get the daily O3 mean concentration
+  df %>% 
+  group_by(site = as.factor(site), date) %>% #creating groups by site
+  summarize(o3 = mean(obs, na.rm = TRUE)) %>% #creating a column for the daily mean o3 concentrations
+  drop_na()  #to drop row with missing values
+  }
+```
+
+Question 1) Describe why you chose this function and what you plan to do with it in the future (200 words or less). Reference Part A as necessary.
+
+I chose this function as it can be adapted to produce different results for other data, so that we can produce not only daily means, but also montly means or montlhy sums, for example, and group it by other parameters of interest, such as day, month or year. For instance, in the case of daily means, I can use this function to get the daily means of my historic and simulated flows under different climate change scenarios, to compare their responses.
+
+Question 2) Improve the function to be more useful and more generic moving forward. Remember, a good function is short, performs a single operation, and uses intuitive names. You must include:
+1. comments on what it does, what all of the inputs are (in order), what it requires of the inputs and the state of the system (a vector, a ts object, etc.), what side-effects it may have (e.g., plots histogram of residuals), and what all of its outputs are (in order).
+2. a sanity checking argument using stopifnot() with a meaningful error message.
+3. Demonstrate that this function works across at least three different use case scenarios. At least one should be realistic (something similar to your data), and at least one should be severe (something that might fail if you didn’t have appropriate error checks and messages in place).
+
+In this case, I will adapt and transform the "daily.mean" function, to get the monthly mean of flows I'm interested in, instead of O3 concentration.
+
+```{r}
+#First I'll select the data
+HydroFlow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm.csv")[-c(1,2),] #reading in the observed data, skipping the 2 rows after the headings that are blank
+Hydro_flow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm2.csv")[-c(1,2),] #reading in the simulated data, skipping the 2 rows after the headings that are blank
+
+
+head(HydroFlow)
+head(Hydro_flow)
+
+```
+
+```{r}
+#Now let's rearrange it to facilitate reading
+HFO <- HydroFlow %>% #selecting the observed data
+  gather(PH, Flow, `Moccasin PH`:`Dion R Holm PH`) #making the columns names (power houses) become rows of the column named PH, and the hydropower flows, rows of the column Flow
+
+head(HFO)
+
+HFS <- Hydro_flow %>% #selecting the simulated data
+  gather(PH, Flow, `Moccasin PH`:`Dion R Holm PH`) #making the columns names (power houses) become rows of the column named PH, and the hydropower flows, rows of the column Flow
+
+head(HFS)
+
+comparison <- data.frame(HFO, HFS) #create a dataframe with all the data
+head(comparison)
+```
+
+```{r}
+#Rearranging the function 
+
+daily.mean <- function(ModvsObs) { #function to get the daily mean concentration of two datasets at the same time
+  
+HydroPowerObs <- HFO %>% #Selecting the observed data by creating an object
+   mutate(MonthDay = format(as.Date(HFO$node, format = "%m/%d/%Y"), "%m/%d")) %>% #creating a column for day and month only
+  group_by(PH = as.factor(PH), MonthDay) %>% #grouping by day-month and power house
+  summarize(MeanDailyFlow = mean(Flow, na.rm=TRUE)) #summarize the data by mean hydropower flow
+  if(!is.numeric(HFO$Flow)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+
+HydroPowerSim <- HFS %>% #Selecting the simulated data
+  mutate(MonthDay = format(as.Date(HFS$node, format = "%m/%d/%Y"), "%m/%d")) %>% #creating a column for day and month only
+  group_by(PH = as.factor(PH), MonthDay) %>% #grouping by day-month and power house
+  summarize(MeanDailyFlow = mean(Flow, na.rm=TRUE)) #summarize the data by mean hydropower flow
+if(!is.numeric(HFS$Flow)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+}
+compare <- data.frame(HydroPowerObs, HydroPowerSim) #create a dataframe with all the data
+return(compare) #the output is a data frame with all observed, followed by the simulated data
+}
+HP1 <- map(comparison, daily.mean) #apply the function to each element of the object "comparison"
+head(HP1)
+
+```
+The function worked well to produce the daily mean for all power houses.
+
+```{r}
+#Another scenario where we can use this same function's structure is for monthly means
+#So, with minor adjustments, we have that:
+
+monthly.mean <- function(ModvsObs) { #function to get the daily mean concentration of two datasets at the same time
+  
+HydroPowerObs <- HFO %>% #Selecting the observed data by creating an object
+   mutate(MonthYear = format(as.Date(HFO$node, format = "%m/%d/%Y"), "%Y/%m")) %>% #creating a column for month and year only
+  group_by(PH = as.factor(PH), MonthYear) %>% #grouping by month-year and power house
+  summarize(MonthlyFlow = sum(Flow, na.rm=TRUE)) #summarize the data by sum of monthly hydropower flow
+  if(!is.numeric(HFO$Flow)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+
+HydroPowerSim <- HFS %>% #Selecting the observed data by creating an object
+   mutate(MonthYear = format(as.Date(HFS$node, format = "%m/%d/%Y"), "%Y/%m")) %>% #creating a column for month and year only
+  group_by(PH = as.factor(PH), MonthYear) %>% #grouping by month-year and power house
+  summarize(MonthlyFlow = sum(Flow, na.rm=TRUE)) #summarize the data by sum of monthly hydropower flow
+if(!is.numeric(HFS$Flow)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+}
+compare <- data.frame(HydroPowerObs, HydroPowerSim) #create a dataframe with all the data
+return(compare) #the output is a data frame with the observed, followed by the simulated data
+}
+HP <- map(comparison, monthly.mean) #apply the function to each element of the object "comparison"
+head(HP)
+
+```
+The function again worked just fine for monthly means!
+
+
+```{r}
+#Read data with characters instead of numeric data
+df3 <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm3.csv")[-c(1,2),] #reading in the observed data, skipping the 2 rows after the headings that are blank
+
+#Now let's rearrange it to facilitate reading
+HFO <- df3 %>% #selecting the observed data
+  gather(PH, Flow, `Moccasin PH`:`Dion R Holm PH`) #making the columns names (power houses) become rows of the column named PH, and the hydropower flows, rows of the column Flow
+
+head(HFO)
+
+HFS <- Hydro_flow %>% #selecting the simulated data
+  gather(PH, Flow, `Moccasin PH`:`Dion R Holm PH`) #making the columns names (power houses) become rows of the column named PH, and the hydropower flows, rows of the column Flow
+
+head(HFS)
+
+comparison3 <- data.frame(HFO, HFS) #create a dataframe with all the data
+comparison3
+
+
+head(comparison3)
+```
+
+```{r}
+#Applying the function
+#HP3 <- map(comparison3, daily.mean) #creating vector
+
+#HP3
+```
+The function worked well to produce an error, due to the presence of characters instead of numeric data in the file. Note: I can't run the command, otherwise I can't knit the file, but it gives to following message: "Error in .f(.x[[i]], ...) : This function only works for numeric input! You have provided an object of class: numeric".
+
+
+Functions Part 2: Select a function one of your classmates has written for this class from their GitHub repository that you think will be most useful to your research.
+Describe why you chose this function and what you plan to do with it in the future (200 words or less). Cite who you got this function from. Reference Part A as necessary.
+Improve the function to be more useful and more generic moving forward. Remember, a good function is short, performs a single operation, and uses intuitive names. You must include:
+1. comments on what it does, what all of the inputs are (in order), what it requires of the inputs and the state of the system (a vector, a ts object, etc.), what side-effects it may have (e.g., plots histogram of residuals), and what all of its outputs are (in order).
+2. a sanity checking argument using stopifnot() with a meaningful error message.
+3. Demonstrate that this function works across at least three different use case scenarios. At least one should be realistic (something similar to your data), and at least one should be severe (something that might fail if you didn’t have appropriate error checks and messages in place).
+
+I decided for this function from homework 4 from Edwin's repository, found here: https://github.com/erivasmeraz/ES207_hw6/blob/master/model_assessment.R. 
+
+```{r}
+model.assess <- function(sim, obs) {require(hydroGOF)
+  a.mae <- mae(sim = sim, obs = obs)
+  b.rmse <- rmse(sim = sim, obs = obs)
+  c.pbias <- pbias(sim = sim, obs = obs)
+  Values <- c(a.mae, b.rmse, c.pbias)
+  Names <- c('mae', 'rmse', 'pbias')
+  stats <- tibble(Names, Values)
+  return(stats)
+}
+```
+
+This function will be very useful to me as I will also need to compare modeled data to historic observed data of hydropower flow and streamflow of regulated river systems (environmental flows).This function requires numeric values from simulated data (sim) and observed data to produce a tibble (subclass of a dataframe) with two columns, one composed of the name of statistical tests (characters) to evaluate the goodness-of-fit of the modeled data, and the other composed of the result of each test (numeric). The tests are vectors in the formula, and they are produced in this order: Mean Absolute Error (mae), Root Mean Square Error (rmse), Percent Bias (pbias). The results can be added to tables or graphical techniques for model evaluation. 
+But in my case, I already decided for other statistical tests, so I'll change the statistical tests to those that are of my interest (replacing RMSE by the Ratio of RMSE to the standard deviation of the observations (RSR), and MAE by the Nash-Sutcliffe Efficiency (SNE)). I decided for these test as they are recommended by Moriasi et al. (2017), as mentioned in Part A. And in order to make the function more useful and replicable without requiring the installation of a package, I would prefer to use the formulas of the statistical tests that are of my interest:
+
+
+To start, let's take the formulas of the statistical tests
+
+Nash-Sutcliffe Efficiency (NSE) -  indicates how well the plot of observed versus simulated data fits the 1:1 line, in which 1 = perfect match, 0 = predictions are as accurate as the mean, <0 = mean is better. 
+
+NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE)
+NSE
+
+Percent bias (PBIAS) - measures the average tendency of the simulated values to be larger or smaller than their observed ones, in which 0 = optimal, low-magnitude values = accurate, positive/negative = over/underestimation.
+
+PBIAS <- 100 *sum((Sim - Obs)/sum(Obs), na.rm =TRUE)
+PBIAS
+
+RSR - Ratio of RMSE (Root mean square error) to the standard deviation of the observations, in which the closer to zero, the better.
+
+rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) )
+
+RSR <- rmse / sd(Obs)
+RSR
+
+So now, I'll change the function's commands to produce my statistical tests by their own formulas, with more proper naming and comments for clarity and easy reuse and replicability, so we have that:
+```{r}
+#Function to test goodness-of-fit using RSR, PBIAS and NSE tests
+model.assess <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of classes: ', class(Obs)[1])
+  }    
+  rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) ) #Formula to calculate RMSE
+  RSR <- rmse / sd(Obs) #object producing RSR test from the RMSE formula
+  PBIAS <- 100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)) #object producing PBIAS test
+  NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #object producing NSE test
+    Values <- c(RSR, PBIAS, NSE) #Creates a column for the results of the tests
+  Test <- c('RSR', 'PBIAS', 'NSE') #Creates a column for the name of the tests
+  stats <- tibble(Test, Values) #Creates a tibble of the final products of the tests, giving numeric values for each test in this order: RSR, PBIAS, NSE
+  return(stats) #returns a tibble as a result, which can be used in graphs or tables
+}
+```
+
+```{r}
+#Wrangling the observed data
+df <- HydroFlow %>%
+  ungroup %>% #removes grouping
+select(node, `Moccasin PH`, `Kirkwood PH`, `Don Pedro PH`, `Dion R Holm PH`) %>% #separates out the variables of interests (in this case I'll select all power houses)
+  mutate(MonthYear = format(as.Date(HydroFlow$node, format = "%m/%d/%Y"), "%Y-%m")) %>% #creates a MonthYear column
+  group_by(MonthYear) %>% #groups the data by MonthYear
+  summarize(Moccasin = sum( `Moccasin PH`),
+            Kirkwood = sum(`Kirkwood PH`), 
+            DonPedro = sum(`Don Pedro PH`), 
+            DiorRH = sum(`Dion R Holm PH`)) #applies the sum of hydropower flows per group of MonthYear
+
+#Wrangling the simulated data
+df2 <- Hydro_flow %>%
+  ungroup %>% #removes grouping
+select(node, `Moccasin PH`, `Kirkwood PH`, `Don Pedro PH`, `Dion R Holm PH`) %>% #separates out the variables of interests (in this case I'll select all power houses)
+  mutate(MonthYear = format(as.Date(Hydro_flow$node, format = "%m/%d/%Y"), "%Y-%m")) %>% #creates a MonthYear column
+  group_by(MonthYear) %>% #groups the data by MonthYear
+  summarize(Moccasin2 = sum( `Moccasin PH`),
+            Kirkwood2 = sum(`Kirkwood PH`), 
+            DonPedro2 = sum(`Don Pedro PH`), 
+            DiorRH2 = sum(`Dion R Holm PH`)) #applies the sum of hydropower flows per group of MonthYear
+```
+
+```{r}
+#Let's try the function out with the data from Moccasin Power House read down below
+
+Sim <- c(df$Moccasin) #selecting my simulated data
+Obs <- c(df2$Moccasin2) #selecting my observed data
+
+monthly.ma <- model.assess(Sim, Obs) #testing if the function works
+head(monthly.ma)
+
+```
+The function works if we want to have a monthly-step assessment.
+
+```{r}
+#Let's try the function out with the daily data from Moccasin Power House read down below
+
+Sim <- c(HydroFlow$`Moccasin PH`) #selecting my simulated data
+Obs <- c(Hydro_flow$`Moccasin PH`) #selecting my observed data
+
+daily.ma <- model.assess(Sim, Obs) #testing if the function works
+head(daily.ma)
+```
+The function also works if we want to have a daily-step assessment.
+
+```{r}
+#Using data with written NAs
+
+HydroFlow3 <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm3.csv")[-c(1,2),] #reading in the observed data, skipping the 2 rows after the headings that are blank
+
+head(HydroFlow3)
+head(HydroFlow)
+
+Obs <- c(HydroFlow3$`Dion R Holm PH`) #selecting my simulated data
+Sim <- c(HydroFlow$`Dion R Holm PH`) #selecting my observed data
+
+#NAs.ma <- model.assess(Sim, Obs) #testing if the function works
+#NAs.ma
+
+```
+The function also works if we have problems with the data, as in this case, in which we have characters in the column "Dion R Holm PH" of the simulated data. Note: I can't run the command, otherwise I can't knit the file, but it gives to following message: "Error in model.assess(Sim, Obs) : This function only works for numeric input! You have provided an object of classes: character".
+
+
+Good Workflow
+
+Create either a small subset of data from one thesis chapter (a tibble with no more than 50 rows). If you do not have data yet, create a dummy-dataset that you anticipate will be similar to your expected data from your research. If you need help coming up with some dummy data, please see me ASAP.
+Write an R notebook with good documentation demonstrating your analysis workflow. You must include:
+Reading in the data
+
+```{r}
+HydroFlow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm.csv")[-c(1,2),] #reading in the observed data, skipping the 2 rows after the headings that are blank
+Hydro_flow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm2.csv")[-c(1,2),] #reading in the modeled data, skipping the 2 rows after the headings that are blank
+
+
+head(HydroFlow) #check it
+head(Hydro_flow) #check it 
+```
+
+Wrangling the data
+
+```{r}
+#Wrangling the observed data
+df <- HydroFlow %>%
+  ungroup %>% #removes grouping
+select(node, `Moccasin PH`, `Kirkwood PH`, `Don Pedro PH`, `Dion R Holm PH`) %>% #separates out the variables of interests (in this case I'll select all power houses)
+  mutate(MonthYear = format(as.Date(HydroFlow$node, format = "%m/%d/%Y"), "%Y-%m")) %>% #creates a MonthYear column
+  group_by(MonthYear) %>% #groups the data by MonthYear
+  summarize(Moccasin = sum( `Moccasin PH`),
+            Kirkwood = sum(`Kirkwood PH`), 
+            DonPedro = sum(`Don Pedro PH`), 
+            DiorRH = sum(`Dion R Holm PH`)) #applies the sum of hydropower flows per group of MonthYear
+
+#Wrangling the simulated data
+df2 <- Hydro_flow %>%
+  ungroup %>% #removes grouping
+select(node, `Moccasin PH`, `Kirkwood PH`, `Don Pedro PH`, `Dion R Holm PH`) %>% #separates out the variables of interests (in this case I'll select all power houses)
+  mutate(MonthYear = format(as.Date(Hydro_flow$node, format = "%m/%d/%Y"), "%Y-%m")) %>% #creates a MonthYear column
+  group_by(MonthYear) %>% #groups the data by MonthYear
+  summarize(Moccasin2 = sum( `Moccasin PH`),
+            Kirkwood2 = sum(`Kirkwood PH`), 
+            DonPedro2 = sum(`Don Pedro PH`), 
+            DiorRH2 = sum(`Dion R Holm PH`)) #applies the sum of hydropower flows per group of MonthYear
+
+head(df) #checking if everything is ok
+head(df2) #checking if everything is ok
+
+```
+
+Applying one of the functions from above to your data. This must include a vectorized approach (meaning using lapply() ldply() or map() and mutate()).
+
+```{r}
+#Here I can use the Function to test goodness-of-fit using RSR, PBIAS and NSE tests
+
+model.assess <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of classes: ', class(Obs)[1])
+  }    
+  rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) ) #Formula to calculate RMSE
+  RSR <- rmse / sd(Obs) #Vector producing RSR test from the RMSE formula
+  PBIAS <- 100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)) #Vector producing PBIAS test
+  NSE <- 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #Vector producing NSE test
+    Values <- c(RSR, PBIAS, NSE) #Creates a column for the results of the tests
+  Test <- c('RSR', 'PBIAS', 'NSE') #Creates a column for the name of the tests
+  stats <- tibble(Test, Values) #Creates a tibble of the final products of the tests, giving numeric values for each test in this order: RSR, PBIAS, NSE
+  return(stats) #returns a tibble as a result, which can be used in graphs or tables
+  }
+
+#Let's try it out with the Moccasin PH
+
+Sim <- c(df$Moccasin) #selecting my simulated data
+Obs <- c(df2$Moccasin2) #selecting my observed data
+
+ma <- model.assess(Sim, Obs) #testing if the function works
+ma
+
+```
+
+
+Visualizing the result in a publication quality plot and a publication quality table.
+
+
+```{r}
+#Let's pick Moccasin PH for that
+
+Hydro_flow$node <- as.Date(Hydro_flow$node, format = "%m/%d/%Y") #make node read as date
+HydroFlow$node <- as.Date(HydroFlow$node, format = "%m/%d/%Y") #make node read as date
+
+Hydro_flow$Month <- as.Date(cut(Hydro_flow$node, breaks = "month")) #create month column to facilitate plotting
+HydroFlow$Month <- as.Date(cut(HydroFlow$node, breaks = "month")) #create month column to facilitate plotting
+head(Hydro_flow) #check it
+head(HydroFlow) #check it
+
+```
+
+```{r}
+#Plotting a publication quality figure
+                           
+s <- ggplot(data =Hydro_flow) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  stat_summary(aes( x = Month, y = `Moccasin PH`, color = "#00AFBB"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+ stat_summary(data = HydroFlow, aes(x = Month, y = `Moccasin PH`, color="#FC4E07"), #plot monthly observed data in orange
+              fun.y = sum, geom = "line") + #showing monthly sum in a line
+     scale_x_date(date_breaks = "6 years", date_labels = "%b/%Y") + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = "Moccasin PH", #identify the colors in a legend
+                          breaks = c("#00AFBB", "#FC4E07"), #select the color
+                          labels = c("Observed", "Simulated"), #select the variables
+                          guide = "legend")+
+  labs(title = "Observed vs. Simulated", #title
+       x = "Date", #name of x axis
+       y = "Hydropower Flow (mcm)") + #name of x axis
+  theme(plot.title = element_text(hjust = 0.5)) #center the title
+s
+
+```
+
+```{r} 
+#Creating a publication quality table
+
+#To have more data for the table, let's use the function for other power houses
+
+#Kirkwood Power House
+Sim2 <- df$Kirkwood #selecting my simulated data
+Obs2 <- df2$Kirkwood2 #selecting my observed data
+ma2 <- model.assess(Sim2, Obs2)
+
+#Don Pedro Power House
+Sim3 <- df$DonPedro #selecting my simulated data
+Obs3 <- df2$DonPedro2 #selecting my observed data
+ma3 <- model.assess(Sim3, Obs3)
+#Dior R Holm Power House
+Sim4 <- df$DiorRH #selecting my simulated data
+Obs4 <- df2$DiorRH2 #selecting my observed data
+ma4 <- model.assess(Sim4, Obs4)
+
+statis <- cbind(ma, ma2[,2], ma3[,2],ma4[,2])
+
+colnames(statis) <- c("Performance Statistics", "Moccasin PH","Kirkwood PH", "Don Pedro PH", "Dion R Holm PH")
+
+library(sjPlot)
+stat_table <- tab_df(statis, 
+                     title = "Comparison of the Simulated with Observed data")
+
+
+stat_table
+```

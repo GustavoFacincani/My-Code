@@ -1,0 +1,324 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+Question 1.
+
+Exercise 4a.
+```{r}
+#Scatter plot
+
+library(tidyverse)
+
+Pollution <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/pollution.csv", col_names =TRUE)
+
+library(extrafont)
+
+library(ggplot2)
+data(Pollution)
+ggplot(Pollution, aes(x = nox, y = mort)) + 
+  theme_bw() + geom_point(alpha = 0.4) + 
+  geom_abline() + 
+  ggtitle("Mortality Rate as a function of levels of Nitric Oxides") +
+  xlab("Relative Nitric Oxide potential") + ylab("Mortality Rate") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5), text=element_text(family="Times New Roman", face="bold", size=12)) + geom_smooth(method = 'lm', se = FALSE)
+
+```
+
+
+```{r}
+#Residuals 
+
+Mort <- Pollution$mort
+Nox <- Pollution$nox
+
+NoxMort <- lm(Mort ~ Nox, data = Pollution)
+summary(NoxMort)
+
+par(mfrow = c(1,2)); plot(NoxMort, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+```
+
+The points are randomly dispersed around the horizontal axis, so a linear regression model apparently would be appropriate for the data at first sight. Although we can see a pattern of increased deaths with increased levels of nitric dioxide, the outliers totally change the regression line, which shows a "negative correlation" between mortality rate and levels of nitric oxide. By using the residual plots, we can judge the data may not follow a linear pattern, what is confirmed by the residuals (falling in part above zero, and in part below zero) and by the almost, but not normal, distribution. 
+
+Question 2.
+
+Exercise 4b.
+```{r}
+#Log transform
+data(Pollution)
+ggplot(Pollution, aes(x = log10 (nox), y = log10(mort))) + 
+  theme_bw() + geom_point(alpha = 0.4) + 
+  geom_abline() + 
+  ggtitle("Mortality Rate as a function of levels of Nitric Oxides") +
+  xlab("Log of relative Nitric Oxide potential") + ylab("Log of Mortality Rate") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5), text=element_text(family="Times New Roman", face="bold", size=12)) + geom_smooth(method = 'lm', se = FALSE)
+
+```
+
+
+```{r}
+#Residuals 
+
+Mort <- Pollution$mort
+Nox <- Pollution$nox
+
+#Log transform x and y
+
+NoxMort1 <- lm(log10(Mort) ~ log10(Nox), data = Pollution)
+summary(NoxMort)
+
+par(mfrow = c(1,2)); plot(NoxMort1, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort1, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+#Log transform only x
+
+NoxMort2 <- lm(Mort ~ log10(Nox), data = Pollution)
+summary(NoxMort)
+
+par(mfrow = c(1,2)); plot(NoxMort2, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort2, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+#Log transform only y
+
+NoxMort3 <- lm(log10(Mort) ~ Nox, data = Pollution)
+summary(NoxMort)
+
+par(mfrow = c(1,2)); plot(NoxMort3, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort3, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+```
+With the log transformation, the influence of outliers are minimized allowing us to recognize a discrete positive correlation between mortality rate and levels of nitric oxide in the scatterplot, different from the non-transformed data. However, transforming x and y or only x will cause more skewness. The skewness was slightly minimized while log transforming y, but there is still a non-linear behavior in the residuals vs fitted data. In the Q-Q plot the distribution of the data was very slightly improved mainly in the lower left, although the data do not perfectly match the normal distribution. 
+
+Exercise 4c.
+The slope of the model is 0.016 (y = 0.016x + 2.96), in which a unit change in the predictor log10(Nox), corresponds to a change of 0.016 in log10(Mort).
+
+
+Question 5.
+
+Exercise 4d.
+```{r}
+
+
+Sulfur <- Pollution$so2
+HydroC <- Pollution$hc
+
+#non-transformed 
+
+NoxMort4 <- lm(Mort ~ Nox + Sulfur + HydroC, data = Pollution)
+
+par(mfrow = c(1,2)); plot(NoxMort4, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort4, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+#log transformed data
+
+NoxMort5 <- lm(log10(Mort) ~ log10(Nox)+log10(Sulfur)+log10(HydroC), data = Pollution)
+
+
+
+par(mfrow = c(1,2)); plot(NoxMort5, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort5, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+#let's use the log transformed data, as it is closer to normal
+summary(NoxMort2)
+```
+
+The multiple R-squared shows that only 28.52% of varation in log10(Mort) can be explained by the model even accounting for more variables (log10 of Nox, sulfur and HydroC). The F-statistic and p value test the Null hypothesis that all the model coefficient are 0, in this case, testing if the slope for Nox, Sulfur and HydroC are 0. The residual standard error is gives an idea of how far observed Mortality rates (log10(Mort)), are from the predicted or fitted Mortality rates. The intercept 2.96 is the estimated mean y value when all xs are 0 (estimated mortality rate for 0 nitric oxides, sulfuric dioxide and hydrocarbons). The estimates of Log of Nox, Sulfur and HydroC, are respectively the effects of each of them on the log of Mort (adjusting/controlling for each other's influence).
+
+Questio
+```{r}
+
+library(caret)
+
+# randomly select half of the sample
+set.seed(0123)
+half_size <- floor(0.50 * nrow(Pollution))
+random_sample <- sample(seq_len(nrow(Pollution)), size = half_size)
+first_half_data <- Pollution[random_sample, ]
+
+#using the first half
+
+first_half <- lm(log10(mort) ~ log10(nox) + log10(so2) + log10(hc), data = first_half_data)
+summary(first_half)
+
+par(mfrow = c(1,2)); plot(first_half, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(first_half, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+
+#using the second half data
+second_half_data <- Pollution[-random_sample, ]
+
+second_half <- lm(log10(mort) ~ log10(nox) + log10(so2) + log10(hc), data = second_half_data)
+
+summary(second_half)
+
+par(mfrow = c(1,2)); plot(second_half, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(second_half, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+#comparing to the original data without transformation
+NoxMort4 <- lm(Mort ~ Nox + Sulfur + HydroC, data = Pollution)
+
+par(mfrow = c(1,2)); plot(NoxMort4, which = 1, bty = "l", font.main=2, font.lab=2, family = "Times New Roman", cex.lab=1.2); plot(NoxMort4, which = 2, bty = "l", bty = "l", font.main=2, font.lab=2, font.sub=4, family = "Times New Roman", cex.lab=1.2)
+
+```
+
+Each half behaves differently. In terms of distribution and fitted values vs residuals, the second half behaved better. The second half had a significantly higher multiple R-squared, of around 0.5 (but also a higher slope), meanwhile the first half had basically half of it (0.2517) and higher p-value and residual standard error. The differences between the data sampled in each half cause uncertainty in the model's response, caused by the variation in the data, and not enough sample size or correlation properly shown between samples (although variations among samples are ordinary).
+
+
+Question 7.
+
+Exercise 4f.
+
+A quicker way to identify interaction effects betweem predictors is to use Pearson's correlation instead of the conditional plots, actually.
+```{r}
+#Correlation between Nitric oxide and sulfur dioxide
+
+cor(log10(Nox), log10(Sulfur), method = "pearson")
+
+#Correlation between Nitric oxide and sulfur dioxide
+
+cor(log10(Nox), log10(HydroC), method = "pearson")
+
+#Correlation between Nitric oxide and sulfur dioxide
+
+cor(log10(Sulfur), log10(HydroC), method = "pearson")
+
+```
+The predictors are correlated, more intensely in the case of Nitric oxide and Sulfur dioxide, highly correlated in the case of Nitric oxide and Hydrocarbons (almost 95%). This collinearity between the variables mean that we should not directly interpret the slope, because, for example, the effect of Nitrogen oxide on mortality rate ajusting for hydrocarbons, because this high correlation suggests that these two effects are bounded together. 
+
+
+
+```{r}
+library(tidyverse)
+library(readxl)
+psoil <- read_excel("C:/Users/gusta/Desktop/PhD/Classes/ES207/Event_data_log.xlsx", col_names =TRUE)
+
+psoil
+
+```
+
+```{r}
+psoil.g <- gather(psoil, key = "depth", value = "soiltest", log_0_2, log_0_4, log_0_8)
+psoil.g
+
+
+```
+
+Question 8.
+```{r}
+#rewriting
+
+psoil.g <- psoil %>% gather("depth", "soiltest", log_0_2, log_0_4, log_0_8)
+psoil.g
+```
+
+```{r}
+ggplot(psoil.g, aes(x = soiltest, y = log_PO4, color = percentile)) + geom_point() + geom_smooth(method = "lm") + facet_wrap(source~depth)
+
+psoil.nested <- psoil.g %>% 
+  group_by(depth, source, percentile) %>% 
+  nest()
+psoil.nested
+
+
+```
+
+```{r}
+#look at the first data frame:
+psoil.nested$data[1]
+```
+
+```{r}
+#another way to look at the first data frame: 
+psoil.nested[[4]][1]
+```
+
+```{r}
+psoil.nested[[4]][1]
+```
+
+Question 9.
+
+```{r}
+#depth = 2, source = tile, percentile = 75
+psoil.nested[[4]][[8]][[2]][3]
+
+```
+
+Question 10.
+
+```{r}
+lmsum<-function(df) {
+  summary(lm(log_PO4 ~ soiltest, data = df))
+}
+lmsum(psoil.nested[[1, "data"]])
+
+
+psoil.nested <- psoil.nested %>% 
+   mutate(lm.summary = map(data, lmsum))
+
+psoil.nested$lm.summary[1]
+```
+
+
+```{r}
+st_vs_po4 <- function(df) {
+  lm(log_PO4 ~ soiltest, data = df)
+}
+st_vs_po4(psoil.nested[[1, "data"]])
+
+psoil.nested <- psoil.nested %>% 
+   mutate(lm.fit = map(data, st_vs_po4))
+psoil.nested
+
+require(broom)
+
+psoil.nested <- psoil.nested %>% 
+  mutate(lm.coeffs = map(lm.fit, tidy)) %>% 
+  mutate(lm.stats = map(lm.summary, glance))
+psoil.nested
+
+psoil.nested$lm.stats[[1]]
+
+psoil.stats <- psoil.nested %>% 
+  dplyr::select(depth, source, percentile, lm.stats) %>% 
+  unnest(lm.stats)
+psoil.stats
+```
+
+
+Question 11.
+
+```{r}
+
+ggplot(psoil.stats, aes(x = percentile, y = r.squared, fill = percentile)) + geom_bar(stat = 'identity') + facet_wrap(source~depth,labeller = label_context)+ theme_bw()
+
+```
+The quintiles were similar among sources and the they also followed approximately the same pattern among depths for each source.
+
+Question 12.
+SRP is not a good fit to measure PO4. It is a good measure to know how the data are distributed, but we don't know how they are distributed within each interval.
+
+Question 14.
+```{r}
+Soil <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/cameroon_soil.csv", col_names =TRUE)
+
+CEC1 <- Soil$CEC1
+Clay1 <- Soil$Clay1
+OC1 <- Soil $OC1
+
+#Correlation between cation exchange capacity and clay content
+
+cor(CEC1, Clay1, method = "pearson")
+
+#Correlation between cation exchange capacity and organic carbon
+
+cor(CEC1, OC1, method = "pearson")
+
+#Correlation between clay content and organic carbone
+
+cor(Clay1, OC1, method = "pearson")
+
+#The Pearson correlation shows the same values
+```
+There is a positive correlation between all three variables, mainly in the relationship between cation exchange capacity and the volume of organic carbon (74.2%). This is mainly due to the covariance of the variables as they jointly vary in the soil. The collinearity of cation exchange capacity with organic carbon and clay content are explained by the great number of negative charges on the surface specially of clay and organic matter, so the greater the clay content and carbon content, the greater the cation exchange capacity. The relationship of organic carbon and clay content is due to the fact that the decomposition process in the clay soils is retarded due to its structure and texture, so the greater the clay content, the greater the organic carbon content tends to be.
+
+Question 15.
+Organic carbon content.
+

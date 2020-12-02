@@ -1,0 +1,198 @@
+---
+title: "IFR_Rank"
+author: "Gustavo Facincani Dourado"
+date: "7/21/2020"
+output: html_document
+---
+
+```{r}
+library(lfstat)
+library(reshape2)
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+#Read data for Merced basin
+#IFR actual flow
+Livneh_IFR_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6)]
+Livneh_IFR_Mer
+
+#Read data for tuolumne basin
+#IFR actual flow
+Livneh_IFR_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 6, 10, 14, 18)] 
+Livneh_IFR_Tuo
+
+#Read data for Stanislaus basin
+#IFR actual flow
+Livneh_IFR_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78)]
+Livneh_IFR_Stn
+
+#Read data for upper_san_joaquin basin
+#IFR actual flow
+Livneh_IFR_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1, 2, 14, 18, 22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90)]
+Livneh_IFR_USJ
+```
+
+```{r}
+#Create columns to sum up the total IFR and total annual IFR per basin
+#Creating a function for that
+IFR <- function(data, interval, basin) {
+x <- data %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2012-09-30"))) %>%
+mutate(Year = lfstat::water_year(node, origin = "usgs"))%>% #year column to facilitate plotting
+  group_by(Year) %>%
+  summarize_each(funs(sum), interval) %>%
+  mutate(`Total Instream Flow (mcm)` = dplyr::select(., interval) %>% rowSums(., na.rm = TRUE),
+         Basin = basin)
+
+#rearranging the data
+x <- reshape2::melt(x, id = c("Year", "Total Instream Flow (mcm)", "Basin")) %>%
+  dplyr::rename(`Instream Flow (mcm)` = value, #rename monthly
+                `Location` = variable) #rename powerhouse
+x
+
+}
+```
+
+```{r}
+MRC <- IFR(Livneh_IFR_Mer, 2:3, "Merced River")
+MRC
+
+TUO <- IFR(Livneh_IFR_Tuo, 2:5, "Tuolume River")
+TUO
+
+STN <- IFR(Livneh_IFR_Stn, 2:19, "Stanislaus River")
+STN
+
+USJ <- IFR(Livneh_IFR_USJ, 2:22, "Upper San Joaquin River")
+USJ
+```
+
+
+```{r}
+IFR_Fig <- function(Data, Title) {
+ggplot(Data, aes(y = `Instream Flow (mcm)`/1000,x = `Total Instream Flow (mcm)`/1000)) + 
+  theme_bw(base_size=16, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_point(alpha = 0.5, size = 2)+
+    geom_smooth(method=lm)+ #, fullrange=TRUE) +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", alpha = 0.5) +
+    scale_x_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, NA),
+                     n.breaks = 4,
+                     expand = c(0, 0)) +
+ labs(title = Title,
+   x = "Total Instream Flow (Thousand mcm)", #name of x axis
+       y = "Instream Flow (Thousand mcm)")+ #name of y axis
+    
+  stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 4, family= "Times New Roman")+
+       stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, size = 4, label.x.npc = 0.05, 
+             label.y.npc = 0.85, family= "Times New Roman")+
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+       # panel.spacing.x = unit(2, "lines"))
+  
+}
+```  
+
+```{r}
+IFR_Fig(MRC, "Merced River") +
+  scale_x_continuous(limits = c(0, 5.2))+
+scale_y_continuous(limits = c(0, 5.2))+
+    facet_wrap(~Location, scales = "fixed", ncol = 4)+
+  png("Mer_AnnualIFR.png", units ="in", width=5, height=5, res = 300)
+```
+
+```{r}
+IFR_Fig(TUO, "Tuolumne River") +
+    scale_x_continuous(limits = c(0, 8.5))+
+    scale_y_continuous(limits = c(0, 8.5))+
+    facet_wrap(~Location, scales = "fixed", ncol = 4)+
+  png("Tuo_AnnualIFR.png", units ="in", width=10, height=10, res = 300)
+```
+
+```{r}
+IFR_Fig(STN, "Stanislaus River")+
+scale_x_continuous(limits = c(0, 9.5))+
+   scale_y_continuous(limits = c(0, 9.5))+
+  facet_wrap(~Location, scales = "fixed")+
+    png("Stn_AnnualIFR.png", units ="in", width=10, height=10, res = 300)
+```
+
+```{r}
+IFR_Fig(USJ, "Upper San Joaquin River")+
+scale_x_continuous(limits = c(0, 15.3))+
+    scale_y_continuous(limits = c(0, 15.3))+
+  facet_wrap(~Location, scales = "fixed",ncol =5)+
+    png("USJ_AnnualIFR.png", units ="in", width=12.5, height=12.5, res = 300)
+```
+
+```{r}
+library(broom)
+library(dplyr)
+library(ModelMetrics)
+
+#Merging the basins into one object
+all_flows <- rbind(STN, TUO, MRC, USJ)
+
+#create function to prepare the table
+#Power <- function(data) {
+all_IFRs <- all_flows %>%
+  group_by(Location, Basin) %>% #grouping by facility and basin to summarize
+  summarise(`Rsquare` = cor(`Instream Flow (mcm)`, `Total Instream Flow (mcm)`, use = "na.or.complete")^2, #R squared
+            #min, mean, median, max and quantile for PH and total Instream Flow
+          
+            `Minimum Instream Flow (mcm)` = min(`Instream Flow (mcm)`, na.rm=TRUE),
+            `1st Qu. Instream Flow (mcm)` = quantile(`Instream Flow (mcm)`, 0.25, na.rm=TRUE),
+            `Mean Instream Flow (mcm)` = mean(`Instream Flow (mcm)`, na.rm=TRUE),
+            `Median Instream Flow (mcm)` = median(`Instream Flow (mcm)`, na.rm=TRUE),
+            `3rd Qu. Instream Flow (mcm)` = quantile(`Instream Flow (mcm)`, 0.75, na.rm=TRUE),
+            `Maximum Instream Flow (mcm)` = max(`Instream Flow (mcm)`, na.rm=TRUE),
+            
+            `Minimum Total Instream Flow (mcm)` = min(`Total Instream Flow (mcm)`, na.rm=TRUE), 
+            `1st Qu. Total Instream Flow (mcm)` = quantile(`Total Instream Flow (mcm)`, 0.25, na.rm=TRUE),
+            `Mean Total Instream Flow (mcm)` = mean(`Total Instream Flow (mcm)`, na.rm=TRUE), 
+            `Median Total Instream Flow (mcm)` = median(`Total Instream Flow (mcm)`, na.rm=TRUE),
+            `3rd Qu. Total Instream Flow (mcm)` = quantile(`Total Instream Flow (mcm)`, 0.75, na.rm=TRUE),
+            `Maximum Total Instream Flow (mcm)` = max(`Total Instream Flow (mcm)`, na.rm=TRUE)) %>%
+  group_by(Basin) %>%
+  mutate(Rank = rank(-`Mean Instream Flow (mcm)`),
+         `Contribution (%)`= `Mean Instream Flow (mcm)` / `Mean Total Instream Flow (mcm)`*100) %>%
+  dplyr::select(Rank, Location, Basin, `Contribution (%)`, everything()) %>% 
+   group_by(Basin) %>%
+  arrange(Basin,Rank) %>%
+  ungroup()
+
+
+#all_Power$Rank <- rank(-all_Power$`Mean Instream Flow (mcm)`) #create rank
+#all_Power <- all_Power %>% #arrange rank in order of importance
+#arrange(all_Power$Rank) 
+all_IFRs
+
+```
+
+```{r}
+
+readr::write_csv(all_IFRs, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Annual_Stats_IFR_Livneh_1980_2012.csv")
+```

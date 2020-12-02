@@ -1,0 +1,213 @@
+---
+title: "SFPUC"
+author: "Gustavo Facincani Dourado"
+date: "8/26/2020"
+output: html_document
+---
+
+```{r}
+
+library(ncdf4)
+library(lubridate)
+library(reshape2)
+library(dplyr)
+library(hyfo)
+library(ggplot2)
+library(readxl)
+library(tidyr)
+#start with empty workspace
+rm(list=ls(all=TRUE))
+
+#Set working directory
+#setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historica/Livneh")
+#Read excel file with monthly bias-corrected flows
+# File name: 
+```
+
+```{r}
+mdlname <- "Livneh"
+BCFlow_Liv <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/Livneh/streamflow_observed_monthly_LK_MC.csv") #data in thousand acre-feet
+BCFlow_Liv <- BCFlow_Liv[c(1,2)]
+BCFlow_Liv# <- BCFlow_Liv %>% mutate(time = as.Date(time, format = "%Y/%m", origin = "1921-01"))
+
+
+BCFlow_Liv$monthyear <- paste0(format(as.Date(sub("^(\\d{4}).*$", "\\1", BCFlow_Liv$time), format = "%Y"), "%Y"),"-", as.numeric(sub('.*(\\d{2}).*', '\\1', BCFlow_Liv$time)),"-15", sep="")
+#BCFlow_Liv$month <- as.numeric(sub('.*(\\d{2}).*', '\\1', BCFlow_Liv$time))
+BCFlow_Liv <- BCFlow_Liv %>%
+  mutate(Date = zoo::as.Date(zoo::as.yearmon(monthyear, "%Y-%m")),
+         Flw = min, #*1.23348, #Thousand Acre-feet/month to million cubic meters/month
+         min = NULL,
+         time = NULL,
+         monthyear = NULL) %>%
+  filter(Date >= as.Date("1950-09-15") & Date <= ("2013-09-15"))
+BCFlow_Liv
+
+lubridate::day(BCFlow_Liv$Date) <- 15
+
+BCFlow_Liv
+```
+
+```{r}
+# Acre-feet/month to cubic meters/sec--------------------------------------------------------------------------------
+for(i in 1:nrow(BCFlow_Liv)){
+  BCFlow_Liv$Flw[i] <- (BCFlow_Liv$Flw[i]*1233480)/(days_in_month(BCFlow_Liv$Date[i])*86400) #TAF to mcm/day
+  
+}
+BCFlow_Liv
+
+```
+
+```{r}
+data <- list()
+# need to rename first 9 files: tot_runoff_sb01 to tot_runoff_sb1
+#n = the number tot_runoff files for this basin
+#REMEMBER TO CHANGE n !!!
+n <- 6
+for (f in (1:n)){
+   f <- ifelse(f <= 9, paste0("0", f, sep =""),
+             ifelse(f > 9,paste0(f), paste0(f)))
+  d <- read.csv(paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Merced/historical/Livneh/total_runoff_sb0",f,"_mcm.csv", sep="")) 
+  d$flow <- d$flow/86400*1000000
+  data[[f]] <- d
+}
+
+df <- Reduce(function(x,y) full_join(x,y, by=c('Date')), data) # eliminates all the duplicate date columns
+
+colnames(df) <-  c('Date',1:n)
+
+# automates the creation of the TotFlw column
+df$TotFlw <- rowSums(df[, -1])
+
+daily_flw_vic <- data.frame(df$Date,df$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+print(head(daily_flw_vic))
+
+```
+
+
+```{r}
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic$Date <- as.Date(ymd(monthly_flw_vic$Date))
+lubridate::day(monthly_flw_vic$Date) <- 15
+
+monthly_flw_vic <- monthly_flw_vic %>%
+  filter(Date >= as.Date("1950-10-15") & Date <= ("2013-09-15"))
+monthly_flw_vic_orig <- monthly_flw_vic
+monthly_flw_vic_orig$Type <- 'Original'
+monthly_flw_vic_orig
+
+BCFlow_Liv
+```
+
+```{r}
+#Bias Correction
+new_df <- list()
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:12)){
+  print(i)
+  obs <- filter(as.data.frame(BCFlow_Liv),month(BCFlow_Liv$Date)== i)#taking the BC info and filtering by the month 
+  hind <- filter(monthly_flw_vic,month(monthly_flw_vic$Date)== i)#taking our data and filtering that by month 
+  
+  bF <- getBiasFactor(hind,obs,method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")# getting the bias based on BC and using our data as hindcast data
+  for (f in (1:n)){
+    new_df[[f]] <- filter(data[[f]],month(as.Date(data[[f]]$Date, format = "%Y-%m-%d")) ==i)#taking the every column of flow and filtering by month 
+    bc_df[[f]] <- applyBiasFactor(new_df[[f]],bF)#applying the bias factor to this column 
+    if (i==1){
+      fin_df[[f]] <- bc_df[[f]]# in order to start off the df. everything after get binded to this 
+    }
+    else {
+      fin_df[[f]] <- bind_rows(fin_df[[f]],bc_df[[f]])
+    }
+  }
+}
+head(obs)
+head(hind)
+```
+
+```{r}
+#Sort and write 
+
+for(i in (1:n)){
+  fin_df[[i]] <- arrange(fin_df[[i]], Date)
+  write.csv(fin_df[[i]],file=paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/",mdlname,"/tot_runoff_sb",i,"BC.csv", sep=""),row.names=F)
+}
+
+df_new <- Reduce(function(x,y) full_join(x,y, by=c('Date')), fin_df)
+colnames(df_new) <-  c('Date',1:n)
+
+df_new$TotFlw <- rowSums(df_new[, -1])
+daily_flw_vic <- data.frame(df_new$Date,df_new$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic_mod <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic_mod$Date <- as.Date(ymd(monthly_flw_vic_mod$Date))
+monthly_flw_vic_mod$Type <- 'Bias Corrected'
+```
+
+```{r}
+#Plot
+BCFlow_Liv$Type <- 'Cal-Adapt'
+#monthly_flw_vic_orig <- extractPeriod(monthly_flw_vic_orig,startDate = '1950-01-15', endDate = '2013-12-15')
+#monthly_flw_vic_mod <- extractPeriod(monthly_flw_vic_mod,startDate = '1950-01-15', endDate = '2013-12-15')
+#BCFlow_Liv <- extractPeriod(BCFlow_Liv,startDate = '1950-01-15', endDate = '2013-12-15')
+data_to_plot <- bind_rows(monthly_flw_vic_orig,monthly_flw_vic_mod,BCFlow_Liv)
+data_to_plot <- melt(data_to_plot,id.vars=c('Date','Type'))
+data_to_plot <- data_to_plot[,c(1,2,4)]
+colnames(data_to_plot) <- c('Date','Data','Flow')
+print(head(data_to_plot))
+```
+
+```{r}
+##Line Curve
+line <- ggplot(data_to_plot,aes(x=Date, y=Flow, color=Data))+ geom_line()+  scale_x_date(limits = as.Date(c('1950-01-01','2013-09-31')))
+line + png(filename=paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/Livneh/",mdlname,"_line.png",sep=""), units="in",width=6.5,height=3,res=360)
+```
+
+```{r}
+##CFD Curve
+data.nm <- unique(data_to_plot$Data)
+data_to_plot$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- data_to_plot$Flow[data_to_plot$Data==data.nm[i]]
+  Fn <- ecdf(vls)
+  data_to_plot$FDC[data_to_plot$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(data_to_plot, aes(x=FDC, y=Flow, color=Data)) + geom_line() + geom_point(shape=21, size=0.05, alpha=0.25) + #[rvic.hist.all.m$Model=="ACCESS1-0_rcp45",]
+        scale_y_log10(limits=c(3e-1,3e3)) +
+#        facet_wrap(~Data, ncol=2) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Exceedance probability") +
+  png(filename=paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/Livneh/",mdlname,"_fdc.png",sep=""), type="cairo", units="in",width=6.5,height=3.5,res=360)
+```
+
+```{r}
+## Box&whisker
+ggplot(data_to_plot, aes(x=Data, y=Flow)) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Data") +
+  png(filename=paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/Livneh/",mdlname,"_box.png",sep=""), type="cairo", units="in",width=6.5,height=4,res=360)
+
+
+```
+
+```{r}
+## Q-Q plot
+ggplot(data_to_plot, aes(sample=Flow, color=Data)) + stat_qq(shape=21, size=0.75) +
+#        + facet_wrap(~Data, ncol=2)
+png(filename=paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/historical/Livneh/",mdlname,"_qq.png",sep=""), type="cairo", units="in",width=6.5,height=3,res=360)
+
+```

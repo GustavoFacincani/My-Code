@@ -1,0 +1,374 @@
+---
+title: "Sequences"
+author: "Gustavo Facincani Dourado"
+date: "6/30/2020"
+output: html_document
+---
+
+```{r}
+#"Random" Sequences
+
+SeqRand <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0001_Y10_RAND_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 1)
+SeqRand 
+
+SeqRand_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0002_Y10_RAND_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 2)
+SeqRand_2
+
+SeqRand_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0003_Y10_RAND_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 3)
+SeqRand_3
+
+SeqRand_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0004_Y10_RAND_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 4)
+SeqRand_4
+
+SeqRand_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0005_Y10_RAND_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 5)
+SeqRand_5
+
+SeqRand_6 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0006_Y10_RAND_N06/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 6)
+SeqRand_6
+
+SeqRand_7 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0007_Y10_RAND_N07/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 7)
+SeqRand_7
+
+SeqRand_8 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0008_Y10_RAND_N08/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 8)
+SeqRand_8
+
+SeqRand_9 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0009_Y10_RAND_N09/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random",
+        Number = 9)
+SeqRand_9
+
+SeqRand_10 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0010_Y10_RAND_N10/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = "Random",
+        Dry = "Random", 
+        Number = 10)
+SeqRand_10
+
+```
+
+```{r}
+#Dry and Wet periods
+
+Seq2DY_1WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0011_Y07_D2W1_N01/Hydropower_Energy_MWh.csv") %>%
+ mutate(Wet = 1,
+        Dry = 2,
+        Number = 1)
+Seq2DY_1WY 
+
+Seq2DY_1WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0012_Y07_D2W1_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 2,
+        Number = 2)
+Seq2DY_1WY_2
+
+Seq2DY_1WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0013_Y07_D2W1_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 2,
+        Number = 3)
+Seq2DY_1WY_3
+
+Seq2DY_1WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0014_Y07_D2W1_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 2,
+        Number = 4)
+Seq2DY_1WY_4
+
+Seq2DY_1WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0015_Y07_D2W1_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 2,
+        Number = 5)
+Seq2DY_1WY_5
+
+Seq2DY_2WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0016_Y08_D2W2_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 2,
+        Number = 1)
+Seq2DY_2WY
+
+Seq2DY_2WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0017_Y08_D2W2_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 2,
+        Number = 2)
+Seq2DY_2WY_2
+
+Seq2DY_2WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0018_Y08_D2W2_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 2,
+        Number = 3)
+Seq2DY_2WY_3
+
+Seq2DY_2WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0019_Y08_D2W2_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 2,
+        Number = 4)
+Seq2DY_2WY_4
+
+Seq2DY_2WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0020_Y08_D2W2_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 2, 
+        Number = 5)
+Seq2DY_2WY_5
+
+Seq3DY_1WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0021_Y09_D3W1_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 3,
+        Number = 1)
+Seq3DY_1WY
+
+Seq3DY_1WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0022_Y09_D3W1_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 3,
+        Number = 2)
+Seq3DY_1WY_2
+
+Seq3DY_1WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0023_Y09_D3W1_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 3,
+        Number = 3)
+Seq3DY_1WY_3
+
+Seq3DY_1WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0024_Y09_D3W1_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 3,
+        Number = 4)
+Seq3DY_1WY_4
+
+Seq3DY_1WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0025_Y09_D3W1_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 3,
+        Number = 5)
+Seq3DY_1WY_5
+
+seq3DY_2WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0026_Y10_D3W2_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 3,
+        Number = 1)
+seq3DY_2WY
+
+seq3DY_2WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0027_Y10_D3W2_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 3,
+        Number = 2)
+seq3DY_2WY_2
+
+seq3DY_2WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0028_Y10_D3W2_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 3,
+        Number = 3)
+seq3DY_2WY_3
+
+seq3DY_2WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0029_Y10_D3W2_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 3,
+        Number = 4)
+seq3DY_2WY_4
+
+seq3DY_2WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0030_Y10_D3W2_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 3,
+        Number = 5)
+seq3DY_2WY_5
+
+seq4DY_1WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0031_Y11_D4W1_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 4,
+        Number = 1)
+seq4DY_1WY
+
+seq4DY_1WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0032_Y11_D4W1_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 4,
+        Number = 2)
+seq4DY_1WY_2
+
+seq4DY_1WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0033_Y11_D4W1_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 4,
+        Number = 3)
+seq4DY_1WY_3
+
+seq4DY_1WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0034_Y11_D4W1_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 4,
+        Number = 4)
+seq4DY_1WY_4
+
+seq4DY_1WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0035_Y11_D4W1_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 4,
+        Number = 5)
+seq4DY_1WY_5
+
+seq4DY_2WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0036_Y12_D4W2_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 4,
+        Number = 1)
+seq4DY_2WY
+
+seq4DY_2WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0037_Y12_D4W2_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 4,
+        Number = 2)
+seq4DY_2WY_2
+
+seq4DY_2WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0038_Y12_D4W2_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 4,
+        Number = 3)
+seq4DY_2WY_3
+
+seq4DY_2WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0039_Y12_D4W2_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 4,
+        Number = 4)
+seq4DY_2WY_4
+
+seq4DY_2WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0040_Y12_D4W2_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 4,
+        Number = 5)
+seq4DY_2WY_5
+
+seq5DY_1WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0041_Y13_D5W1_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 5,
+        Number = 1)
+seq5DY_1WY
+
+seq5DY_1WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0042_Y13_D5W1_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 5,
+        Number = 2)
+seq5DY_1WY_2
+
+seq5DY_1WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0043_Y13_D5W1_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 5,
+        Number = 3)
+seq5DY_1WY_3
+
+seq5DY_1WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0044_Y13_D5W1_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 5,
+        Number = 4)
+seq5DY_1WY_4
+
+seq5DY_1WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0045_Y13_D5W1_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 1,
+        Dry = 5,
+        Number = 5)
+seq5DY_1WY_5
+
+seq5DY_2WY <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0046_Y14_D5W2_N01/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 5,
+        Number = 1)
+seq5DY_2WY
+
+seq5DY_2WY_2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0047_Y14_D5W2_N02/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 5,
+        Number = 2)
+seq5DY_2WY_2
+
+seq5DY_2WY_3 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0048_Y14_D5W2_N03/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 5,
+        Number = 3)
+seq5DY_2WY_3
+
+seq5DY_2WY_4 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0049_Y14_D5W2_N04/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 5,
+        Number = 4)
+seq5DY_2WY_4
+
+seq5DY_2WY_5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Sequences/stanislaus/sequences/S0050_Y14_D5W2_N05/Hydropower_Energy_MWh.csv")%>%
+ mutate(Wet = 2,
+        Dry = 5,
+        Number = 5)
+seq5DY_2WY_5
+
+```
+
+
+```{r}
+sequences <- rbind(SeqRand, SeqRand_2, SeqRand_3, SeqRand_4, SeqRand_5, 
+                   SeqRand_6, SeqRand_7, SeqRand_8, SeqRand_9, SeqRand_10,
+                   Seq2DY_1WY, Seq2DY_1WY_2, Seq2DY_1WY_3, Seq2DY_1WY_4, Seq2DY_1WY_5,
+                   Seq2DY_2WY, Seq2DY_2WY_2, Seq2DY_2WY_3, Seq2DY_2WY_4, Seq2DY_2WY_5,
+                   Seq3DY_1WY, Seq3DY_1WY_2, Seq3DY_1WY_3, Seq3DY_1WY_4, Seq3DY_1WY_5,
+                   seq3DY_2WY, seq3DY_2WY_2, seq3DY_2WY_3, seq3DY_2WY_4, seq3DY_2WY_5,
+                   seq4DY_1WY, seq4DY_1WY_2, seq4DY_1WY_3, seq4DY_1WY_4, seq4DY_1WY_5,
+                   seq4DY_2WY, seq4DY_2WY_2, seq4DY_2WY_3, seq4DY_2WY_4, seq4DY_2WY_5,
+                   seq5DY_1WY, seq5DY_1WY_2, seq5DY_1WY_3, seq5DY_1WY_4, seq5DY_1WY_5,
+                   seq5DY_2WY, seq5DY_2WY_2, seq5DY_2WY_3, seq5DY_2WY_4, seq5DY_2WY_5)
+sequences
+```
+
+
+```{r}
+sequences2 <- sequences %>%
+  mutate(Total = rowSums(sequences[2:12]),
+         Year = lfstat::water_year(Date, origin = "usgs"),
+         Wet = as.factor(Wet),
+         Dry = as.factor(Dry)) %>%
+  group_by(Wet, Dry, Number) %>%
+         summarize(MeanAnnual = mean(Total))
+
+sequences2
+
+sequences2$Dry <- factor(sequences2$Dry, levels = c("Random", "1", "2", "3", "4", "5"))
+sequences2
+```
+
+```{r}
+ggplot(sequences2, aes(x = Dry, y = MeanAnnual, color = Wet))+
+    theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_point(position=position_dodge(width=0.4),alpha = 0.6, size = 2.2)+
+
+  scale_color_manual(values = c("cyan3", "dodgerblue2", "#000000"))+
+
+      scale_y_continuous(limits = c(2750, 5550),
+                         labels = scales::comma,
+                      expand = c(0, NA)) +
+  labs(color = "Number of\nWet Years",
+       title = "Stanislaus River",
+    x = "Number of Dry Years", 
+       y = "Energy (MWh)") + #name of x axis
+  theme(legend.position = c(0.933, 0.79),#"right",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stanislaus_Sequences.png", units ="in", width=8, height=4, res = 300)
+```
+
+

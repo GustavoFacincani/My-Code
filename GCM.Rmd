@@ -1,0 +1,405 @@
+---
+title: "GCMs_download"
+author: "Gustavo Facincani Dourado"
+date: "8/2/2020"
+output: html_document
+---
+
+```{r}
+init_year <- 2030
+end_year <- 2060
+
+climate_scenario <- 'CanESM2'
+  variables <- c('ET','Tair','baseflow','precip','rainfall','runoff','snow_melt','snowfall','tot_runoff')
+ study_path <- 'http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/'
+
+  for (i in variables) {
+	folder = toString(study_path, climate_scenario, rcp, sep="/")
+	save_path = toString(study_path, climate_scenario, rcp, i, sep="/")
+	for (year in range(init_year,end_year+1)){
+		data_file = toString(variable, ".", toString(year),".v0.CA_NV.nc",sep="/")
+		path = toString(folder, data_file, sep="/")
+		print('now downloading: ', path, sep="/")
+		testfile = urllib.URLopener()
+		testfile.retrieve(path, save_path,data_file, sep="/")
+  }
+```
+
+
+
+```{r}
+#download_nc <- function(model, rcp, variable){
+
+year <- c(2006:2100)
+
+model <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+#YearStart <- "2006" #earliest year for GCM data
+#YearStop<- "2100" #latest year for GCM data
+rcp <- c("rcp45", "rcp85") #emission scenarios
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+
+for (year in years) {
+#  for(model in models){
+ #   for(rcp in rcps){
+  #    for(variable in variables){
+ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",model,"/",rcp,"/",variable,".",year,".v0.CA_NV.nc")
+
+#newdir <- paste0("C:/Users/gusta/Desktop/PhD/CERCWET/")
+#dir.create(newdir)      # should test for error
+#    cwd <- getwd()          # CURRENT dir
+ #   setwd(newdir) 
+download.file(url=ncdfURL,destfile=paste0(newdir,"/", model,"_",rcp,"_",variable,"_",year,"_","CA_NV.nc"), mode = "wb")
+setwd(cwd)
+}#}}}
+
+
+#}
+```
+download.file(url=fullurl, destfile=paste0("somedata/CALADAPT/projected_data_monthly/", ccmods[[c]], "/", ccscenario[[s]], "/", varofinterest[[v]], "/", varofinterest[[v]], "_month_", ccmods[[c]], "_", ccscenario[[s]], "_", time[[t]], "-", month[[m]], ".v0.CA_NV.tif"), method="curl")
+
+
+```{r}
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+modelMat <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+
+rcp <- c("rcp45", "rcp85") #emission scenarios
+
+lapply(modelMat, download_nc, rcp=rcp, variable=variable)
+
+```
+
+
+
+```{r}
+download_nc <- function(model, rcp, variable){
+
+year <- c(2006:2100)
+
+model <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+#YearStart <- "2006" #earliest year for GCM data
+#YearStop<- "2100" #latest year for GCM data
+rcp <- c("rcp45", "rcp85") #emission scenarios
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+
+for (i in seq_along(year)) {
+ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",model,"/",rcp,"/",variable,".",i,".v0.CA_NV.nc")
+
+for(a in seq_along(model)){
+  for(b in seq_along(rcp)){
+newdir <- setwd("C:/Users/gusta/Desktop/PhD/CERCWET/")
+newdir2 <- dir.create(newdir,a,b)}}
+
+#dir.create(newdir)      # should test for error
+#    cwd <- getwd()          # CURRENT dir
+#    setwd(newdir) 
+    for(a in seq_along(model)){
+  for(b in seq_along(rcp)){
+files <- paste0(a,"_",b,"_",variable,"_",i,"_","CA_NV.nc")}}
+#for(a in model){
+ # for(b in rcp){
+  #  for(c in variable){
+for (file in seq_along(files)) {
+download.file(url=ncdfURL,destfile= paste(file),mode = "wb")
+#setwd(cwd)
+}
+}
+}
+```
+
+```{r}
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+modelMat <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+
+rcp <- c("rcp45", "rcp85") #emission scenarios
+
+lapply(modelMat, download_nc, rcp=rcp, variable=variable)
+
+```
+
+```{r}
+#download_nc <- function(model, rcp, variable){
+
+year <- c(2006:2100)
+
+model <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+#YearStart <- "2006" #earliest year for GCM data
+#YearStop<- "2100" #latest year for GCM data
+rcp <- c("rcp45", "rcp85") #emission scenarios
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+
+for (i in year) {
+ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",model,"/",rcp,"/",variable,".",i,".v0.CA_NV.nc")
+
+for(a in model){
+  for(b in rcp){
+#newdir <- paste0("C:/Users/gusta/Desktop/PhD/CERCWET/",a,"_",b,"_",variable,"_",i,"_","CA_NV.nc")
+#newdir2 <- dir.create(newdir,a,b)}}
+      # should test for error
+#    cwd <- getwd()          # CURRENT dir
+#    setwd(newdir) 
+    for(a in model){
+  for(b in rcp){
+#files <- paste0(a,"_",b,"_",variable,"_",i,"_","CA_NV.nc")}}
+newdir <- paste0("C:/Users/gusta/Desktop/PhD/CERCWET/",a,"_",b,"_",variable,"_",i,"_","CA_NV.nc")
+dir.create(newdir)
+cwd <- getwd()          # CURRENT dir
+setwd(newdir) 
+#for(a in model){
+ # for(b in rcp){
+  #  for(c in variable){
+for (file in files) {
+#download.file(url=ncdfURL,destfile= paste0(newdir, "/",file),mode = "wb")
+
+  }
+}}
+
+func.download_files <- function(link) {
+
+  download.file(url=link,destfile= paste0(newdir2),mode = "wb")
+   
+}
+}}}
+mapply(FUN = func.download_files,link=ncdfURL)
+setwd(cwd)
+#}
+```
+```{r}
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+modelMat <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+
+rcp <- c("rcp45", "rcp85") #emission scenarios
+
+lapply(modelMat, download_nc, rcp=rcp, variable=variable)
+
+```
+
+
+```{r}
+download_nc <- function(model, rcp, variable){
+  year <- c(2006:2100)
+  
+  ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",rep(model, length(model)),"/",rep(rcp, length(rcp)),"/",rep(variable, length(variable)), ".",rep(year, length(year)),".v0.CA_NV.nc")
+  
+  dest <-  paste0("C:/Users/gusta/Desktop/PhD/CERCWET/",rep(model, length(model)),"/",rep(rcp, length(rcp)),sep="")
+                 #,"/",rep(variable, length(variable)),"_",rep(year, length(year)),"_","CA_NV.nc", sep="")
+  dir.create(dest)
+ 
+ #  download.file(url=ncdfURL,destfile=dest, mode = "wb")
+  Map(function(u, d) download.file(u, d, mode="wb"), ncdfURL, dest)
+
+}
+```
+
+```{r}
+modelMat <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+YearStart <- "2006"
+YearStop<- "2100"
+rcp <- c("rcp45", "rcp85")
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "snow_melt", "snowfall", "tot_runoff")
+
+lapply(modelMat, download_nc, rcp=rcp, variable=variable)
+```
+
+
+```{r}
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "runoff", "SWE", "snow_melt", "snowfall", "tot_runoff") #variables of interest
+
+modelMat <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+
+rcp <- c("rcp45", "rcp85") #emission scenarios
+
+lapply(modelMat, download_nc, rcp=rcp, variable=variable)
+
+```
+
+
+```{r}
+#working on this
+download_nc <- function(model, rcp, variable){
+  year <- c(2006:2100)
+  
+
+  ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",rep(model, length(model)),"/",rep(rcp, length(rcp)),"/",rep(variable, length(variable)), ".",rep(year, length(year)),".v0.CA_NV.nc")
+  
+  neway<-paste0("C:/Users/gusta/Desktop/PhD/CERCWET/",rep(model, length(model)),"/",rep(rcp, length(rcp)),"/",rep(variable, length(variable)), ".",rep(year, length(year)),".v0.CA_NV.nc") 
+
+  dest <-  paste0(rep(model, length(model)),"/",rep(rcp, length(rcp)),"/",rep(variable, length(variable)), ".",rep(year, length(year)),".v0.CA_NV.nc")
+#  dir.create(dest)
+ 
+   download.file(url=ncdfURL,destfile=dest, mode = "wb")
+ # Map(function(u, d) download.file(u, d, method = "libcurl", quiet = TRUE), ncdfURL, dest)
+
+}
+```
+
+```{r}
+models <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+YearStart <- "2006"
+  year <- c(2006:2100)
+YearStop<- "2100"
+rcp <- c("rcp45", "rcp85")
+variable <- c("ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", "tot_runoff")
+
+lapply(models, download_nc, rcp=rcp, variable=variable)
+```
+
+
+```{r}
+#working on this
+#download_nc <- function(models, rcps, variables){
+  years <- c(2006:2100)
+GCMs_loca <- "http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/"
+GCM_dir <- paste(GCMs_loca,model,"/",rcp,"/",variable, ".",year, sep = "")
+setwd("C:/Users/gusta/Desktop/PhD/CERCWET/") 
+
+models <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+rcps <- c("rcp45", "rcp85")
+variables <- c("ET", "Tair", "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", "tot_runoff")
+  
+for(year in years) {
+  for(variable in variables) {
+    for(rcp in rcps){
+      for(model in models) {
+#  ncdfURL <- paste0("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/",model,"/",rcp,"/",variable, ".",year,".v0.CA_NV.nc", sep = "")
+
+
+
+#  dest <-  paste0(~model,"/",rcp,"/",variable, ".",year,".v0.CA_NV.nc", sep = "")
+#  dir.create(dest)
+filenames <- paste(variable, ".",year, ".v0.CA_NV.nc", sep="" )
+	#determine the GCM and RCP directory
+for(i in filenames) {
+		pth <- paste( "./", model,"/", rcp,"/", sep = "")
+		#if the directory doesn't exist, make it!
+#		if (!file.exists(pth)){
+#			dir.create(pth)
+		}
+
+ #  download.file(url=ncdfURL,destfile=dest, mode = "wb")
+ # Map(function(u, d) download.file(u, d, mode = "wb"), ncdfURL, dest)
+	download.file( paste( GCM_dir , i , sep="" ) , paste( "./", model,"/", rcp,"/" , i, sep="" ) , mode="wb" )
+
+      }}}}
+#}
+```
+
+```{r}
+library(rvest)
+library(stringr)
+page <- xml2::read_html("http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/")
+
+page %>%
+  html_nodes("a") %>%       # find all links
+  html_attr("href") %>%     # get the url
+  str_subset("\\.nc")   # look at the first one
+```
+
+```{r}
+ url <- "http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/ACCESS1-3/rcp45/"
+doc <- read_html(url)
+href <- html_attr(html_nodes(doc, "a"), "href")[[2]]
+
+href
+```
+
+
+```{r}
+setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs")
+
+#main NHIS FTP directory with documentation
+nhis_doc_ftp <- "ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Dataset_Documentation/NHIS/"
+
+#loop through 1963 - 2010
+for ( year in 1963:1964 ){
+
+	#create the full string to the FTP folder of the current year
+	year_ftp_dir <- paste( nhis_doc_ftp , year , "/" , sep="" )
+	
+	#figure out what all of the files within that folder are named
+	filenames <- getURL( year_ftp_dir , dirlistonly=T )
+	filenames1 <- tolower( strsplit(filenames, "\r*\n")[[1]] )
+	
+	#as written, the program downloads EVERY file in each year's directory
+	#however, if you only want to download files with "person" or "core" in their filename
+	#uncomment this line..
+	#save only the files with the word "person" or "core" in them
+	filenames2 <- filenames1[ grepl("person" , filenames1) | grepl("core" , filenames1) ]
+	print(filenames)}
+```
+	#loop through all of those files and save them to your working directory
+	for ( i in filenames ){ 
+	
+		#determine the year directory
+		pth <- paste( "./" , year , "/" , sep="" )
+		#if the directory doesn't exist, make it!
+		if (!file.exists(pth)){
+			dir.create(pth)
+		}
+
+		download.file( paste( year_ftp_dir , i , sep="" ) , paste( "./" , year , "/" , i , sep = "" ) , mode="wb" )
+	}	
+}
+
+
+```{r}
+library(RCurl)    
+
+#set your output folder
+#setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs")
+
+GCMs_loca <- "http://albers.cnr.berkeley.edu/data/scripps/loca_vic-output/"
+
+rcps <- c("rcp45", "rcp85")
+variables <- c("ET", "Tair")#, "baseflow", "precip", "rainfall", "SWE", "runoff", "snow_melt", "snowfall", "tot_runoff")
+GCMs <- c(#"CanESM2", "CNRM-CM5", "HadGEM2-ES","MIROC5"  these we already have
+              "ACCESS1‐0","CCSM4", "CESM1-BGC","CMCC-CMS","GFDL-CM3","HadGEM2-CC")#all 10 GCMs
+#loop through 2006-2099
+
+for (GCM in GCMs){
+  for(rcp in rcps) {
+    for(variable in variables) {
+      for ( year in 2006:2007){
+      GCM_dir <- paste(GCMs_loca,GCM,"/",rcp,"/", sep = "")
+
+doc <- read_html(GCM_dir)
+filenames <- html_attr(html_nodes(doc, "a"), "href")
+filenames2 <- filenames[ grepl("ET.2" , filenames) | grepl("Tair" , filenames)| grepl("baseflow" , filenames) | grepl("precip" , filenames) | grepl("rainfall" , filenames) | grepl("SWE" , filenames) | grepl("runoff" , filenames) | grepl("snow_melt" , filenames) | grepl("snowfall" , filenames) | grepl("tot_runoff" , filenames)]
+
+#print(filenames)
+#print(filenames2)
+
+
+        
+	#loop through all of those files and save them to your working directory
+	for ( i in filenames2 ){ 
+	
+		#determine the GCM and RCP directory
+		pth <- paste( "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/", GCM,"/", rcp,"/" , sep="" )
+		#if the directory doesn't exist, make it!
+		if (!dir.exists(pth)){
+			dir.create(file.path(pth), recursive = TRUE)
+		}
+
+		download.file( paste( GCM_dir , i , sep="" ) , paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/", GCM,"/", rcp,"/" , i, sep="" ) , mode="wb" )
+	}	
+
+    }}}}
+  
+  
+```

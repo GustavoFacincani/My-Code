@@ -1,0 +1,654 @@
+---
+title: "GCMs"
+author: "Gustavo Facincani Dourado"
+date: "6/11/2020"
+output: html_document
+---
+
+```{r}
+library(data.table)
+library(readr)
+library(tidyverse)
+library(extrafont)
+```
+
+```{r}
+#WYT
+
+WYT.GCMs <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/rcp85/*")
+#WYT.GCMs2 <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/rcp45/*")
+
+WYT.Livneh <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/Livneh/*")
+
+WYTlist <- lapply(WYT.GCMs, read_csv)
+WYTlist
+
+
+
+WYT_GMCs <- rbindlist(WYTlist) %>%
+  ungroup() %>%
+  mutate(GCM = as.factor(GCM),
+         Scenario = as.factor(Scenario),
+         WYT = as.factor(WYT)) %>%
+  filter(`Water Year` %in% (2040:2059))
+
+
+
+WYT_GMCs
+
+```
+
+```{r}
+Ensemble <- WYT_GMCs %>%
+  group_by(`Water Year`) %>%
+  summarize(`SJVI (maf)` = mean(`SJVI (maf)`))
+
+write.csv(Ensemble, "C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/Ensemble_RCP8.5_SJI.csv")
+```
+
+
+```{r}
+WYTLivneh <- lapply(WYT.Livneh, read_csv)
+WYTLivneh
+
+WYT_Livneh <- rbindlist(WYTLivneh) %>%
+  ungroup() %>%
+  mutate(GCM = as.factor(GCM),
+         Scenario = as.factor(Scenario),
+         WYT = as.factor(WYT)) %>%
+  filter(`Water Year` %in% (1951:2013))
+#  filter(`Water Year` %in% (1981:2010))
+
+WYT_Livneh
+
+```
+
+
+```{r}
+WYT_SJVI <- rbind(WYT_Livneh, WYT_GMCs)
+
+#WYT_SJVI %>%
+#  group_by(GCM, Scenario) %>%
+#  table()
+
+WYT_SJVI$GCM <- factor(WYT_SJVI$GCM, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+WYT_SJVI$WYT <- factor(WYT_SJVI$WYT, levels = c("Critical","Dry", "Below Normal", "Above Normal", "Wet"))
+
+WYT_SJVI
+```
+
+```{r}
+WYT_SJVI1 <- WYT_SJVI %>%
+  mutate(Count = 1) %>%
+    group_by(`Water Year`, WYT, GCM, Scenario) %>%
+  summarize(Count = sum(Count)) %>%
+    group_by(WYT, GCM, Scenario) %>%
+  mutate(perc = Count/sum(Count))
+
+WYT_SJVI1
+
+```
+
+```{r}
+#barplot(table(WYT, WYT$WYT), beside = TRUE, legend = levels(WYT$GCM))
+
+ggplot(WYT_SJVI, aes(x = factor(WYT), fill = GCM)) +
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+     # geom_bar(aes(y = (..count..)/sum(..count..)*2, stat="count")) + 
+#  scale_y_continuous(limits = c(0, 0.4),
+ #                    labels= percent,
+  #                   expand = c(0, NA))+
+           
+  #scale_fill_manual(values = c("#000000", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(title = "Water Year Types calculated based on /nthe San Joaquin Valley Index",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+#  scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+ #                  labels =c(#"Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+  #                           "C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = 1),
+          strip.placement = "outside",
+                    legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))
+```
+
+```{r}
+#barplot(table(WYT, WYT$WYT), beside = TRUE, legend = levels(WYT$GCM))
+WYT_SJVI1 %>%
+  filter(!GCM == "Ensemble" & !GCM == "ACCESS1-0" & !GCM == "CMCC-CMS" & !GCM == "GFDL‐CM3" & !GCM == "CCSM4" & !GCM == "HadGEM2‐CC"& !GCM == "CESM1-BGC") %>%
+ggplot(., aes(x = factor(WYT), fill = interaction(GCM, Scenario))) +
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      geom_bar(mapping = aes(x = factor(WYT), y = perc*100, fill = interaction(GCM, Scenario), group=GCM), color = "black", position = "dodge", stat = "count")+#, stat = ) +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+     # geom_bar(aes(y = (..count..)/sum(..count..)*2, stat="count")) + 
+  scale_y_continuous(#limits = c(0, 0.4),
+                     labels= scales::percent)+
+  #                   expand = c(0, NA))+
+           
+  #scale_fill_manual(values = c("#000000", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(title = "Water Year Types calculated based on \nthe San Joaquin Valley Index",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+#  scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+ #                  labels =c(#"Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+  #                           "C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+#  facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = 1),
+          strip.placement = "outside",
+                    legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))
+```
+
+```{r}
+#barplot(table(WYT, WYT$WYT), beside = TRUE, legend = levels(WYT$GCM))
+
+ggplot(WYT_SJVI, aes(x = factor(WYT), fill = GCM)) +
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+      geom_bar(aes(y = (..count..)/sum(..count..)*2, stat="count")) + 
+  scale_y_continuous(limits = c(0, 0.4),
+                     labels= scales::percent,
+                     expand = c(0, NA))+
+           
+ # scale_fill_manual(values = c("#000000", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(title = "Water Year Types calculated based on /nthe San Joaquin Valley Index",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+                   labels =c(#"Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             "C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = 1),
+          strip.placement = "outside",
+                    legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))#+
+#png("WYT_SJVI2_initials.png", units ="in", width=5.8, height=5.8, res = 300)
+
+```
+
+```{r}
+library(extrafont)
+
+WYT_SJVI1 %>%
+  filter(!Scenario == "RCP 4.5") %>%
+ggplot(., aes(fill=WYT, y = Count, x=factor(GCM))) + 
+    geom_bar(position="fill", stat="identity")+
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels=scales::percent, 
+                     expand = c(0,NA)) +
+           
+  scale_fill_manual(values = c("tomato2","orange", "#FEDC56", "cyan3", "dodgerblue2"), labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+    labs(title = "Frequency of Water Year Types",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+   #                labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             #"C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+#  facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17)) +
+png("WYT_Frequency_10GCMs.png", units ="in", width=7, height=4, res = 300)
+
+```
+
+
+```{r}
+WYT_SJVI1 %>%
+  filter(!Scenario == "RCP4.5" & !GCM == "Ensemble") %>%
+           #GCM == "Ensemble" & !GCM == "ACCESS1-0" & !GCM == "CMCC-CMS" & !GCM == "GFDL‐CM3" & !GCM == "CCSM4" & !GCM == "HadGEM2‐CC"& !GCM == "CESM1-BGC") %>%
+ggplot(., aes(fill=WYT, y = Count, x=fct_rev(factor(GCM)))) + #fct_rev reverts the order
+#theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE))+
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels=scales::percent, #reverts the colors
+                     expand = c(0,NA)) +
+           
+  scale_fill_manual(values = c("tomato2","orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+    #"Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+  labs(title = "Frequency of Water Year Types",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+   #                labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             #"C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  #facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = +0.5),
+          strip.placement = "outside",
+          legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"),
+        panel.margin = unit(1.5, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))+
+ coord_flip(clip = 'off') +
+   # facet_wrap(~ Scenario, ncol=1, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+png("WYT_Frequency_coordflip_yreversed_initials_10GCMs_NewMelones.png", units ="in", width=6, height=4, res = 300)
+
+```
+
+```{r}
+WYT_SJVI1 %>%
+  filter(!GCM == "Ensemble" & !GCM == "ACCESS1-0" & !GCM == "CMCC-CMS" & !GCM == "GFDL‐CM3" & !GCM == "CCSM4" & !GCM == "HadGEM2‐CC"& !GCM == "CESM1-BGC") %>%
+ggplot(., aes(fill=WYT, y = Count, x=fct_rev(factor(interaction(Scenario,GCM))))) + #fct_rev reverts the order
+#theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE))+
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels=scales::percent, #reverts the colors
+                     expand = c(0,NA)) +
+           
+  scale_fill_manual(values = c("tomato2","orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+    #"Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+  labs(title = "Frequency of Water Year Types",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+   #                labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             #"C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  #facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = +0.5),
+          strip.placement = "outside",
+          legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"),
+        panel.margin = unit(1.5, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))+
+ coord_flip(clip = 'off') +
+   # facet_wrap(~ Scenario, ncol=1, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+png("WYT_Frequency_coordflip_yreversed_initials_4GCMs.png", units ="in", width=6, height=4, res = 300)
+
+```
+
+
+
+```{r}
+
+#barplot(table(WYT, WYT$WYT), beside = TRUE, legend = levels(WYT$GCM))
+
+ggplot(WYT_SJVI, aes(x = factor(WYT), fill = GCM)) +
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+       geom_bar(aes(y = (..count..)/sum(..count..)*2, stat="count")) + 
+  scale_y_continuous(limits = c(0, 0.4),
+                     labels= scales::percent,
+                     expand = c(0, NA))+
+#                     limits = c(0, 0.5, 1, 1.5))+
+                     
+           
+ # scale_fill_manual(values = c("#000000", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(title = "Water Year Types calculated based on the San Joaquin Valley Index",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+                   labels =c("C", "D", "BN", "AN", "W"))+
+                   #("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario")), scales = "fixed") +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))#+
+#png("WYT_SJVI_initials.png", units ="in", width=7, height=4, res = 300)
+
+```
+
+
+```{r}
+
+ggplot(WYT_SJVI, aes(factor(WYT), fill = GCM)) +
+  geom_bar(color = "black", position = "dodge", stat = "count") +
+ # ggthemes::scale_fill_colorblind(c("")) +
+  labs(title = "Merced River",
+       x = element_blank(), 
+       y = "Number of Years") + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+  # scale_fill_manual(values = c("#000000", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  facet_wrap(~ Scenario, ncol=1, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+    legend.title = element_blank(),
+        legend.box.margin = margin(t = -17)) 
+#png("WYT_SJVI.png", units ="in", width=7, height=5, res = 300)
+
+
+```
+
+
+```{r}
+CanESM2_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv")[-c(1:3), c(1,6)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CanESM2 RCP8.5` = as.numeric(`Lake McClure`))
+CanESM2_Mer
+
+CNRM_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv")[-c(1:3), c(1,6)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CNRM-CM5 RCP8.5` = as.numeric(`Lake McClure`))
+CNRM_Mer
+
+HadGEM2_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv")[-c(1:3), c(1,6)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-ES RCP8.5` = as.numeric(`Lake McClure`))
+HadGEM2_Mer
+
+MIROC5_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv")[-c(1:3), c(1,6)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `MIROC5 RCP8.5` = as.numeric(`Lake McClure`))
+MIROC5_Mer
+```
+
+```{r}
+GCMs_Mer <- cbind(CanESM2_Mer[c(1,3)], CNRM_Mer[3], HadGEM2_Mer[3], MIROC5_Mer[3]) %>%
+    mutate(Basin = as.factor("Merced"),
+           Month = as.Date(cut(node, breaks = "month")),
+           Year = as.Date(cut(node, breaks = "year")))
+#    dplyr::group_by(Year) %>%
+#    dplyr::mutate(Annual_Can = sum(`CanESM2 RCP8.5`),
+#           Annual_CNRM = sum(`CNRM-CM5 RCP8.5`),
+#           Annual_Had = sum(`HadGEM2-ES RCP8.5`),
+#           Annual_MIR = sum(`HadGEM2-ES RCP8.5`))
+GCMs_Mer
+
+GCMs_Mer2 <- melt(GCMs_Mer, id = c("node", "Basin", "Year", "Month")) #"Annual_Can",                                   "Annual_CNRM", "Annual_Had", "Annual_MIR")) 
+GCMs_Mer2
+
+```
+
+```{r}
+#Merced monthly
+ggplot(GCMs_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    stat_summary(aes( x = Month, y = `CanESM2 RCP8.5`, colour = "#56B4E9"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Month, y = `CNRM-CM5 RCP8.5`, colour = "#E69F00"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Month, y = `HadGEM2-ES RCP8.5`, colour = "#009E73"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Month, y = `MIROC5 RCP8.5`, colour = "#000000"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+#   geom_line(aes(x = node, y = `CanESM2 RCP8.5`, colour = "#56B4E9")) +
+#  geom_line(aes(x = node, y = `CNRM-CM5 RCP8.5`, colour = "#E69F00")) +
+#   geom_line(aes(x = node, y = `HadGEM2-ES RCP8.5`, colour = "#009E73")) +
+#   geom_line(aes(x = node, y = `MIROC5 RCP8.5`, colour = "#000000")) +
+   scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(expand = c(0, 0),
+                  date_labels = "%b/%Y",
+                  breaks = as.Date(c("2030-10-01","2035-10-01", "2040-10-01",
+                                     "2045-10-01", "2050-10-01", "2055-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00", "#009E73", "#000000"), #select the color
+                          labels = c("CanESM2 RCP8.5","CNRM-CM5 RCP8.5", 
+                                     "HadGEM2-ES RCP8.5", "MIROC 5 RCP8.5"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+        subtitle = "Lake McClure",
+    x = element_blank(), 
+       y = "Monthly Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  
+#    geom_text(note_tuo, #adding where to add text 
+#             mapping= aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+#  facet_wrap(~ Reservoir, ncol=1, scales = "free_y") +
+  
+#png("mer_gcm_storage_timeseries.png", units ="in", width=8, height=2, res = 300)
+
+
+```
+
+```{r}
+#Merced monthly
+ggplot(GCMs_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    stat_summary(aes( x = Month, y = value, color = "#00AFBB"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(expand = c(0, 0),
+                  date_labels = "%b/%Y",
+                  breaks = as.Date(c("2030-10-01","2035-10-01", "2040-10-01",
+                                     "2045-10-01", "2050-10-01", "2055-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00", "#009E73", "#000000"), #select the color
+                          labels = c("CanESM2 RCP8.5","CNRM-CM5 RCP8.5", 
+                                     "HadGEM2-ES RCP8.5", "MIROC 5 RCP8.5"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+        subtitle = "Lake McClure",
+    x = element_blank(), 
+       y = "Monthly Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+#    geom_text(note_tuo, #adding where to add text 
+#             mapping= aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+  facet_wrap(~ variable, ncol=1, scales = "free_y") 
+  
+#png("mer_gcm_storage_timeseries.png", units ="in", width=8, height=2, res = 300)
+
+```
+
+```{r}
+#Merced annual storage
+ggplot(GCMs_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    stat_summary(aes( x = Year, y = `CanESM2 RCP8.5`, colour = "#56B4E9"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Year, y = `CNRM-CM5 RCP8.5`, colour = "#E69F00"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Year, y = `HadGEM2-ES RCP8.5`, colour = "#009E73"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+    stat_summary(aes( x = Year, y = `MIROC5 RCP8.5`, colour = "#000000"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+#   geom_line(aes(x = node, y = `CanESM2 RCP8.5`, colour = "#56B4E9")) +
+#  geom_line(aes(x = node, y = `CNRM-CM5 RCP8.5`, colour = "#E69F00")) +
+#   geom_line(aes(x = node, y = `HadGEM2-ES RCP8.5`, colour = "#009E73")) +
+#   geom_line(aes(x = node, y = `MIROC5 RCP8.5`, colour = "#000000")) +
+   scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(expand = c(0, 0),
+                  date_labels = "%b/%Y",
+                  breaks = as.Date(c("2030-10-01","2035-10-01", "2040-10-01",
+                                     "2045-10-01", "2050-10-01", "2055-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00", "#009E73", "#000000"), #select the color
+                          labels = c("CanESM2 RCP8.5","CNRM-CM5 RCP8.5", 
+                                     "HadGEM2-ES RCP8.5", "MIROC 5 RCP8.5"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+        subtitle = "Lake McClure",
+    x = element_blank(), 
+       y = "Annual Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  
+#    geom_text(note_tuo, #adding where to add text 
+#             mapping= aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+#  facet_wrap(~ Reservoir, ncol=1, scales = "free_y") +
+  
+#png("mer_gcm_storage_timeseries.png", units ="in", width=8, height=2, res = 300)
+
+
+```
+
+```{r}
+#Merced annual storage
+ggplot(GCMs_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    stat_summary(aes( x = Year, y = value, color = "#00AFBB"), #plot monthly observed data in greenish blue
+               fun.y = sum, geom = "line") + #showing monthly sum in a line
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(expand = c(0, 0),
+                  date_labels = "%b/%Y",
+                  breaks = as.Date(c("2030-10-01","2035-10-01", "2040-10-01",
+                                     "2045-10-01", "2050-10-01", "2055-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00", "#009E73", "#000000"), #select the color
+                          labels = c("CanESM2 RCP8.5","CNRM-CM5 RCP8.5", 
+                                     "HadGEM2-ES RCP8.5", "MIROC 5 RCP8.5"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+        subtitle = "Lake McClure",
+    x = element_blank(), 
+       y = "Annual Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+#    geom_text(note_tuo, #adding where to add text 
+#             mapping= aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+  facet_wrap(~ variable, ncol=1, scales = "free_y") 
+  
+#png("mer_gcm_storage_timeseries.png", units ="in", width=8, height=2, res = 300)
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

@@ -1,0 +1,59 @@
+```{r}
+library(readr)
+```
+
+
+```{r}
+
+number <- c("sb01", "sb02", "sb03", "sb04" ,"sb05", "sb06")#, "sb07", "sb08", "sb09", "sb10" ,"sb11", "sb12", "sb13", "sb14", "sb15", "sb16" ,"sb17", "sb18", "sb19")#, "sb20", "sb21", "sb22" ,"sb23", "sb24", "sb25", "sb26", "sb27", "sb28" ,"sb29", "sb30", "sb31", "sb32", "sb33", "sb34" ,"sb35", "sb36", "sb37", "sb38")
+rcp <- "rcp85"
+GCMs <- c(#"CMCC-CMS", "ACCESS1-0", "GFDL-CM3", "CCSM4", 
+  "HadGEM2-CC")#, "CESM1-BGC")
+basin <- "Merced River"
+basin2 <- "MERR"
+for(GCM in GCMs){
+for (i in number) {
+csv <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/",basin2,"/Catchment_RO_BC/",GCM,"_",rcp,"/tot_runoff_",i,".csv", sep = ""))
+csv
+
+
+#Shp_file <- raster::shapefile("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/common/hydrology/Shapefiles/Mer.shp")
+
+#Shp_file$SUBWAT <- gsub("^.{0,4}", "sb", Shp_file$SUBWAT) #switch names in the attribute table of the shp file
+#Shp_file$AREA <- area(Shp_file)
+
+csv$flow <- (csv$flow*86400)/1000000
+csv
+
+csv_path <- paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/",basin,"/hydrology/gcms/",GCM,"_",rcp,"/runoff")
+#if the directory doesn't exist, make it!
+if (!dir.exists(csv_path)){
+  dir.create(file.path(csv_path), recursive = TRUE)
+}
+  
+write.csv(csv,file= paste(csv_path,"/","tot_runoff_", i,"_mcm.csv", sep = ""), row.names=F)}
+}
+```
+
+
+```{r}
+
+number <- c("sb01", "sb02", "sb03", "sb04" ,"sb05", "sb06")#, "sb07", "sb08", "sb09", "sb10" ,"sb11", "sb12", "sb13", "sb14", "sb15", "sb16" ,"sb17", "sb18", "sb19", "sb20", "sb21", "sb22" ,"sb23", "sb24", "sb25")#, "sb26", "sb27", "sb28" ,"sb29", "sb30", "sb31", "sb32", "sb33", "sb34" ,"sb35", "sb36", "sb37", "sb38")
+rcp <- "rcp85"
+#GCMs <- c("CMCC-CMS", "ACCESS1-0", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "CESM1-BGC")
+basin <- "Merced River"
+GCM<- "CCSM4"
+#for(GCM in GCMs){
+for (i in number) {
+  
+McClure_path <- paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Merced/hydrology/gcms/CCSM4_rcp85/runoff/", sep = "")
+
+McClure <- list.files(McClure_path)
+print(McClure)
+
+Lake <- lapply(list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Merced River/hydrology/gcms/CCSM4_rcp85/runoff/"), read_csv)
+print(Lake)
+}#}
+
+
+```

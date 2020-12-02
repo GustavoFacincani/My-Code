@@ -1,0 +1,190 @@
+---
+title: "Class_Feb24"
+author: "Gustavo Facincani Dourado"
+date: "2/24/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+require(tidyverse, quietly = TRUE)
+
+wq <- suppressMessages(read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p", "n/a"), guess_max = 30000))
+
+wq.f <- wq %>% 
+  filter(VarType == "Field" & Depth == 3) # making sure to get just the field data from EMP out of the whole dataset and only from the first meter of the water column'
+
+wq.f <- wq.f %>% 
+  filter(StationCode %in% c("C3", "D10", "D4", "D22", "D12", "D16", "D26", "D19", "MD10", "D28A", "P8", "C10", "D7", "D8", "D6", "D41"))
+
+st <- c("C3", "D10")
+wq.f2 <- wq.f %>%
+  filter(StationCode %in% st)
+wq.f2
+
+
+p <- ggplot(wq.f, aes(x = SampleDate, y = Turbidity)) + 
+  geom_line() + facet_wrap(~StationCode, ncol = 3)
+p
+
+```
+```{r}
+wq.f <- wq.f %>% 
+  filter(StationCode %in% c("C10", "D26", "C3", "D4", "D6", "D7", "D8")) %>% 
+  filter(between(SampleDate, as.Date("1975-01-01"), as.Date("2000-12-01")))
+#sanity check
+p <- ggplot(wq.f, aes(x = SampleDate, y = Turbidity)) + 
+  geom_line() + facet_wrap(~StationCode, ncol = 3)
+p + theme_bw()
+```
+
+```{r}
+library(lubridate)
+
+wq.f$year <- year(wq.f$SampleDate)  
+wq.y <- wq.f %>% 
+  group_by(StationCode, year) %>% 
+  summarize(meanTurb = mean(Turbidity, na.rm = TRUE), nTurb = n())
+
+wq.y
+```
+
+```{r}
+wq.y$rank <- rank(wq.y$meanTurb, ties.method = "average")
+# let me also make StationCode a factor to make my life easier later on in this analysis...
+wq.y$StationCode <- as.factor(wq.y$StationCode)
+wq.y
+```
+
+```{r}
+#sanity check
+ggplot(wq.y, aes(x = rank, y = rank)) + geom_point()
+```
+
+```{r}
+rank.aov <- aov(rank ~ StationCode, data = wq.y)
+ggplot(wq.y, aes(x = StationCode, y = meanTurb)) + geom_boxplot() +
+  xlab("Station") + ylab ("Mean Annual Turbidity") 
+```
+
+```{r}
+library(ggthemes)
+ggplot(wq.y, aes(x = StationCode, y = meanTurb)) + geom_boxplot() + theme_tufte() +
+  xlab("Station") + ylab ("Mean Annual Turbidity") 
+```
+
+
+```{r}
+rank.aov
+```
+
+```{r}
+summary.aov(rank.aov)
+```
+
+```{r}
+head(confint(rank.aov))
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2)) # optional layout 
+plot(rank.aov) # diagnostic plots
+```
+
+```{r}
+plot(rank.aov, which = 1)
+```
+
+```{r}
+plot(rank.aov, which = 3)
+```
+
+```{r}
+plot(rank.aov, which = 2)
+```
+
+```{r}
+plot(rank.aov, which = 4)
+```
+
+```{r}
+plot(rank.aov, which = 5)
+```
+
+```{r}
+classic.aov <- aov(meanTurb ~ StationCode, data = wq.y)
+summary(classic.aov)
+```
+
+```{r}
+head(confint(classic.aov))
+```
+
+```{r}
+layout(matrix(c(1,2,3,4),2,2)) # optional layout 
+plot(classic.aov) # diagnostic plots
+```
+
+```{r}
+kw <- kruskal.test(meanTurb ~ StationCode, data = wq.y)
+kw
+```
+
+```{r}
+wq.y
+```
+
+```{r}
+classic.aov <- aov(meanTurb ~ StationCode, data = wq.y)
+summary(classic.aov)
+```
+
+```{r}
+tuk <- TukeyHSD(classic.aov)
+tuk
+```
+
+```{r}
+plot(tuk)
+```
+
+```{r}
+# try this out: layout(matrix(nrow = 1, ncol = 2))
+
+write.csv(wq.y, "C:/Users/gusta/Desktop/PhD/Classes/ES207/WaterQ.csv", row.names = FALSE)
+write.csv(wq.y, "C:/Users/gusta/Desktop/PhD/Classes/ES207/WaterQuality.csv")
+```
+
+```{r}
+require(tidyverse, quietly = TRUE)
+wq3 <- suppressMessages(read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p", "n/a"), guess_max = 30000))
+
+wq3$complete <- complete.cases(wq3$Turbidity)
+wq3 <- wq3 %>% 
+  filter(VarType == "Field" & Depth == 3 & complete =="TRUE")
+
+library(lubridate)
+my.stations <-c("C3", "D10", "D4", "D22",
+                "D12", "D16", "D26", "D19",
+                "MD10", "D28A", "P8", "C10", 
+                "D7", "D8", "D6", "D41")
+wq3$year <- year(wq3$SampleDate) 
+wq3 <- wq3 %>%
+  filter(StationCode %in% my.stations)
+```
+
+```{r}
+kendall <- function(df) {
+  cor.test(~ Temperature + Turbidity, data = df, method = "kendall")
+}
+kendall(df = wq.plots[[1, "data"]])
+
+
+
+model2 <- train(log10(mort) ~ log10(nox) + log10(so2) + log10(hc), Pollution,
+                method = "lm",
+                trControl = trainControl(
+                    method = "cv", number = 2))
+model2
+```
+

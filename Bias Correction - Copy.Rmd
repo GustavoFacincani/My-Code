@@ -1,0 +1,291 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "8/17/2020"
+output: html_document
+---
+
+```{r}
+library(ncdf4)
+library(lubridate)
+library(reshape2)
+library(dplyr)
+library(hyfo)
+library(ggplot2)
+```
+
+```{r}
+#start with empty workspace
+#rm(list=ls(all=TRUE))
+
+#Set working directory
+setwd("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/")
+wd <- setwd("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/")
+#Read NC file with monthly bias-corrected flows
+ncfname <- paste(wd, "/", "TUOR/BC_Data_Berkeley/CCSM4.rcp85.DPR_I.1950-2100.monthly.BC.nc", sep = "")
+mdlname <- "CCSM4_rcp85"
+modelname <- "CCSM4"
+ncin <- nc_open(ncfname)
+ncin
+```
+
+```{r}
+t <- ncvar_get(ncin, "time")
+flw.array <- ncvar_get(ncin,'flow')
+t <- as.Date.numeric(t,origin = "1900-01-01")
+BCFlow_Berk <- data.frame(t,flw.array/35.314666)#converting cfs to cms #*86400/1000000) #or using this forZ mcm^3/day
+colnames(BCFlow_Berk) <- c('Date','Flw')
+BCFlow_Berk$Date <- as.Date(ymd(BCFlow_Berk$Date))
+BCFlow_Berk <- extractPeriod(BCFlow_Berk,startDate = '2006-01-15', endDate = '2099-12-15')
+BCFlow_Berk
+```
+
+```{r}
+#Get daily VIC flows at the Reservoir
+data <- list()
+for (f in (1:19)){
+   if (f < 10) {
+      f <- paste("0", as.character(f), sep="")
+    } else {
+      f <- as.character(f)
+    }
+    
+  d <- read.csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_woBC/CCSM4_rcp85/tot_runoff_sb",f,".csv", sep=""))
+  data[[f]] <- d
+}
+```
+
+```{r}
+df <- Reduce(function(x,y) full_join(x,y, by=c('Date')), data)
+
+colnames(df) <-  c('Date',1:19)
+#df$Date <- as.Date(df$Date, format = "%d/%m/%Y")
+
+df$TotFlw <- df$'1'+df$'2'+df$'3'+df$'4'+df$'5'+df$'6'+df$'7'+df$'8'+df$'9'+df$'10'+df$'11'+df$'12'+df$'13'+df$'14'+df$'15'+df$'16'+df$'17'+df$'18'+df$'19'#+df$'20'+df$'21'+df$'22'+df$'23'+df$'24'+df$'25'+df$'26'+df$'27'+df$'28'+df$'29'+df$'30'+df$'31'+df$'32'+df$'33'+df$'34'+df$'35'+df$'36'+df$'37'+df$'38'
+
+daily_flw_vic <- data.frame(df$Date,df$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+daily_flw_vic$Flw <- daily_flw_vic$Flw #I'm using mcm/day, so turn it back into m^3/s
+print((daily_flw_vic))
+```
+
+```{r}
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic$Date <- as.Date(ymd(monthly_flw_vic$Date))
+monthly_flw_vic_orig <- monthly_flw_vic
+monthly_flw_vic_orig$Type <- as.factor('Pre-Bias Correction')
+
+print(monthly_flw_vic_orig)
+print(BCFlow_Berk)
+```
+
+```{r}
+#Bias Correction
+new_df <- list()
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:12)){
+  print(i)
+  obs <- filter(BCFlow_Berk,month(BCFlow_Berk$Date)== i)
+  hind <- filter(monthly_flw_vic,month(monthly_flw_vic$Date)== i)
+
+  bF <- getBiasFactor(hind,obs,method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")
+  for (f in (1:19)){
+    new_df[[f]] <- filter(data[[f]],month(as.Date(data[[f]]$Date, format = "%Y-%m-%d")) ==i)
+    bc_df[[f]] <- applyBiasFactor(new_df[[f]],bF)
+    if (i==1){
+      fin_df[[f]] <- bc_df[[f]]
+    }
+    else {
+      fin_df[[f]] <- bind_rows(fin_df[[f]],bc_df[[f]])
+     
+    }
+  }
+}
+
+```
+
+```{r}
+#Sort and write
+  for (f in (1:19)){
+   if (f < 10) {
+      f <- paste("0", as.character(f), sep="")
+    } else {
+      f <- as.character(f)
+    }
+  fin_df[[as.numeric(f)]] <- arrange(fin_df[[as.numeric(f)]], Date)
+  write.csv(fin_df[[as.numeric(f)]],file=paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_BC/CCSM4_rcp85/tot_runoff_sb",f,".csv", sep=""),row.names=F)
+}
+
+df_new <- Reduce(function(x,y) full_join(x,y, by=c('Date')), fin_df)
+colnames(df_new) <-  c('Date',1:19)
+
+
+```
+
+```{r}
+df_new$TotFlw <- df_new$'1'+df_new$'2'+df_new$'3'+df_new$'4'+df_new$'5'+df_new$'6'+df_new$'7'+df_new$'8'+df_new$'9'+df_new$'10'+df_new$'11'+df_new$'12'+df_new$'13'+df_new$'14'+df_new$'15'+df_new$'16'+df_new$'17'+df_new$'18'+df_new$'19'#+df_new$'20'+df_new$'21'+df_new$'22'+df_new$'23'+df_new$'24'+df_new$'25'+df_new$'26'+df_new$'27'+df_new$'28'+df_new$'29'+df_new$'30'+df_new$'31'+df_new$'32'+df_new$'33'+df_new$'34'+df_new$'35'+df_new$'36'+df_new$'37'+df_new$'38'
+daily_flw_vic <- data.frame(df_new$Date,df_new$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+daily_flw_vic$Flw <- daily_flw_vic$Flw
+
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic_mod <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic_mod$Date <- as.Date(ymd(monthly_flw_vic_mod$Date))
+monthly_flw_vic_mod$Type <- as.factor('Post-Bias Correction')
+
+#Plot
+BCFlow_Berk$Type <- as.factor('Bias-Corrected Reference')
+monthly_flw_vic_orig <- extractPeriod(monthly_flw_vic_orig,startDate = '2006-01-15', endDate = '2099-12-15')
+monthly_flw_vic_mod <- extractPeriod(monthly_flw_vic_mod,startDate = '2006-01-15', endDate = '2099-12-15')
+BCFlow_Berk <- extractPeriod(BCFlow_Berk,startDate = '2006-01-15', endDate = '2099-12-15')
+data_to_plot <- bind_rows(monthly_flw_vic_orig,monthly_flw_vic_mod,BCFlow_Berk)
+data_to_plot <- melt(data_to_plot,id.vars=c('Date','Type'))
+data_to_plot <- data_to_plot[,c(1,2,4)]
+colnames(data_to_plot) <- c('Date','Data','Flow')
+data_to_plot$Data <- as.factor(data_to_plot$Data)
+
+data_to_plot$Data <- factor(data_to_plot$Data, levels=c("Pre-Bias Correction", "Post-Bias Correction", "Bias-Corrected Reference"))
+
+print(head(data_to_plot))
+```
+
+
+data_to_plot$Month <- format(data_to_plot$Date,"%m")
+
+print(tail(data_to_plot))
+
+data2 <- data_to_plot %>%
+  filter(!Data == "Post-Bias Correction")
+
+ggplot(data2) +
+  geom_point(aes(x = Flow[data2$Data == "Bias-Corrected Reference"], 
+                 y = Flow[data2$Data == "Pre-Bias Correction"])) +
+  facet_wrap(~as.factor(Month))
+
+
+
+
+```{r}
+##Line Curve
+line <- ggplot(data_to_plot,aes(x=Date, y=Flow, color=Data))+ geom_line()+  scale_x_date(limits = as.Date(c('2006-01-01','2099-12-31')))
+line + png(filename=paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_BC/", mdlname,"/",mdlname,"_line.png",sep=""), units="in",width=6.5,height=3,res=360)
+```
+
+```{r}
+##CFD Curve
+data.nm <- unique(data_to_plot$Data)
+data_to_plot$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- data_to_plot$Flow[data_to_plot$Data==data.nm[i]]
+  Fn <- ecdf(vls)
+  data_to_plot$FDC[data_to_plot$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(data_to_plot, aes(x=FDC, y=Flow, color=Data)) + geom_line() + geom_point(shape=21, size=0.05, alpha=0.25) + #[rvic.hist.all.m$Model=="CCSM4_rcp85",]
+        scale_y_log10(limits=c(3e-1,3e3)) +
+#        facet_wrap(~Data, ncol=2) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Exceedance probability") +
+  png(filename=paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_BC/",mdlname,"/",mdlname,"_fdc.png",sep=""), type="cairo", units="in",width=6.5,height=3.5,res=360)
+```
+
+```{r}
+## Box&whisker
+ggplot(data_to_plot, aes(x=Data, y=Flow)) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Data")  +
+png(filename=paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_BC/",mdlname,"/",mdlname,"_box.png",sep=""), type="cairo", units="in",width=6.5,height=4,res=360)
+
+
+```
+
+```{r}
+## Q-Q plot
+ggplot(data_to_plot, aes(sample=Flow, color=Data)) + stat_qq(shape=21, size=0.75) +
+        #+ facet_wrap(~Data, ncol=2)
+png(filename=paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/Catchment_RO_BC/",mdlname,"/",mdlname,"_qq.png",sep=""), type="cairo", units="in",width=6.5,height=3,res=360)
+
+```
+
+```{r}
+BiasCorrection <- as.data.frame(data_to_plot$Flow[data_to_plot$Data == "Post-Bias Correction"])
+BiasCorrection2 <-as.data.frame(data_to_plot$Flow[data_to_plot$Data == "Bias-Corrected Reference"])
+BiasCorrection$Date <- data_to_plot$Date[data_to_plot$Data == "Bias-Corrected Reference"]
+head(BiasCorrection2)
+
+bias <- cbind(BiasCorrection, BiasCorrection2) %>%
+  rename(`Post-Bias Correction` = `data_to_plot$Flow[data_to_plot$Data == "Post-Bias Correction"]`,
+         Reference = `data_to_plot$Flow[data_to_plot$Data == "Bias-Corrected Reference"]`) %>%
+  mutate(month = format(Date,"%B"))
+bias
+
+bias$month <- factor(bias$month, levels = c("January", "February", "March","April", "May", "June", "July", "August", "September", "October", "November", "December"))
+```
+
+
+```{r}
+
+
+myformula <- y ~ x
+ggplot(bias, aes(y = `Post-Bias Correction`, x = Reference)) +
+  geom_point() +
+  xlim(0,370) + ylim(0,370)+
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = myformula) +
+  ggpmisc::stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~")), formula = myformula, parse = TRUE, size = 3) +
+            
+  facet_wrap(~month, scales = "fixed") 
+
+``````
+
+```{r}
+BiasCorrection <- as.data.frame(Final$tot_runoff_sb21[Final$Data == "Post-Bias Correction"])
+BiasCorrection1 <- as.data.frame(Final$tot_runoff_sb21[Final$Data == "Pre-Bias Correction (Livneh)"])
+BiasCorrection2 <-as.data.frame(Final$tot_runoff_sb21[Final$Data == "USGS Reference (Observed)"])
+BiasCorrection$Date <- Final$Date[Final$Data == "Post-Bias Correction"]
+head(BiasCorrection2)
+head(BiasCorrection)
+
+bias <- cbind(BiasCorrection,BiasCorrection1, BiasCorrection2) %>%
+  rename(`Post-Bias Correction` = `Final$tot_runoff_sb21[Final$Data == "Post-Bias Correction"]`,
+         Reference = `Final$tot_runoff_sb21[Final$Data == "USGS Reference (Observed)"]`,
+         `Pre-Bias Correction` = `Final$tot_runoff_sb21[Final$Data == "Pre-Bias Correction (Livneh)"]`) %>%
+  mutate(month = format(Date,"%B"))
+bias
+
+bias$month <- factor(bias$month, levels = c("January", "February", "March","April", "May", "June", "July", "August", "September", "October", "November", "December"))
+```
+
+
+```{r}
+
+
+myformula <- y ~ x
+ggplot(bias, aes(y = `Post-Bias Correction`, x = Reference)) +
+  geom_point() +
+  xlim(0,370) + ylim(0,370)+
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = myformula) +
+  ggpmisc::stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~")), formula = myformula, parse = TRUE, size = 3) +
+            
+  facet_wrap(~month, scales = "fixed") 
+
+ggplot(bias, aes(y = `Pre-Bias Correction`, x = Reference)) +
+  geom_point() +
+  xlim(0,370) + ylim(0,370)+
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = myformula) +
+  ggpmisc::stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~")), formula = myformula, parse = TRUE, size = 3) +
+            
+  facet_wrap(~month, scales = "fixed") 
+
+``````

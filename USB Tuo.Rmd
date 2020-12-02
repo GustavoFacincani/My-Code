@@ -1,0 +1,351 @@
+---
+title: "Bias Correction USJ"
+author: "Gustavo Facincani Dourado"
+date: "9/17/2020"
+output: html_document
+---
+
+
+```{r}
+library(readr)
+library(tidyverse)
+library(hyfo)
+library(lubridate)
+```
+
+```{r}
+#Reading Livneh data, that is going to be used for bias correction and filtering them to have objects with the same length of the observed data, to be used as the simulated vs observed
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/runoff/"
+
+
+Sub10_Livneh <- read_csv(paste(path,"tot_runoff_sb10_mcm.csv",sep="")) %>%
+  rename(Inflow = tot_runoff_sb10)
+
+Sub10_PreBC <- Sub10_Livneh%>%
+   filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
+
+
+Sub22_Livneh <- read_csv(paste(path,"tot_runoff_sb22_mcm.csv",sep="")) %>%
+  rename(Inflow = tot_runoff_sb22)
+Sub22_PreBC <- Sub22_Livneh %>% #Granite Creek
+   filter(between(Date, as.Date("1965-10-01"), as.Date("1986-09-29")))
+
+Sub23_Livneh <- read_csv(paste(path,"tot_runoff_sb23_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb23)
+Sub23_PreBC <- Sub23_Livneh%>% #San Joaquin River
+    filter(between(Date, as.Date("1951-10-01"), as.Date("1991-09-29")))
+
+
+Sub31_Livneh <- read_csv(paste(path,"tot_runoff_sb31_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb31) 
+Sub31_PreBC <-  Sub31_Livneh %>% #Thomas Edison Lake
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31")))
+
+
+Sub36_Livneh <- read_csv(paste(path,"tot_runoff_sb36_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb36)
+Sub36_PreBC <- Sub36_Livneh %>% #Bear Creek
+   filter(between(Date, as.Date("1975-10-01"), as.Date("1986-09-29")))
+
+Sub37_Livneh <- read_csv(paste(path,"tot_runoff_sb37_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb37)
+Sub37_PreBC <-  Sub37_Livneh %>% #SF San Joaquin River
+  filter(between(Date, as.Date("2009-10-01"), as.Date("2013-12-31")))
+
+
+Sub38_Livneh <- read_csv(paste(path,"tot_runoff_sb38_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb38)
+Sub38_PreBC <- Sub38_Livneh %>% #Florence Lake
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-29")))
+
+
+```
+
+
+```{r}
+Reservoir_flow <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_cfs2.csv", col_types = cols(Date = col_date(), .default = col_double()))
+Reservoir_flow
+Reservoir_flow2 <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_cfs2_copy.xlsx")
+Reservoir_flow2
+
+Reservoir_flow$`Holm PH` <- as.numeric(Reservoir_flow2$`Holm PH`)
+Reservoir_flow
+```
+
+```{r}
+#Read the gauge data for the same period of the data we have for Livneh
+USJpath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/"
+
+#Subbasins 21, 31 and 38 have Florence Lake, Thomas A. Edison Lake and Mammoth Pool Reservoir respectively
+Reservoir_stor <- read_csv(paste0(USJpath, "gauges/storage_mcm.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+#filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #selecting period of available gauged data
+Reservoir_stor
+
+#The other subbasins only streamflow
+#Reservoir_flow <- read.csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_cfs2.csv", col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+#filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #selecting period of available gauged data
+#Reservoir_flow
+
+Reservoir_flow[2:21] <- (Reservoir_flow[2:21]/35.314666)*86400/1000000 #as reservoir data is in million cubic meters (mcm), let's convert cms to mcm
+Reservoir_flow
+```
+
+```{r}
+#Water balance of reservoirs to determine inflows
+#Subbasin 38 - Florence
+Cherry_outflow <- Reservoir_flow[c(1,5,6,21)] %>% #gauges 11229500 and USGS 11230000, outflow of Florence
+  filter(between(Date, as.Date("1996-07-30"), as.Date("2013-12-31")))
+Cherry_outflow
+
+Sub38 <- Reservoir_stor[c(1,4)] %>% #selecting gauge with storage data
+filter(between(Date, as.Date("1996-07-30"), as.Date("2013-12-31"))) %>%
+   mutate(ChangeStorage = `USGS 11277200 CHERRY LK NR HETCH HETCHY CA` - lag(`USGS 11277200 CHERRY LK NR HETCH HETCHY CA`, default = first(`USGS 11277200 CHERRY LK NR HETCH HETCHY CA`)) - Cherry_outflow$`USGS 11277100 LK ELEANOR DIV TO CHERRY LAKE NR HETCH HETCHY CA`,
+          #getting daily change in storage
+          Outflow = rowSums(Cherry_outflow[3:4]), #sum of USGS 11229500 and USGS 11230000, which correspond to flow below the reservoir and Ward Tunnel intake, respectively 
+          Inflow = (ChangeStorage + Outflow)) %>% #ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day
+           select(Date, Inflow)#remove the already used column 
+Sub38
+```
+
+#Subbasins 31 - Thomas Edison
+Thomas_outflow <- Reservoir_flow[c(1,14)] %>%
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31")))
+
+Sub31 <- Reservoir_stor[c(1,6)] %>% #selecting gauge with storage data
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31"))) %>%
+   mutate(ChangeStorage = `USGS 11231000 LK THOMAS A. EDISON NR BIG C CA` - lag(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`, default = first(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`)), #getting daily change in storage
+          Outflow = Thomas_outflow$`USGS 11231500 MONO C BL LK THOMAS A EDISON CA`, #getting outflow
+          Inflow = (ChangeStorage + Outflow)) %>% 
+           select(Date, Inflow)#remove the already used column 
+Sub31
+
+#Subbasin 21 - Mammoth Pool Reservoir
+Mammoth_outflow <- Reservoir_flow[c(1,17,18)] %>%
+   filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
+
+Sub21 <- Reservoir_stor[c(1,10)] %>% #selecting gauge below Thomas Edison
+    filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31"))) %>%
+#  replace(is.na(Reservoir_flow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`), 0) %>%
+   mutate(ChangeStorage = `USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA` - lag(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`, default = first(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`)), #getting change in storage
+          PH_Flow = Mammoth_outflow$`USGS 11235100 MAMMOTH POOL PP NR BIG CREEK CA`, 
+          Below_Reservoir = Mammoth_outflow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`,
+          Sub20 = Sub20_Livneh$tot_runoff_sb20) %>% #getting outflow, summing up the flow below the reservoir, flow to the PH and I'm subtracting the contribution from Subbasin 20, as it is below the reservoir, before the gauge
+          mutate(Inflow = rowSums(na.omit(.[3:5])) - Sub20) %>% #here I'm subtracting the contribution of Sub20, which is a small area below the dam, above the USGS gauge, and omitting NAs as we have 2 years of missing data in the record
+           select(Date, Inflow) #remove the already used column  
+Sub21
+```
+
+
+```{r}
+#Subbasin 22
+Sub22 <- Reservoir_flow[c(1,3)] %>% #Granite Creek
+   filter(between(Date, as.Date("1965-10-01"), as.Date("1986-09-29"))) %>%
+  rename(Inflow = 2)
+Sub22
+
+#Subbasin 36
+Sub23 <- Reservoir_flow[c(1,2)]%>% #San Joaquin River
+    filter(between(Date, as.Date("1951-10-01"), as.Date("1991-09-29")))%>%
+  rename(Inflow = 2)
+Sub23
+
+#Subbasin 36
+Sub36 <- Reservoir_flow[c(1,7)]%>% #SF San Joaquin River
+   filter(between(Date, as.Date("1975-10-01"), as.Date("1986-09-29")))%>%
+  rename(Inflow = 2)
+Sub36
+
+#Subbasin 37 
+#If we consider these gauges, around 24% of the days will have negative values
+
+#Sub37 <- Reservoir_flow[c(1,5,7)] %>% #SF San Joaquin, with inflow from Florence Lake
+#   filter(between(Date, as.Date("1975-10-01"), as.Date("1980-09-29"))) %>%
+#  mutate(Inflow = (`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - `USGS 11230000 SF SAN JOAQUIN R NR FLORENCE LK CA`)) 
+#Sub37
+
+#Considering this slightly shorter record, we only have 4 days with negative flow
+Sub37 <- Reservoir_flow[c(1,6,7)] %>% #SF San Joaquin, with inflow from Florence Lake
+   filter(between(Date, as.Date("2009-10-01"), as.Date("2013-12-31"))) %>%
+  mutate(Inflow = (`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - `USGS 11230070 SF SAN JOAQUIN R AB HOOPER C NR FLORENCE LAKE CA`)) %>%
+           select(Date, Inflow)#remove the already used column 
+Sub37
+#PortalPH <- Reservoir_flow[17] #Portal is ignored by now, as "The water delivered to Huntington Lake may also pass through Portal Powerhouse at the exit of the Ward Tunnel depending upon the amount of water being transported. Page 71 https://www.sce.com/sites/default/files/inline-files/p120bc3_initialstatement_and_exhibitsad_and_h.pdf
+#PortalPH
+```
+
+
+#Here I tried montlhy bias correction, but daily bias correction seem to produce better results
+Florence_USGS <- Florence %>% 
+  group_by(year = year(Date), month = month(Date)) %>% 
+  summarise(flow = sum(flow)) %>%
+  ungroup %>%
+  mutate(Date = as.Date(paste(year,'-', month,'-15', sep="")),
+         year = NULL,
+         month = NULL) %>%
+  select(Date, flow)
+Florence_USGS
+
+Florence_Livneh <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff_aggregated/Florence Lake Inflow mcm.csv")
+Florence_Livneh
+
+Florence_PreBC_Livneh <- Florence_Livneh%>%
+filter(between(date, as.Date("1955-01-01"), as.Date("1991-09-30")))#%>% 
+#  group_by(year = year(date), month = month(date)) %>% 
+#  summarise(flow = sum(flow)) %>%
+#  ungroup %>%
+#  mutate(Date = as.Date(paste(year,'-', month,'-15', sep="")),
+#         year = NULL,
+#         month = NULL) %>%
+#  select(Date, flow)
+Florence_PreBC_Livneh
+
+
+
+
+#Bias Correction, testing the monthly BC
+
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:12)){
+
+  obs <- filter(Florence_USGS,month(Florence_USGS$Date)== i)
+  hind <- filter(Florence_PreBC_Livneh,month(Florence_PreBC_Livneh$Date)== i)
+
+  bF <- getBiasFactor(as.data.frame(hind),as.data.frame(obs),method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")
+  bF
+  print(paste(i," bias factor is ", bF@biasFactor, sep = ""))
+    new_df <- filter(Florence_Livneh,month(as.Date(Florence_Livneh$date, format = "%Y-%m-%d")) ==i)
+    bc_df <- applyBiasFactor(new_df,bF)
+    if (i==1){
+      fin_df <- bc_df
+    }
+    else {
+      fin_df <- bind_rows(fin_df,bc_df)
+     
+    }
+  }
+
+#write_csv(fin_df, "Florence_inflow_BC_monthly.csv")
+
+
+```{r}
+#Bias Correction with daily data
+
+  path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/USJR/SubCatchment_RO_BC"
+BiasCorrection <- function(Observed, Simulated, ToBeCorrected, Subbasin){
+
+  
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:366)){
+
+  obs <- filter(Observed,yday(Observed$Date)== i)
+  hind <- filter(Simulated,yday(Simulated$Date)== i)
+
+  bF <- getBiasFactor(as.data.frame(hind),as.data.frame(obs),method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")
+  bF
+  print(paste(i," bias factor is ", bF@biasFactor, sep = ""))
+    new_df <- filter(ToBeCorrected,yday(as.Date(ToBeCorrected$Date, format = "%Y-%m-%d")) ==i)
+    bc_df <- applyBiasFactor(new_df,bF)
+    if (i==1){
+      fin_df <- bc_df
+    }
+    else {
+      fin_df <- bind_rows(fin_df,bc_df)
+     
+    }
+  }
+fin_df2 <-  arrange(fin_df, Date) #bias corrected Florence Lake inflow
+head(fin_df2)
+write_csv(fin_df2, paste(path,"/tot_runoff_sb",Subbasin,"_mcm.csv", sep=""))
+
+}
+```
+
+```{r}
+BiasCorrection(Sub21, Sub21_PreBC, Sub21_Livneh, "21")
+BiasCorrection(Sub22, Sub22_PreBC, Sub22_Livneh, "22")
+BiasCorrection(Sub23, Sub23_PreBC, Sub23_Livneh, "23")
+BiasCorrection(Sub31, Sub31_PreBC, Sub31_Livneh, "31")
+BiasCorrection(Sub36, Sub36_PreBC, Sub36_Livneh, "36")
+BiasCorrection(Sub37, Sub37_PreBC, Sub37_Livneh, "37")
+BiasCorrection(Sub38, Sub38_PreBC, Sub38_Livneh, "38")
+```
+
+
+```{r}
+Make_Figures <- function(Observed, Simulated, Subbasin, StartDate, EndDate){
+
+#Observed <- Sub22 
+#Simulated<-  Sub22_PreBC
+#Subbasin <- "sb22"
+#StartDate <- "1965-10-01"
+#EndDate <- "1986-09-29"
+
+Pre_BC2 <- Simulated %>% #getting the data pre-bias correction
+  mutate(Data = "Pre-Bias Correction (Livneh)") 
+Pre_BC2
+
+BC_daily <- read_csv(paste(path_BC,"/Daily_BC/","tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Data = "Post-Bias Correction (Livneh)") %>%
+  rename(Inflow = 2) %>%
+   filter(between(Date, as.Date(StartDate), as.Date(EndDate)))
+
+BC_daily
+
+Reference <- Observed %>% #getting the observed data from USGS
+    mutate(Data = "USGS Reference (Observed)")
+Reference
+
+Final <- rbind(Pre_BC2, BC_daily, Reference)
+Final
+Final$Data <- factor(Final$Data, levels = c("Pre-Bias Correction (Livneh)", "USGS Reference (Observed)","Post-Bias Correction (Livneh)"))
+
+##Line Curve
+Final2 <- Final %>%
+  mutate(Yearmon = zoo::as.yearmon(Date)) %>%
+  group_by(Yearmon, Data) %>%
+  summarise(Inflow = sum(Inflow)) %>%
+  ungroup() %>%
+  mutate(Date = as.Date(Yearmon))
+
+ggplot(Final2,aes(x=Date, y=Inflow, color=Data))+ geom_line()+  scale_x_date(date_labels = "%b-%Y", date_minor_breaks = '6 month')+
+ggsave(filename=paste(path,"/",Subbasin,"_line.png",sep=""), units="in",width=6.5,height=3)#,res=360)
+
+##FDC Curve
+data.nm <- unique(Final$Data)
+Final$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- Final$Inflow[Final$Data==data.nm[i]]
+  Fn <- ecdf(vls)
+  Final$FDC[Final$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(Final, aes(x=FDC, y=Inflow, color=Data)) + geom_line() + geom_point(shape=21, size=0.05, alpha=0.25) + 
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Exceedance probability") +
+  ggsave(filename=paste(path,"/",Subbasin,"_fdc.png",sep=""), units="in",width=6.5,height=3.5)#,res=360)
+
+## Box&whisker
+ggplot(Final, aes(x=Data, y=Inflow)) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Data")  +
+  ggsave(filename=paste(path,"/",Subbasin,"_box.png",sep=""), units="in",width=6.5,height=4)#,res=360)
+
+
+## Q-Q plot
+ggplot(Final, aes(sample=Inflow, color=Data)) + stat_qq(shape=21, size=0.75)+
+  png(filename=paste(path,"/",Subbasin,"_qq.png",sep=""), units="in",width=6.5,height=3,res=360)
+}
+```
+
+```{r}
+Make_Figures(Sub21, Sub21_PreBC, "sb21", "1980-10-01", "2013-12-31")
+Make_Figures(Sub22, Sub22_PreBC, "sb22", "1965-10-01" ,"1986-09-29") 
+Make_Figures(Sub23, Sub23_PreBC, "sb23", "1951-10-01", "1991-09-29")
+Make_Figures(Sub31, Sub31_PreBC, "sb31", "1954-10-12", "2013-12-31")
+Make_Figures(Sub36, Sub36_PreBC, "sb36", "1975-10-01", "1986-09-29")
+Make_Figures(Sub37, Sub37_PreBC, "sb37", "2009-10-01", "2013-12-31")
+Make_Figures(Sub38, Sub38_PreBC, "sb38", "1950-01-01", "1980-09-29")
+```

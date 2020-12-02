@@ -1,0 +1,1072 @@
+---
+title: "HW10"
+author: "Gustavo Facincani Dourado"
+date: "5/3/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+
+#Read the data files
+o3.filepaths <- list.files("C:/Users/gusta/Desktop/PhD/Classes/ES207/ca_ozone", "\\.txt$", full.names = TRUE)
+o3.filenames <- list.files("C:/Users/gusta/Desktop/PhD/Classes/ES207/ca_ozone", pattern = ".txt") 
+o3.filenames
+```
+
+```{r}
+#Gather all files
+o3.filelist <- lapply(o3.filepaths, read_delim, delim = "|")
+o3.filelist
+```
+
+
+```{r}
+daily.mean <- function(df) { #function to get the daily O3 mean concentration
+  df %>% 
+  group_by(site = as.factor(site), date) %>% #creating groups by site
+  summarize(o3 = mean(obs, na.rm = TRUE)) %>% #creating a column for the daily mean o3 concentrations
+  drop_na()  #to drop row with missing values
+  }
+d <- map(o3.filelist, daily.mean) #creating vector
+d
+```
+
+
+```{r}
+library(data.table)
+daily.tibble <- rbind_list(d) #combine my data using rbind
+daily.tibble
+```
+
+```{r}
+library(readxl) #Let's read the file with the information on the location of each station
+loc <- read_excel("C:/Users/gusta/Desktop/PhD/Classes/ES207/ca_ozone/location.xls")
+loc
+
+colnames(loc)[1] <- "site"
+daily.site <- daily.tibble %>%
+  left_join(loc, by = "site") %>% #get the site
+   mutate(OzonYear = format(as.Date(daily.tibble$date, format = "%Y-%m-%d"), "%Y")) %>% 
+  #create a column for the year to facilitate classification by year
+mutate(OzonMonth = format(as.Date(daily.tibble$date, format = "%Y-%m-%d"), "%m")) %>%
+  #create a column for the month to facilitate classification by month
+   filter(!grepl('OUT', Basin)) %>% #separate out measurements that are not in CA 
+  filter(!grepl('MEX', Basin)) #separate out measurements in Mexico
+daily.site
+```
+
+```{r}
+library(base)
+#Now, let's summarize the whole dataset into mean annual Ozone Concentration per basin
+OzY <- daily.site %>%
+  group_by(o3, OzonYear, Basin) %>%
+  summarize(nOzon = n(),
+            Median = median(o3)) 
+#use the median to get the central point of the data, to asses the trend
+OzY
+```
+
+```{r}
+#Let's just visualize the ozone concentration throughout the state per year
+ggplot(data = daily.site, aes(x=OzonYear, y = o3),
+group = OzonYear)+
+geom_boxplot() + theme_tufte() +
+  ylab ("Ozone Concentration (ppm)")+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+ 
+  #add the 0.07 line just to check if the ozone concentration is under the air quality standard
+  theme(axis.text.x = element_text(angle=45))
+
+#Let's just visualize the ozone concentration throughout the state per month
+ggplot(data = daily.site, aes(x=OzonMonth, y = o3),
+group = OzonYear)+
+geom_boxplot() + theme_tufte() +
+  xlab("Month") + ylab ("Ozone Concentration (ppm)")+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")
+  #add the 0.07 line just to check if the ozone concentration is under the air quality standard
+```
+We can see that there is not much change in the quantiles throughout the years, but the outliers have been less reported overtime. By checking the monthly distribution, we notice that there tends to be higher ozone concentrations in the summer, and lower ozone concentration between November and February.
+
+```{r}
+a <- ggplot(data = daily.site) + 
+  geom_line(aes(x = date, y = o3, colour = `Basin Name`, alpha = 0.3)) +
+   geom_hline(yintercept = 0.070, linetype = "dashed", color = "red") +
+  labs(title = "Daily Ozone Concentration in different Air Basins in California",
+       x = "Date",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+a
+```
+The data is very dense, so we cannot see the patterns for each basin in one graph.
+
+```{r}
+#So, let's plot it separately
+a1 <- ggplot(data = daily.site) + 
+  geom_line(aes(x = date, y = o3)) + 
+    facet_wrap(facets = vars(`Basin Name`))+
+   geom_hline(yintercept = 0.070, linetype = "dashed", color = "red") +
+  labs(title = "Daily Ozone Concentration in different Air Basins in California",
+       x = "Date",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+a1
+```
+In the graphs above, we can see that not all basins have the same trend. Some basins have large variance which is decreasing overtime, closer to the area below the standard of 0.070 ppm, 8-hour standard set by law (South Coast, Salton Sea and Mojave Desert, for example), although many times the ozone concentration has been above such standard. Other areas, tend to maintain ozone emissions below the standard (North Coast, Lake Tahoe, Northeast Plateau and Lake County). A few areas have some periods in which the standard is exceeded but we can recognize a tend of decreasing variance, maintaining the ozone emissions below 0.070 ppm recently (North Central Coast, San Francisco Bay Area and Great Basin Valleys). Other areas are showing a not-so-large variance, but that constantly exceeds the standard (such as the San Joaquin Valley, Sacramento Valley, Mountain Counties and San Diego).
+
+
+```{r}
+#Let's prepare a daily data set for each Air Basin
+#Then let's make a time series for each with a sanity check
+
+#Great Basin Valleys
+GBV <- daily.site %>%
+ filter(grepl('GBV', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+GBV
+
+GBV.ts <- ts(GBV$o3, start = c(1980,1), frequency = 365.25)
+head(GBV.ts, 20)
+
+#San Francisco Bay Area
+SFB <- daily.site %>%
+ filter(grepl('SFB', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SFB
+
+SFB.ts <- ts(SFB$o3, start = c(1980,1), frequency = 365.25)
+head(SFB.ts, 20)
+
+#Lake County
+LC <- daily.site %>%
+ filter(grepl('LC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+LC
+
+LC.ts <- ts(LC$o3, start = c(1980,1), frequency = 365.25)
+head(LC.ts, 20)
+
+#Mojave Desert
+MD <- daily.site %>%
+ filter(grepl('MD', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+MD
+
+MD.ts <- ts(MD$o3, start = c(1980,1), frequency = 365.25)
+head(MD.ts, 20)
+
+#Salton Sea
+SS <- daily.site %>%
+ filter(grepl('SS', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SS
+
+SS.ts <- ts(SS$o3, start = c(1980,1), frequency = 365.25)
+head(SS.ts, 20)
+
+#Sacramento Valley
+SV <- daily.site %>%
+ filter(grepl('SV', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SV
+
+SV.ts <- ts(SV$o3, start = c(1980,1), frequency = 365.25)
+head(SV.ts, 20)
+
+#San Joaquin Valley
+SJV <- daily.site %>%
+ filter(grepl('SJV', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SJV
+
+SJV.ts <- ts(SJV$o3, start = c(1980,1), frequency = 365.25)
+head(SJV.ts, 20)
+
+#San Diego
+SD <- daily.site %>%
+ filter(grepl('SD', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SD
+
+SD.ts <- ts(SD$o3, start = c(1980,1), frequency = 365.25)
+head(SD.ts, 20)
+
+
+#Mountain Counties
+MC <- daily.site %>%
+ filter(grepl('MC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+MC
+
+MC.ts <- ts(MC$o3, start = c(1980,1), frequency = 365.25)
+head(MC.ts, 20)
+
+#North Central Coast
+NCC <- daily.site %>%
+ filter(grepl('NCC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+NCC
+
+NCC.ts <- ts(NCC$o3, start = c(1980,1), frequency = 365.25)
+head(NCC.ts, 20)
+
+#North Coast
+NC <- daily.site %>%
+ filter(grepl('NC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+NC
+
+NC.ts <- ts(NC$o3, start = c(1980,1), frequency = 365.25)
+head(NC.ts, 20)
+
+#South Coast
+SC <- daily.site %>%
+ filter(grepl('SC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SC
+
+SC.ts <- ts(SC$o3, start = c(1980,1), frequency = 365.25)
+head(SC.ts, 20)
+
+#South Central Coast
+SCC <- daily.site %>%
+ filter(grepl('SCC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SCC
+
+SCC.ts <- ts(SCC$o3, start = c(1980,1), frequency = 365.25)
+head(SCC.ts, 20)
+
+#Northeast Plateau
+NEP <- daily.site %>%
+ filter(grepl('NEP', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+NEP
+
+NEP.ts <- ts(NEP$o3, start = c(1980,1), frequency = 365.25)
+head(NEP.ts, 20)
+
+#Lake Tahoe
+LT <- daily.site %>%
+ filter(grepl('LT', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+LT
+
+LT.ts <- ts(LT$o3, start = c(1980,1), frequency = 365.25)
+head(LT.ts, 20)
+```
+
+```{r}
+
+#Let's check for autocorrelation with the AutoCorrelation Function (ACF)
+
+library(forecast)
+Acf(GBV.ts)
+Acf(MC.ts)
+Acf(MD.ts)
+Acf(NC.ts)
+Acf(NCC.ts)
+Acf(SC.ts)
+Acf(SCC.ts)
+Acf(SJV.ts)
+Acf(SV.ts)
+Acf(LC.ts)
+Acf(SS.ts)
+Acf(SD.ts)
+Acf(NEP.ts)
+Acf(LT.ts)
+Acf(SFB.ts)
+```
+All basins are very autocorrelated, and Mountain Counties, North Coast and San Diego are only positively autocorrelated.
+
+```{r}
+#Let's check out some of them more in depth
+
+#Great Basins Valley - an example with positive and negative autocorrelation
+Acf(GBV.ts, lag = 115)
+Box.test(GBV.ts, lag = 115, type = "Ljung-Box")
+
+#San Diego - am example of a positive autocorrelation
+Acf(SD.ts, lag = 510)
+Box.test(SD.ts, lag = 510, type = "Ljung-Box")
+
+#San Francisco Bay Area - an example with positive and little negative autocorrelation
+Acf(SFB.ts, lag = 115)
+Box.test(SFB.ts, lag = 115, type = "Ljung-Box")
+```
+Based on the very small p-values, we can reject the null hypothesis that the time series isn’t autocorrelated, as they confirm a strong autocorrelation.
+
+```{r}
+#So, as a result, we can reduce the frequency of the data to monthly to account for that
+#Let's do it for all basins
+#Lake County
+LC <- daily.site %>%
+ filter(grepl('LC', Basin))%>% #filtering the data from the basin I want
+  ungroup %>%
+select(site, date, o3) #selecting just the data I want from that basin
+LC
+
+LC.ts <- ts(LC$o3, start = c(1980,1), frequency = 365.25) #getting an annual times series from it
+head(LC.ts, 20)
+
+```
+
+```{r}
+#Lake Tahoe
+LT <- daily.site %>%
+ filter(grepl('LT', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+LT
+
+LT.ts <- ts(LT$o3, start = c(1980,1), frequency = 365.25)
+head(LT.ts, 20)
+```
+
+```{r}
+#Mountain Counties
+
+MC <- daily.site %>%
+ filter(grepl('MC', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+MC
+
+MC.ts <- ts(MC$o3, start = c(1980,1), frequency = 365.25)
+head(MC.ts, 20)
+```
+
+
+```{r}
+#Mojave Desert
+MD <- daily.site %>%
+ filter(grepl('MD', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+MD
+
+MD.ts <- ts(MD$o3, start = c(1980,1), frequency = 365.25)
+head(MD.ts, 20)
+
+```
+
+
+```{r}
+#North Coast
+NC <- daily.site %>%
+ filter(grepl('NC', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+NC
+
+NC.ts <- ts(NC$o3, start = c(1980,1), frequency = 365.25)
+head(NC.ts, 20)
+
+```
+
+
+```{r}
+#North Central Coast
+NCC <- daily.site %>%
+ filter(grepl('NCC', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+NCC
+
+NCC.ts <- ts(NCC$o3, start = c(1980,1), frequency = 365.25)
+head(NCC.ts, 20)
+
+```
+
+
+```{r}
+#Northeast Plateau
+NEP <- daily.site %>%
+ filter(grepl('NEP', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+NEP
+
+NEP.ts <- ts(NEP$o3, start = c(1980,1), frequency = 365.25)
+head(NEP.ts, 20)
+
+```
+
+
+```{r}
+#South Coast
+SC <- daily.site %>%
+ filter(grepl('SC', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SC 
+
+SC.ts <- ts(SC$o3, start = c(1980,1), frequency = 365.25)
+head(SC.ts, 20)
+
+```
+
+
+```{r}
+#South Central Coast
+SCC <- daily.site %>%
+ filter(grepl('SCC', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SCC
+
+SCC.ts <- ts(LC$o3, start = c(1980,1), frequency = 365.25)
+head(SCC.ts, 20)
+
+```
+
+
+```{r}
+#San Diego
+SD <- daily.site %>%
+ filter(grepl('SD', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SD
+
+SD.ts <- ts(SD$o3, start = c(1980,1), frequency = 365.25)
+head(SD.ts, 20)
+
+```
+
+```{r}
+#San Francisco Bay Area
+SFB <- daily.site %>%
+ filter(grepl('SFB', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SFB
+
+SFB.ts <- ts(SFB$o3, start = c(1980,1), frequency = 365.25)
+head(SFB.ts, 20)
+```
+
+
+```{r}
+#San Joaquin Valley
+SJV <- daily.site %>%
+ filter(grepl('SJV', Basin)) %>%
+  ungroup %>%
+select(site, date, o3)
+SJV
+
+SJV.ts <- ts(SJV$o3, start = c(1980,1), frequency = 365.25)
+head(SJV.ts, 20)
+```
+
+```{r}
+SS <- daily.site %>%
+ filter(grepl('SS', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SS 
+
+SS.ts <- ts(SS$o3, start = c(1980,1), frequency = 365.25)
+head(SS.ts, 20)
+
+```
+
+```{r}
+SV <- daily.site %>%
+ filter(grepl('SV', Basin))%>%
+  ungroup %>%
+select(site, date, o3)
+SV 
+
+SV.ts <- ts(SV$o3, start = c(1980,1), frequency = 365.25)
+head(SV.ts, 20)
+```
+
+```{r}
+
+#Plot each times series separately
+plot.ts(GBV.ts)
+plot.ts(LC.ts)
+plot.ts(LT.ts)
+plot.ts(MD.ts)
+plot.ts(MC.ts)
+plot.ts(NCC.ts)
+plot.ts(NC.ts)
+plot.ts(NEP.ts)
+plot.ts(SV.ts)
+plot.ts(SS.ts)
+plot.ts(SD.ts)
+plot.ts(SC.ts)
+plot.ts(SCC.ts)
+plot.ts(SFB.ts)
+plot.ts(SJV.ts)
+
+
+```
+Here we can see better that some time series have a lot of variance, such as the one from Northeast Plateau (with lower magnitude) and Mountain Counties (with higher magnitudes). We can also see that the variance in some time series is decreasing overtime, such as in San Diego, Mojave Desert, North Central Coast, Salton Sea and South Coast. Meanwhile, the Great Basins Valley seems to have had an increase ozone concentration recently.
+
+
+
+```{r}
+#To avoid autocorrelation we can use montlhy data
+#Great Basin Valleys
+GBV$mo <- as.factor(lubridate::month(GBV$date))
+
+GBV$yr <- year(GBV$date)
+GBV.mo <- GBV %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+GBV.mo
+
+ggplot(GBV.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red") +
+labs(title = "Monthly Median Ozone Concentration in Great Basin Valleys",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#Lake County
+LC$mo <- as.factor(lubridate::month(LC$date))
+
+LC$yr <- year(LC$date)
+LC.mo <- LC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+LC.mo
+
+ggplot(LC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Lake County",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+
+#Lake Tahoe
+LT$mo <- as.factor(lubridate::month(LT$date))
+
+LT$yr <- year(LT$date)
+LT.mo <- LT %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+LT.mo
+
+ggplot(LT.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Lake Tahoe",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+
+#Mojave Desert
+MD$mo <- as.factor(lubridate::month(MD$date))
+
+MD$yr <- year(MD$date)
+MD.mo <- MD %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+MD.mo
+
+ggplot(MD.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Mojave Desert",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#Mountain Counties
+MC$mo <- as.factor(lubridate::month(MC$date))
+
+MC$yr <- year(MC$date)
+MC.mo <- MC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+MC.mo
+
+ggplot(MC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Mountain Counties",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#North Central Coast
+NCC$mo <- as.factor(lubridate::month(NCC$date))
+
+NCC$yr <- year(NCC$date)
+NCC.mo <- NCC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+NCC.mo
+
+ggplot(NCC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in North Central Coast",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#North Coast
+NC$mo <- as.factor(lubridate::month(NC$date))
+
+NC$yr <- year(NC$date)
+NC.mo <- NC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+NC.mo
+
+ggplot(NC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in North Coast",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#Northeast Plateau
+NEP$mo <- as.factor(lubridate::month(NEP$date))
+
+NEP$yr <- year(NEP$date)
+NEP.mo <- NEP %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+NEP.mo
+
+ggplot(NEP.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Northeast Plateau",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#Sacramento Valley
+SV$mo <- as.factor(lubridate::month(SV$date))
+
+SV$yr <- year(SV$date)
+SV.mo <- SV %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SV.mo
+
+ggplot(SV.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Sacramento Valley",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#Salton Sea
+SS$mo <- as.factor(lubridate::month(SS$date))
+
+SS$yr <- year(SS$date)
+SS.mo <- SS %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SS.mo
+
+ggplot(SS.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in Salton Sea",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#San Diego
+SD$mo <- as.factor(lubridate::month(SD$date))
+
+SD$yr <- year(SD$date)
+SD.mo <- LC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SD.mo
+
+ggplot(SD.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in San Diego",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#San Francisco Bay Area
+SFB$mo <- as.factor(lubridate::month(SFB$date))
+
+SFB$yr <- year(SFB$date)
+SFB.mo <- SFB %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SFB.mo
+
+ggplot(SFB.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in San Francisco Bay Area",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#San Joaquin Valley
+SJV$mo <- as.factor(lubridate::month(SJV$date))
+
+SJV$yr <- year(SJV$date)
+SJV.mo <- SJV %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SJV.mo
+
+ggplot(SJV.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in San Joaquin Valley",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+#South Central Coast
+SCC$mo <- as.factor(lubridate::month(SCC$date))
+
+SCC$yr <- year(SCC$date)
+SCC.mo <- SCC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SCC.mo
+
+ggplot(SCC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in South Central Coast",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+
+#South Coast
+SC$mo <- as.factor(lubridate::month(SC$date))
+
+SC$yr <- year(SC$date)
+SC.mo <- SC %>%
+  select(-site, -date) %>% 
+  group_by(yr, mo) %>% 
+  summarize(o3 = median(o3)) 
+SC.mo
+
+ggplot(SC.mo, aes(x = mo, y = o3, group = mo)) + geom_boxplot()+
+  geom_hline(yintercept = 0.070, linetype = "dashed", color = "red")+
+labs(title = "Monthly Median Ozone Concentration in South Coast",
+       x = "Time",
+       y = "Ozone Concentration (ppb)") +
+  theme_bw()
+
+```
+Luckily, all basins have average values under the 0.07 ppm 8-hr standard. Here we can identify that the basins closer to the coast (such as the Bay Area, San Diego, North Central Coast and Norht Coast) don't have the noticeable increase in ozone concentrations during the summer that the areas more to the countryside have (such as Mountain Counties, San Joaquin Valley, Sacramento Valley and Mojave Desert).
+
+```{r}
+#Let's check the ACF in our monthly data per basin
+
+#Great Basin Valleys
+GBV.mo.ts <- ts(GBV.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(GBV.mo.ts)
+
+#Lake County
+LC.mo.ts <- ts(LC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(LC.mo.ts)
+
+#Lake Tahoe
+LT.mo.ts <- ts(LT.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(LT.mo.ts)
+
+#Mojave Desert
+MD.mo.ts <- ts(MD.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(MD.mo.ts)
+
+#Mountain Counties
+MC.mo.ts <- ts(MC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(MC.mo.ts)
+
+#North Central Coast
+NCC.mo.ts <- ts(NCC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(NCC.mo.ts)
+
+#North Coast
+NC.mo.ts <- ts(NC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(NC.mo.ts)
+
+#Northeast Plateau
+NEP.mo.ts <- ts(NEP.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(NEP.mo.ts)
+
+#sacramento Valley
+SV.mo.ts <- ts(SV.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SV.mo.ts)
+
+#Salton Sea
+SS.mo.ts <- ts(SS.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SS.mo.ts)
+
+#San Diego
+SD.mo.ts <- ts(SD.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SD.mo.ts)
+
+#San Francisco Bay Area
+SFB.mo.ts <- ts(SFB.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SFB.mo.ts)
+
+#South Central Coast
+SCC.mo.ts <- ts(SCC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SCC.mo.ts)
+
+#South Coast
+SC.mo.ts <- ts(SC.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SC.mo.ts)
+
+#San Joaquin Valley
+SJV.mo.ts <- ts(SJV.mo$o3, start = c(1980, 1), frequency = 12)
+forecast::Acf(SJV.mo.ts)
+```
+All basins present autocorrelation.
+
+```{r}
+#Let's decompose each time series to check for trends, seasonality and random components
+#Great Basins Valleys
+GBV.components <- decompose(GBV.mo.ts, type = "additive")
+plot(GBV.components)
+
+#Lake County
+LC.components <- decompose(LC.mo.ts, type = "additive")
+plot(LC.components)
+
+#Lake Tahoe
+LT.components <- decompose(LT.mo.ts, type = "additive")
+plot(LT.components)
+
+#Mojave Desert
+MD.components <- decompose(MD.mo.ts, type = "additive")
+plot(MD.components)
+
+#Mountain Counties
+MC.components <- decompose(MC.mo.ts, type = "additive")
+plot(MC.components)
+
+#North Central Coast
+NCC.components <- decompose(NCC.mo.ts, type = "additive")
+plot(NCC.components)
+
+#North Coast
+NC.components <- decompose(NC.mo.ts, type = "additive")
+plot(NC.components)
+
+#Northeast Plateu
+NEP.components <- decompose(NEP.mo.ts, type = "additive")
+plot(NEP.components)
+
+#Sacramento valey
+SV.components <- decompose(SV.mo.ts, type = "additive")
+plot(SV.components)
+
+#Salton Sea
+SS.components <- decompose(SS.mo.ts, type = "additive")
+plot(SS.components)
+
+#San Diego
+SD.components <- decompose(SD.mo.ts, type = "additive")
+plot(SD.components)
+
+#South Coast
+SC.components <- decompose(SC.mo.ts, type = "additive")
+plot(SC.components)
+
+#South Central Coast
+SCC.components <- decompose(SCC.mo.ts, type = "additive")
+plot(SCC.components)
+
+#San Francisco Bay Area
+SFB.components <- decompose(SFB.mo.ts, type = "additive")
+plot(SFB.components)
+
+#San Joaquin Valley
+SJV.components <- decompose(SJV.mo.ts, type = "additive")
+plot(SJV.components)
+
+```
+Although there is a lot of variation in the trends in all years, we can see that there has been an upward trend in most basin in more recent years, more pronouncedly in the Great Basin Valley, Lake County, Northeas Plateau, San Francisco Bay Area, South Coast and Salton Sea. In the most recent year, however the trend follows a downward in The North Coast and North Central Coast present very similar overall responses. We can identify the influence of different seasonal patterns too, with two peaks (in the Northeast Plateu, North Coast, North Central Coast, South Central Coast, San Francisco Bay Area, for example), with one peak (Great Basins Valley, Mojave Desert, Mountain Counties, Salton Sea and San Joaquin Valley), and somewhere in between (Lake County, Lake Tahoe, South Coast and San Diego).
+
+```{r}
+library(wql)
+
+#Let's use Mann-Kendall and Seasonal Mann-Kendall Trend Tests for each basin
+#No assumptions are required for normality
+#This is to check if the central value changes overtime
+#To do that let's consider an alpha = 5%
+#Therefore, we assume that there is a monotonic trend in our data if p>0.05
+mannKen(SFB.mo.ts)
+
+seaKen(SFB.mo.ts)
+```
+Here we can see that there is a trend in the San Francisco Bay Area Basin, both overall and seasonal.
+
+```{r}
+mannKen(GBV.mo.ts)
+
+seaKen(GBV.mo.ts)
+```
+The Great Basins Valley has a significant overall trend, and an even more significant seasonal trend.
+
+```{r}
+mannKen(LT.mo.ts)
+
+seaKen(LT.mo.ts)
+```
+Here we can that there is an overall trend, and a stronger seasonal trend (p<0.01) in the Great Basins Valley Air Basin.
+
+```{r}
+mannKen(MD.mo.ts)
+
+seaKen(MD.mo.ts)
+```
+Here we see that there is no significant trend in the Movaje Desert Basin.
+
+```{r}
+mannKen(MC.mo.ts)
+
+seaKen(MC.mo.ts)
+```
+Here we see that there is an overall and a more pronounced seasonal trend in the Mountain Counties Air Basin.
+
+```{r}
+mannKen(LC.mo.ts)
+
+seaKen(LC.mo.ts)
+```
+Here we see a significant seasonal trend and a slightly more significant overall trend in the Lake County basin.
+
+```{r}
+mannKen(SC.mo.ts)
+seaKen(SC.mo.ts)
+```
+Here we see a surprisingly no significant trend at all in the South Coast Basin, although with a significant seasonal trend (p = 0.015). 
+
+```{r}
+mannKen(SCC.mo.ts)
+
+seaKen(SCC.mo.ts)
+```
+Here we have a non-significant trend in the South Central Coast air Basin.
+
+```{r}
+mannKen(NCC.mo.ts)
+seaKen(NCC.mo.ts)
+
+```
+In the North Central Coast air Basin, we have no significant trend, but there is a seasonal trend component (p<0.01).
+
+```{r}
+mannKen(NC.mo.ts)
+
+seaKen(NC.mo.ts)
+```
+In the North Coast air Basin, there's no trend.
+
+```{r}
+mannKen(NEP.mo.ts)
+
+seaKen(NEP.mo.ts)
+```
+The Northeast Plateau air basin also present no trend.
+
+```{r}
+mannKen(SV.mo.ts)
+
+seaKen(SV.mo.ts)
+```
+There is a trend in the Sacramento Valley, and a very significant seasonal trend too, demonstrated by the very low p-value.
+
+```{r}
+mannKen(SS.mo.ts)
+
+seaKen(SS.mo.ts)
+```
+The Salton Sea air basin presents only a seasonal trend component.
+
+```{r}
+mannKen(SD.mo.ts)
+
+seaKen(SD.mo.ts)
+```
+San Diego air Basin has a seasonal, as well as a more significant overall trend.
+
+```{r}
+mannKen(SJV.mo.ts)
+
+seaKen(SJV.mo.ts)
+```
+The San Joaquin Valley has no general trend, but has a significant seasonal trend.
+
+```{r}
+#So, we found no seasonal trend in the Mojave Desert, South Central Coast, North Coast, Northeast Plateau, South Coast, North Central Coast, Salton Sea, San Joaquin Valley.
+#Let's see if we can't really observe trends or if the seasonal test is cancelling out the seasonal trend
+plotSeason(MD.mo.ts, "by.month")
+```
+In the Mojave Desert, we can identify a positive trend in recent years, between November and March, most pronouncedly in Jan-Feb. And a negative trend between May and August.
+
+```{r}
+plotSeason(SCC.mo.ts, "by.month")
+```
+In the South Central Coast, we can see more recent negative trend between June and October.
+
+```{r}
+plotSeason(NC.mo.ts, "by.month")
+```
+In the North Coast, there is a negative trend between August and October in the most recent years.
+
+```{r}
+plotSeason(NEP.mo.ts, "by.month")
+```
+In the Northeast Plateau, we can see a positive trend from September through March, and a negative trend between May and July.
+
+```{r}
+plotSeason(SC.mo.ts, "by.month")
+```
+In the South Coast, there has been a positive trend between November and April, and a negative trend in July.
+
+```{r}
+plotSeason(NCC.mo.ts, "by.month")
+```
+We can identify only a positive trend in recent year in March in the North Central Coast.
+
+```{r}
+plotSeason(SS.mo.ts, "by.month")
+```
+In the Salton Sea, we see a positive trend between November and March in recent years, and a negative trend between May and August.
+
+```{r}
+plotSeason(SJV.mo.ts, "by.month")
+```
+We can see a positive trend between February and April in recent years, as well as a negative trend in August.

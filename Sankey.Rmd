@@ -1,0 +1,54 @@
+---
+title: "Sankey Diagram"
+author: "Gustavo Facincani Dourado"
+date: "8/22/2020"
+output: html_document
+---
+
+```{r}
+library(networkD3)
+sankey_mer <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =2)[c(1:4),1:4]
+sankey_mer
+nodes_mer <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =1)[c(1:5), 1:2]
+nodes_mer
+```
+
+
+```{r}
+sankeyNetwork(Links = sankey_mer, Nodes = nodes_mer, Source = "source...2", Target = "target...3", 
+              Value = "value...4", NodeID = "name...2", fontSize = 11, nodeWidth = 14,
+              fontFamily = "Times New Roman",iterations = 0, sinksRight=FALSE)
+```
+
+
+```{r}
+sankey_stn <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =2)[5:23,10:13]
+sankey_stn
+nodes_stn <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =1)[1:19,6:7]
+nodes_stn
+
+```
+
+```{r}
+sankeyNetwork(Links = sankey_stn, Nodes = nodes_stn, Source = "source...11", Target = "target...12", 
+              Value = "value...13", NodeID = "name...7", fontSize = 11, nodeWidth = 15,
+              fontFamily = "Times New Roman", sinksRight=FALSE)  %>% 
+  #htmlwidgets::prependContent(htmltools::tags$h1("Mean annual instream flow (mcm) - Upper San Joaquin River"))%>% 
+  saveNetwork(file = 'sankey_Mis.html')
+```
+
+```{r}
+webshot("file:///C:/Users/gusta/Desktop/PhD/Classes/ES207/sankey_Mis.html", "sankey_usj.png",  delay = 0.2)
+```
+
+
+```{r}
+sankey_tuo <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =2)[25:32,10:13]
+sankey_tuo
+nodes_tuo <- readxl::read_excel("C:/Users/gusta/Desktop/PhD/CERCWET/Sankey.xlsx", sheet =1)[1:9,10:11]
+nodes_tuo
+
+sankeyNetwork(Links = sankey_tuo, Nodes = nodes_tuo, Source = "source...11", Target = "target...12", 
+                Value = "value...13", NodeID = "name...11", fontSize = 11, nodeWidth = 15,
+              fontFamily = "Times New Roman", sinksRight=FALSE)
+```

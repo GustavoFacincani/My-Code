@@ -1,0 +1,29 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "7/27/2020"
+output: html_document
+---
+
+```{r}
+#Read data for Merced basin
+#IFR actual flow
+CanESM2_IFR_Mer <- Mer("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv")
+CanESM2_IFR_Mer
+
+#Read data for tuolumne basin
+#IFR actual flow
+CanESM2_IFR_Tuo <- Tuo("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv")
+CanESM2_IFR_Tuo
+
+#Read data for Stanislaus basin
+#IFR actual flow
+CanESM2_IFR_Stn <- Stn("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv")
+CanESM2_IFR_Stn
+
+#Read data for upper_san_joaquin basin
+#IFR actual flow
+CanESM2_IFR_USJ <- USJ("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv")
+CanESM2_IFR_USJ
+```
+

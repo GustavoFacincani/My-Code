@@ -1,0 +1,202 @@
+
+```{r}
+library(readr)
+library(tidyverse)
+USJpath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/gauges/"
+
+#Subbasins 31 and 38
+Reservoir_flow <- read_csv(paste0(USJpath, "streamflow_cfs.csv", sep = ""))
+Reservoir_flow[2:23] <- Reservoir_flow[2:23]*2446.58/1000000 #converting to mcm/day
+Reservoir_flow
+
+Reservoir_stor <- read_csv(paste0(USJpath, "storage_mcm.csv", sep = ""))
+Reservoir_stor
+```
+
+```{r}
+colname <- colnames(Reservoir_flow)
+USGS_gauges <- stringr::str_sub(colname, 5, 13)[-1]
+USGS_gauges
+
+colname2 <- colnames(Reservoir_stor)
+USGS_gauges2 <- stringr::str_sub(colname2, 5, 13)[-1]
+USGS_gauges2
+```
+
+```{r}
+library(dataRetrieval)
+
+siteNo <- "11251000"
+pCode <- "00060"
+start.date <- "1999-10-01"
+end.date <- "2019-09-30"
+
+USGS <- readNWISdv(siteNumbers = siteNo,
+                     parameterCd = pCode,
+                     startDate = start.date,
+                     endDate = end.date)
+head(USGS)
+```
+
+
+
+
+```{r}
+siteNo <- c("11276500", "11276600", "11276900", "11277100","11277300", "11278000", "11278200", "11278300", "11278400", "11281000", "11282000", "11283250", "11283350", "11283500", "11284400", "11284700", "11289000", "11289500", "11289650")
+pCode <- "00060"
+start.date <- "1949-10-01"
+end.date <- "2019-09-30"
+
+USGS <- readNWISdv(siteNumbers = siteNo,
+                     parameterCd = pCode,
+                     startDate = start.date,
+                     endDate = end.date)
+```
+
+```{r}
+siteInfo <- attr(USGS, "siteInfo")
+siteInfo
+
+```
+
+```{r}
+library(dplyr)
+common_column_names <- intersect(names(USGS), names(siteInfo))
+#2. Use this character vector as your by parameters in the merge function.
+
+USGS2 <- merge(USGS, siteInfo, by="site_no", all.dataframe_1=TRUE) %>%
+  select(Date, site_no, agency_cd.x, station_nm, X_00060_00003) %>%
+  mutate(ID = paste(agency_cd.x, site_no, station_nm, sep = " "),
+         station_nm = NULL,
+         site_no = NULL,
+         agency_cd.x = NULL) %>%
+  rename(flow = X_00060_00003)
+USGS2
+
+```
+
+```{r}
+USGS3 <- tidyr::spread(USGS2, ID, flow, fill = "")
+USGS3
+
+
+```
+
+```{r}
+readr::write_csv(USGS3, "streamflow_cfs2.csv", na = "")
+```
+
+
+library(dataRetrieval)
+siteNo2 <- c("11234700", "11243400", "11236000", "11229600", "11231000", "11246650", "11250100", "11241950", "11239500")
+pCode <- "00054" #code for reservoir storage
+start.date <- "1949-10-01"
+end.date <- "2019-09-30"
+
+
+res_info <- whatNWISdata(sites= siteNo2, parameterCd = pCode)
+res_info
+USGS2 <- readNWISdv(siteNumbers = "11234700",
+                     parameterCd = res_info$parm_cd[1],
+                     startDate = start.date,
+                     endDate = end.date)
+USGS2
+
+
+
+```{r}
+Redinger <- read.table("C:/Users/gusta/Downloads/USGS 11241950 REDINGER LK NR AUBERRY CA.txt")[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"REDINGER LK NR AUBERRY CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+```
+
+```{r}
+
+Shaver <- read.table("C:/Users/gusta/Downloads/USGS 11239500 SHAVER LK NR BIG C CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"SHAVER LK NR BIG C CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+Shaver
+```
+
+```{r}
+Kerchoff <- read.table("C:/Users/gusta/Downloads/USGS 11246650 KERCKHOFF RES NR AUBERRY CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"KERCKHOFF RES NR AUBERRY CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Millerton <- read.table("C:/Users/gusta/Downloads/USGS 11250100 MILLERTON LK A FRIANT CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"MILLERTON LK A FRIANT CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Thomas <- read.table("C:/Users/gusta/Downloads/USGS 11231000 LK THOMAS A. EDISON NR BIG C CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"LK THOMAS A. EDISON NR BIG C CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Huntington <- read.table("C:/Users/gusta/Downloads/USGS 11236000 HUNTINGTON LK NR BIG CREEK CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"HUNTINGTON LK NR BIG CREEK CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Florence <- read.table("C:/Users/gusta/Downloads/USGS 11229600 FLORENCE LK NR BIG C CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"FLORENCE LK NR BIG C CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Bass <- read.table("C:/Users/gusta/Downloads/USGS 11243400 BASS LK NR BASS LAKE CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"BASS LK NR BASS LAKE CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+Mammoth <- read.table("C:/Users/gusta/Downloads/USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA.txt", fill = TRUE)[-c(1:2),-5] %>%
+  rename(Date = V3) %>%
+  mutate(USGS = paste(V1, V2,"MAMMOTH POOL RE NR BIG CREEK CA",sep = " "),
+         V1 = NULL,
+         V2 = NULL,
+         V4 = as.integer(as.character(V4))/810.71318210885,
+         Date = as.Date(Date)) %>%
+tidyr::spread(., USGS, V4, fill = 0)
+
+#gauges <- cbind(Redinger, Shaver, Kerchoff,Millerton, Thomas, Huntington, Florence, Bass, Mammoth)
+gauges <- Reduce(function(x, y) merge(x, y, all = TRUE), list(Redinger, Shaver, Kerchoff,Millerton, Thomas, Huntington, Florence, Bass, Mammoth))
+gauges
+```
+
+```{r}
+readr::write_csv(gauges, "storage_mcm.csv", na = "")
+```

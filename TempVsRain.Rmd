@@ -1,0 +1,110 @@
+---
+title: "Temperature"
+author: "Gustavo Facincani Dourado"
+date: "7/31/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+library(dplyr)
+library(eia)
+```
+
+```{r}
+#USJ
+read <- function(path, GCMs) {
+Scenario <- read_csv(path)%>%
+   dplyr::rename(Date = time,
+         Rainfall = "1") %>%
+  mutate(GCM = GCMs,
+                  Date = as.Date(Date))
+Scenario}
+
+Hist_Had <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/rainfall_month_HadGEM2-ES_historical.csv", "HadGEM2-ES")
+Hist_Had
+
+Hist_CNR <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/rainfall_month_CNRM-CM5_historical.csv", "CNRM-CM5")
+Hist_CNR
+
+Hist_Can <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/rainfall_month_CanESM2_historical.csv", "CanESM2")
+Hist_Can
+
+Hist_Mir <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/rainfall_month_MIROC5_historical.csv", "MIROC5")
+Hist_Mir
+
+Hist_Rain_USJ <- rbind(Hist_Had, Hist_Can, Hist_CNR, Hist_Mir)
+Hist_Rain_USJ
+```
+
+```{r}
+#USJ
+read <- function(path, GCMs) {
+Scenario <- read_csv(path)%>%
+   dplyr::rename(Date = time,
+         Temperature = "1") %>%
+           mutate(GCM = GCMs,
+                  Date = as.Date(Date))
+Scenario}
+
+Histt_Had <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/Tair_month_HadGEM2-ES_historical.csv", "HadGEM2-ES")
+Histt_Had
+
+Histt_CNR <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/Tair_month_CNRM-CM5_historical.csv", "CNRM-CM5")
+Histt_CNR
+
+Histt_Can <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/Tair_month_CanESM2_historical.csv", "CanESM2")
+Histt_Can
+
+Histt_Mir <- read("C:/Users/gusta/Desktop/PhD/Classes/ES207/GCMs/Temperature/USJ/Tair_month_MIROC5_historical.csv", "MIROC5")
+Histt_Mir
+
+Hist_Temp_USJ <- rbind(Histt_Had, Histt_Can, Histt_CNR, Histt_Mir)
+Hist_Temp_USJ
+
+
+TvsR_USJ <- cbind(Hist_Rain_USJ, Hist_Temp_USJ[-c(1,3)]) %>%
+ mutate(Date = as.Date(Date, "%m/%d/%Y"))
+TvsR_USJ
+
+TvsR_USJ$week_date <- as.Date(paste(TvsR_USJ$Date, 1, sep="-"), format="%Y-%W-%w")
+```
+
+```{r}
+ggplot(TvsR_USJ, aes(x = Date, y = Rainfall), group = GCM) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_smooth(alpha = 0.2, color = "blue")+ 
+  geom_smooth(aes(x = Date, y = Temperature), color = "red")+
+ #   geom_line(aes(x=Date, y = Temperature), alpha = 0.2)+ 
+ # geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+ labs(x = "Temperature", 
+       y = "Rainfall") + #name of x axis
+  theme() +
+  #  stat_smooth(aes(x = Temperature, y = Rainfall), 
+   #             method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+  #  scale_y_continuous(limits = c(0, 7),
+   #                    expand = c(0.005, 0.005)) +
+     scale_x_date()+#limits = c(0, 7),
+    #                    expand = c(0.005, 0.005)) +
+   #stat_poly_eq(formula = "y~x", 
+    #         aes(label = paste0("atop(", ..eq.label.., ",", ..rr.label.., ")")), 
+     #        parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 3.5, family= "Times New Roman")+
+   facet_wrap(~ GCM, ncol=2, scales = "fixed") +
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) 
+```

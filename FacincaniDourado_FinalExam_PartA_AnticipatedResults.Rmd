@@ -1,0 +1,123 @@
+---
+title: "FacincaniDourado_PartA_AnticipatedResults"
+author: "Gustavo Facincani Dourado"
+date: "5/12/2020"
+output: html_document
+---
+
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(reshape2)
+
+#Using this data a created/edited as an examples
+
+#Read the data of the observed hydropower flow, skipping empty rows
+HydroFlow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm.csv")[-c(1,2),]
+#Read the data of the simnulated hydropower flow, skipping empty rows
+Hydro_flow <- read_csv("C:/Users/gusta/Desktop/PhD/DataAnalysis/Hydropower_Flow_mcm2.csv")[-c(1,2),]
+
+
+HydroFlow
+Hydro_flow
+```
+
+```{r}
+#Read the dates in column "node" as dates
+Hydro_flow$node <- as.Date(Hydro_flow$node, format = "%m/%d/%Y")
+HydroFlow$node <- as.Date(HydroFlow$node, format = "%m/%d/%Y")
+
+Hydro_flow$Day <- as.Date(cut(Hydro_flow$node, breaks = "day"))
+HydroFlow$Day <- as.Date(cut(HydroFlow$node, breaks = "day"))
+
+
+```
+
+```{r}
+#Plotting an example of key figure
+
+#This is the example of daily fit of the "modeled" data in the "observed" data in a year
+plot <- ggplot(data =Hydro_flow) + 
+  stat_summary(aes( x = Day, y = `Moccasin PH`, color = "#00AFBB"), geom = "line") +
+ stat_summary(data = HydroFlow, aes(x = Day, y = `Moccasin PH`, color="#FC4E07"), geom = "line") +
+     scale_x_date(date_breaks = "6 years", date_labels = "%Y") +
+  scale_color_identity(name = "Moccasin PH",
+                          breaks = c("#00AFBB", "#FC4E07"),
+                          labels = c("Observed", "Simulated"),
+                          guide = "legend")+
+  labs(title = "Observed vs. Simulated",
+       x = "Date",
+       y = "Hydropower Flow (mcm)") + theme(plot.title = element_text(hjust = 0.5))
+
+min <- as.Date("1990-1-1")
+max <- as.Date("1990-12-31")
+plot + scale_x_date(limits = c(min, max))
+```
+
+```{r}
+#wrangling the data to get daily mean of each power house for simulated and observed data
+HydroPowerObs <- HydroFlow %>%
+  mutate(MonthDay = format(as.Date(HydroFlow$node, format = "%m/%d/%Y"), "%m/%d")) %>%
+  group_by(MonthDay) %>%
+  summarize(DM_Moccasin = mean(`Moccasin PH`),
+            DM_Kirkwood = mean(`Kirkwood PH`), 
+            DM_DonPedro = mean(`Don Pedro PH`), 
+            DM_DionRH = mean(`Dion R Holm PH`))
+
+HydroPowerSim <- Hydro_flow %>%
+    mutate(MonthDay = format(as.Date(Hydro_flow$node, format = "%m/%d/%Y"), "%m/%d")) %>%
+  group_by(MonthDay) %>%
+  summarize(DM_Moccasin = mean(`Moccasin PH`),
+            DM_Kirkwood = mean(`Kirkwood PH`), 
+            DM_DonPedro = mean(`Don Pedro PH`), 
+            DM_DionRH = mean(`Dion R Holm PH`))
+```
+
+```{r}
+
+#Check the daily mean hydropower flow values for each power house
+head(HydroPowerObs)
+head(HydroPowerSim)
+```
+
+```{r}
+#Kruskal-Wallis to assess the significance of the daily difference within the year for each power house
+
+OM <- kruskal.test(`DM_Moccasin` ~ MonthDay, data = HydroPowerObs)
+SM <- kruskal.test(`DM_Moccasin` ~ MonthDay, data = HydroPowerSim)
+
+OK <- kruskal.test(`DM_Kirkwood` ~ MonthDay, data = HydroPowerObs)
+SK <- kruskal.test(`DM_Kirkwood` ~ MonthDay, data = HydroPowerSim)
+
+OD <- kruskal.test(`DM_DonPedro` ~ MonthDay, data = HydroPowerObs)
+SD <- kruskal.test(`DM_DonPedro` ~ MonthDay, data = HydroPowerSim)
+
+ODi <- kruskal.test(`DM_DionRH` ~ MonthDay, data = HydroPowerObs)
+SDi <- kruskal.test(`DM_DionRH` ~ MonthDay, data = HydroPowerSim)
+
+```
+
+```{r}
+#Creating a table with p-values, as an example
+
+Opvalues <- c(OM$p.value, OK$p.value, OD$p.value, ODi$p.value)
+
+Spvalues <- c(SM$p.value, SK$p.value, SD$p.value, SDi$p.value)
+
+PH <- c("Moccasin PH", "Kirkwood PH", "Don Pedro PH", "Dion R Holm PH")
+
+
+table <- data.frame(PH, Opvalues, Spvalues)
+colnames(table) <- c("Power House", "Observed p-values","Simulated p-values")
+
+library(sjPlot)
+stat_table1 <- tab_df(table, 
+                     title = "Significance of the difference in mean daily hydropower flow within a year", file= "tablee.doc")
+
+
+stat_table1
+```
+

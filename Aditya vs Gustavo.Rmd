@@ -1,0 +1,39 @@
+---
+title: "Comparison"
+author: "Gustavo Facincani Dourado"
+date: "8/25/2020"
+output: html_document
+---
+
+```{r}
+gustavo_b01 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/bias correction/MERR/Catchment_RO_BC/CanESM2_rcp45/tot_runoff_sb1.csv") %>%
+  mutate(flw = flw/1000000*86400)
+gustavo_b01
+
+aditya_b01 <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/MERR/Catchment_RO/tot_runoff_sb01.csv")
+aditya_b01
+
+gustavo_b01$aditya <- aditya_b01$flow
+gustavo_b01$gustavo <- gustavo_b01$flw
+```
+
+```{r}
+library(ggplot2)
+ggplot(gustavo_b01) +
+  geom_line(aes(x = Date, y =gustavo)) +
+  geom_line(aes(x = Date, y = aditya, color = "#FF0000"))+
+  scale_x_date(limits = as.Date(c('2030-01-01','2060-12-31'))) +
+  ylim(0, 12)
+```
+
+```{r}
+library(ggpmisc)
+my.formula <- y ~ x
+
+ggplot(gustavo_b01, aes(x = gustavo, y =aditya)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  geom_point()
+```

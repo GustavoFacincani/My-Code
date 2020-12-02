@@ -1,0 +1,200 @@
+---
+title: "HW9_FacincaniDourado"
+author: "Gustavo Facincani Dourado"
+date: "4/15/2020"
+output: html_document
+---
+
+Chapter 9. 
+
+Exercise 2. Use simulation to evaluate the revised Poisson model in problem 9 in Chapter 8. A potential problem of such data is the excess number of zeroes, a phenomenon known as zero-inﬂation [Lambert, 1992].
+
+
+```{r}
+library(tidyverse)
+library(msme)
+urlfile <- "https://raw.githubusercontent.com/songsqian/eesR/master/R/Data/sturgeon.csv"
+stur <- read_csv(url(urlfile))
+```
+
+```{r}
+stur
+```
+
+```{r}
+ggplot(stur, aes(x = CATCH)) + geom_histogram(binwidth = 1) + 
+  labs(title = "Histogram of Sturgeon Catch Data",
+       y = "Density",
+       x = "Catch")
+```
+
+```{r}
+#Simple Poisson Model
+stur.m1 <- glm(CATCH ~ YEAR, data = stur, offset = log(Effort), family = "poisson")
+summary(stur.m1)
+```
+
+```{r}
+library(broom)
+tidy(stur.m1, exponentiate = TRUE)
+```
+
+```{r}
+library(jtools)
+summ(stur.m1)
+
+```
+
+```{r}
+stur %>% 
+  gather(YEAR, TEMP, SALINITY, COND, DTSF, DO, key = "var", value = "value") %>%
+  ggplot(aes(x = value, y = CATCH)) +
+  geom_point(alpha = 0.5, na.rm = T) +
+  facet_wrap(~var, scales = "free")
+```
+
+```{r}
+#Poisson with more variables
+stur.m2 <- glm(CATCH ~ YEAR + TEMP + SALINITY + DTSF, data = stur, offset = log(Effort), family = "poisson")
+summary(stur.m2)
+```
+
+```{r}
+#Quasipoisson
+stur.m3 <- glm(CATCH ~ YEAR + TEMP + SALINITY + DTSF, data = stur, offset = log(Effort), family = "quasipoisson")
+summary(stur.m3)
+```
+
+
+So, let's compare the models using simulation.
+
+```{r}
+y <- stur$CATCH
+n <-dim(stur)[1]
+n.sims <- 5000
+zeros <- mean(stur$CATCH==0)
+zeros
+```
+There are 43.87% of zeros in the data.
+
+
+```{r}
+#Simple Poisson Regression
+y.rep.mean1 <- numeric()
+for (i in 1:n.sims){
+  y.rep1 <- rpois(n, predict(stur.m1, type = "response"))
+  y.rep.mean1 [i] <- mean(y.rep1 ==0)}
+
+zeros1 <- mean(y.rep1==0)
+zeros1
+
+print(paste("The simulation shows that the Poisson Regression gives", zeros1*100,"% of zeros"))
+```
+
+```{r}
+#Poisson Regression with added variables
+y.rep.mean2 <- numeric()
+for (i in 1:n.sims){
+  y.rep2 <- rpois(n, predict(stur.m2, type = "response"))
+  y.rep.mean2 [i] <- mean(y.rep2 ==0)}
+
+zeros2 <- mean(y.rep2==0)
+zeros2
+
+print(paste("The simulation shows that the Poisson Regression with added variables gives", zeros2*100,"% of zeros"))
+```
+
+```{r}
+#QuasiPoisson Regression
+y.rep.mean3 <- numeric()
+for (i in 1:n.sims){
+  y.rep3 <- rpois(n, predict(stur.m3, type = "response"))
+  y.rep.mean3 [i] <- mean(y.rep3 ==0)}
+
+zeros3 <- mean(y.rep3==0)
+zeros3
+
+print(paste("The simulation shows that the QuasiPoisson Regression gives", zeros3*100,"% of zeros"))
+```
+
+```{r}
+library(pscl)
+library(broom)
+
+#Zero-inflated Poisson Regression
+
+stur.m4 <- zeroinfl(CATCH ~ YEAR + TEMP + SALINITY + DTSF, offset = log(Effort), dist = 'poisson', data = stur)
+summary(stur.m4)
+```
+
+```{r}
+P__disp(stur.m4)
+```
+Checking for over-dispersion we can see that the Zero-inflated model has a better fit, because of the dispersion < 2.
+
+```{r}
+#Zero-inflated Poisson Regression
+y.rep.mean4 <- numeric()
+for (i in 1:n.sims){
+  y.rep4 <- rpois(n, predict(stur.m4, type = "response"))
+  y.rep.mean4 [i] <- mean(y.rep4 ==0)}
+
+zeros4 <- mean(y.rep4==0)
+zeros4
+
+print(paste("The simulation shows that the Zero-inflated Poisson Regression gives", zeros4*100,"% of zeros"))
+```
+
+```{r}
+#Zero-inflated Negative Binomial Poisson Regression
+
+stur.m5 <- zeroinfl(CATCH ~ YEAR + TEMP + SALINITY + DTSF, offset = log(Effort), dist = 'negbin', data = stur)
+summary(stur.m5)
+```
+
+```{r}
+P__disp(stur.m5)
+```
+Checking for over-dispersion we can see that the Zero-inflated negative binomial model has the best fit of all, because of the dispersion close to 1.
+
+```{r}
+#Zero-inflated Negative Binomial Poisson Regression
+y.rep.mean5 <- numeric()
+for (i in 1:n.sims){
+  y.rep5 <- rpois(n, predict(stur.m5, type = "response"))
+  y.rep.mean5 [i] <- mean(y.rep5 ==0)}
+
+zeros5 <- mean(y.rep5==0)
+zeros5
+
+print(paste("The simulation shows that the Zero-inflated Negative Binomial Poisson Regression gives", zeros5*100,"% of zeros"))
+```
+
+```{r}
+
+require(ggplot2)
+#Plotting the simulated percent of zeros among model
+
+
+#Plot the data for simple Poisson
+ggplot(data.frame(y.rep.mean1), aes(y.rep.mean1)) + 
+  geom_histogram(aes(y=..density..))
+
+#Plot the data for Poisson with added variables
+ggplot(data.frame(y.rep.mean2), aes(y.rep.mean2)) + 
+  geom_histogram(aes(y=..density..))
+
+#Plot the data for QuasiPoisson
+ggplot(data.frame(y.rep.mean3), aes(y.rep.mean3)) + 
+  geom_histogram(aes(y=..density..))
+
+#plot the data for Zero-inflated Poisson
+ggplot(data.frame(y.rep.mean4), aes(y.rep.mean4)) + 
+  geom_histogram(aes(y=..density..))
+
+#plot the data for Zero-inflated Negative Binomial Poisson
+ggplot(data.frame(y.rep.mean5), aes(y.rep.mean5)) + 
+  geom_histogram(aes(y=..density..))
+```
+
+However, by only using simulation, I repeatedly got results around 20% (usually 17-22%) for all models, which is still not satisfactory. The representation can be seen in the histograms above.

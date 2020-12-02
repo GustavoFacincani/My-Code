@@ -1,0 +1,242 @@
+---
+title: "Power house flow"
+author: "Gustavo Facincani Dourado"
+date: "6/4/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(tidyr)
+library(grid)
+library(grDevices)
+library(ggpubr)
+library(scales)
+library(reshape)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+
+```
+
+```{r}
+#Read Power House flow data for Merced
+Sim_HidFlow_Mer <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/Hydropower_Flow_mcm.csv") %>%
+  filter(between(Date, as.Date("1980-10-01"), as.Date("2013-09-30")))
+Sim_HidFlow_Mer
+
+Obs_HidFlow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Merced River/gauges/streamflow_cfs.csv")  %>%
+  filter(between(Date, as.Date("1980-10-01"), as.Date("2013-09-30")))
+Obs_HidFlow_Mer
+
+```
+
+
+
+#rsr(LakeMS$`Lake McSwain`, ObsLakeMS$`USGS 11270600 MCSWAIN RES NR SNELLING CA`, na.rm = TRUE)
+pbias(LakeMS$`Lake McSwain`, ObsLakeMS$`USGS 11270600 MCSWAIN RES NR SNELLING CA`, na.rm = TRUE)
+NSE(LakeMS$`Lake McSwain`, ObsLakeMS$`USGS 11270600 MCSWAIN RES NR SNELLING CA`, na.rm = TRUE)
+
+model.assess(LakeMS$`Lake McSwain`, ObsLakeMS$`USGS 11270600 MCSWAIN RES NR SNELLING CA`, na.rm = TRUE)
+
+```
+#Read IFR data for Merced
+IFR_Mer <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/InstreamFlowRequirement_Flow_mcm.csv")
+IFR_Mer$Type <- "IFR"
+IFR_Mer
+
+MinIFR_Mer <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/InstreamFlowRequirement_Min Flow_mcm.csv")
+MinIFR_Mer$Type <- "MinIFR"
+MinIFR_Mer
+
+MaxIFR_Mer <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/InstreamFlowRequirement_Max Flow_mcm.csv")
+MaxIFR_Mer$Type <- "MaxIFR"
+MaxIFR_Mer$`IFR bl New Exchequer Dam` <- "NA"
+MaxIFR_Mer
+
+IFRs_Merced <- rbind(IFR_Mer, MinIFR_Mer, MaxIFR_Mer)
+IFRs_Merced <- melt(as.data.frame(IFRs_Merced), id = c("Date", "Type"))  %>%
+  rename(c(variable = "Location", 
+           value = "Flow"))
+IFRs_Merced$Flow <- as.numeric(IFRs_Merced$Flow)
+IFRs_Merced
+```
+
+```{r}
+#Daily Hydropower Flow for Merced
+  ggplot(HydroFlow_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9)+ #plot monthly observed data in greenish blue
+ geom_line(aes(x = Date, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7)+
+#plot monthly observed data in orange
+geom_line(aes(x = Date, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7)+
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_labels = "%b/%Y",
+                  breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                          labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                          guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower flow (million cubic meters)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+
+png("Merced_hydropower_timeseries.png", units ="in", width=8, height=5, res = 300)
+```
+
+```{r}
+#Monthly hydropower flow for Merced
+
+HydroFlow_Mer$Month <- as.Date(cut(HydroFlow_Mer$Date, breaks = "month"))
+
+  ggplot(HydroFlow_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  stat_summary(aes(x = Month, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9, fun = sum, geom = "line")+ #plot monthly observed data in greenish blue
+ stat_summary(aes(x = Month, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7, fun = sum, geom = "line")+
+#plot monthly observed data in orange
+stat_summary(aes(x = Month, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7, fun = sum, geom = "line")+
+    scale_y_continuous(expand = c(0, 0))+
+    scale_x_date(date_labels = "%b/%Y",
+                  breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                         breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                          labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                          guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower flow (million cubic meters)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+
+png("Merced_monthly_hydropower_timeseries.png", units ="in", width=8, height=5, res = 300)
+
+
+```
+
+
+```{r}
+#Monthly IFR for Merced
+
+IFRs_Merced$Month <- as.Date(cut(IFRs_Merced$Date, breaks = "month"))
+
+  ggplot(IFRs_Merced) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+stat_summary(aes(x = Month, y = Flow, colour = Type), alpha = 0.6, fun = sum, geom = "line")+
+  scale_colour_manual(values=c("#E69F00", "#0072B2", "#56B4E9"))+  
+  scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_labels = "%b/%Y",
+                  breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), 
+                             as.Date("2000-10-01"), as.Date("2010-10-01")),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Instream flow (million cubic meters)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +#center the title
+
+ facet_wrap(~ Location, ncol=1, scales= "free",  labeller = labeller(variable = c(`IFR at Shaffer Bridge` = "IFR at Shaffer Bridge", `IFR bl New Exchequer Dam` = "IFR below New Exchequer Dam"))) +
+
+  
+png("Merced_monthly_IFR_timeseries.png", units ="in", width=8, height=5, res = 300)
+
+```
+
+```{r}
+#IFR for Merced
+  ggplot(IFRs_Merced) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Flow, color = Type, linetype = Type))+ #plot monthly observed data in greenish blue
+  scale_colour_manual(values=c("#E69F00", "#0072B2", "#56B4E9"))+  
+  scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_labels = "%b/%Y",
+                  breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), 
+                             as.Date("2000-10-01"), as.Date("2010-10-01")),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Instream flow (million cubic meters)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +#center the title
+
+ facet_wrap(~ Location, ncol=1, scales= "free",  labeller = labeller(variable = c(`IFR at Shaffer Bridge` = "IFR at Shaffer Bridge", `IFR bl New Exchequer Dam` = "IFR below New Exchequer Dam"))) +
+                                                                       
+png("Merced_IFR_timeseries.png", units ="in", width=8, height=5, res = 300)
+
+```
+
+```{r}
+#Merced Storage
+
+  ggplot(Storage_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = Storage))+ #plot monthly observed data in greenish blue
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_labels = "%b/%Y",
+                  breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Reservoir storage (million cubic meters)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+
+ facet_wrap(~ Lake, ncol=1, scales= "free") +  
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+    
+png("Merced_storage_timeseries.png", units ="in", width=8, height=5, res = 300)
+
+```
+
+```{r}
+write_csv(IFRs_Merced, "IFRs_Merced.csv", append=FALSE, col_names=TRUE)
+```
+
+```{r}
+
+```
+
+```{r}
+
+
+ll
+nM <- length(dataset$Month)
+lapply(1:nM, function(i){
+  a <- dataset$Sim_flow
+  b <- dataset$Obs_flow
+  m <- model.assess(a,b)
+  ll <<- rbind(dataset,data.frame(dataset=dataset[i],label=m))
+})
+labels <- ll
+```
+
+```{r}
+
+```

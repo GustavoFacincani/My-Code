@@ -1,0 +1,24 @@
+---
+title: "es207_hw6"
+author: "Gustavo Facincani Dourado"
+date: "3/10/2020"
+output: html_document
+---
+
+Question 4.
+
+```{r}
+
+library(tidyverse)
+simulated <- 1:10
+observed <- 10:19
+
+model_assess <- function(sim, obs) {require(hydroGOF)
+  RMSE.stats <- rmse(sim = simulated, obs = observed, na.rm=TRUE)
+  MAE.stats <- mae(sim = simulated, obs = observed, na.rm=TRUE)
+  PBIAS.stats <- pbias(sim = simulated, obs = observed, na.rm=TRUE)
+  tibble(RMSE = RMSE.stats, MAE = MAE.stats, PBIAS = PBIAS.stats)
+}
+
+print(model_assess(sim,obs))
+```

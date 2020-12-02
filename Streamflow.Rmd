@@ -1,0 +1,229 @@
+---
+title: "HP flow, IFR and Storage"
+author: "Gustavo Facincani Dourado"
+date: "8/18/2020"
+output: html_document
+---
+
+```{r}
+library(raster)
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(grid)
+library(ggpubr)
+library(scales)
+library(ggpmisc)
+library(lubridate)
+library(dplyr)
+```
+
+```{r}
+#Function to read the files
+
+streamflow <- function(basin, variables) { #basin = folder named after each basin, variables = # of columns besides the date column
+  #I'm using read.csv because, for some reason, read_csv wasn't working properly with dates
+streamflow_basin <- read.csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/gauges/streamflow_cfs.csv", sep =""), check.names=FALSE, colClasses=c("Date", rep("numeric",variables))) #I'm setting classes of columns because read.csv messes with that
+
+streamflow_basin}
+
+streamflow_mer <- streamflow("Merced River", 8)
+streamflow_mer
+
+streamflow_tuo <- streamflow("Tuolumne River", 22)
+streamflow_tuo
+
+streamflow_usj <- streamflow("Upper San Joaquin River", 47)
+streamflow_usj
+
+streamflow_stn <- streamflow("Stanislaus River", 37)
+streamflow_stn
+```
+
+```{r}
+#Phoenix was missing
+Phoenix <- readxl::read_excel("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/References/Flow data from utilities/PGE Mokelumne including Phoenix.xls", sheet = "Data", skip =3)[c(4,5)] %>%
+   mutate(...4 = as.Date(...4))
+Phoenix
+
+streamflow_stn$`Phoenix PH` <- Phoenix$`S108 (Phoenix PH)`[match(streamflow_stn$Date, Phoenix$...4)]
+streamflow_stn
+#I tried using merge() to add this column, it was a throwing errors and I couldn't fix it
+#Probably because the files are in different formats (csv vs xlsx)
+#So I did it this way, less elegant, but works
+```
+
+```{r}
+#Recovering csv file that was open and unintentionally saved in excel
+#When we open it on excel and save it, it alters the configuration of dates, etc
+csvfile <- read.delim("C:/Users/gusta/Documents/streamflow_cfs.txt", check.names = F)
+
+csvfile[2:38] <- lapply(csvfile[2:38], as.double)
+csvfile <- csvfile%>% mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+csvfile
+write.csv(csvfile,file= "C:/Users/gusta/Documents/streamflow_cfs.csv",row.names=F)
+```
+
+```{r}
+#function to get Start and End of non-NA values
+Streamflow_data <- function(streamflow) {
+
+NonMissingStartEnd <- function(my.col, date.col, df){
+  Start <- df[[date.col]][min(which(!is.na(df[[my.col]])))] #column with first date with non-NA values in record
+  End <- df[[date.col]][max(which(!is.na(df[[my.col]])))] #column with last date with non-NA values in record
+  data.frame(my.col = my.col, Start=Start, End=End) #creating dataframe
+  
+}
+
+#Apply function to all columns
+x <-  lapply(names(streamflow), NonMissingStartEnd, date.col = 'Date', df=streamflow)
+streamflow_timespan <- do.call(rbind,x)
+streamflow_timespan
+
+#reshaping the data
+streamflow2 <- reshape2::melt(streamflow, id = "Date")
+streamflow2
+
+#merging the tibbles we got
+streamflow_manipulated <- merge(streamflow2, streamflow_timespan, by.x = "variable", by.y = "my.col")
+streamflow_manipulated
+
+#selecting only the period of record between the Start and End date
+streamflow_complete <- data.table::as.data.table(streamflow_manipulated[streamflow_manipulated$Date >= streamflow_manipulated$Start & streamflow_manipulated$Date <= streamflow_manipulated$End,] %>% 
+                                                   
+  mutate(`Time Span (years)` = round(time_length(difftime(as.Date(End), as.Date(Start)), "years"), digits = 1), #Time span of the data in years
+         `Time Span (months)` = round(time_length(difftime(as.Date(End), as.Date(Start)), "months"), digits = 1), #Time span of the data in months
+         value = as.numeric(value), #setting value as numeric to avoid trouble
+         Month = lubridate::month(as.Date(Date, "%Y-%m-%d")), #creating month column in case it's useful
+         Year = lfstat::water_year(Date, origin = "usgs"), #defining the water year
+     `Number of NAs` = (ifelse(is.na(value), 1,0))) %>% #count of NAs, adding #1 to each time an NA comes up
+  group_by(variable, Start, End, Year, Month, `Time Span (years)`, `Time Span (months)`) %>% #group by month
+  summarise(`Number of NAs` = sum(`Number of NAs` ))) %>% #get sum of monthly NAs
+  mutate(Completeness = ifelse(`Number of NAs` > 8, 0, 1))%>% #count = 1 means it is an incomplete month, as the number of NAs is > ~25% (8 days), or complete (count = 0) when it has data for at least 22-23 days
+  group_by(variable,Start, End,`Time Span (years)`, `Time Span (months)`) %>%
+  summarise(`Completeness (%)` = round(sum((Completeness)/`Time Span (months)`)*100, digits = 1)) #dividing the sum of number of complete months by the number of months in record
+  
+streamflow_complete$`Completeness (%)`[streamflow_complete$`Completeness (%)` > 100] <- as.numeric(100) #set colum "Completeness (%) to not be greater than 100, because the "Completeness" column is formed by integers and "Time Span (months)" is not
+#That difference in rounding numbers might give results like 100.2% complete, so here we're fixing that
+
+
+streamflow_complete}
+```
+
+
+```{r}
+Mer <- Streamflow_data(streamflow_mer) 
+Mer
+Tuo <- Streamflow_data(streamflow_tuo)#%>%
+#  dplyr::filter(., grepl('PH', variable)) #here I was filtering the data to see which gauges were PHs
+Tuo
+USJ <- Streamflow_data(streamflow_usj)
+USJ
+
+Stn <- Streamflow_data(streamflow_stn) 
+Stn
+```
+
+
+```{r}
+#Reading the table we have on Box
+table <- readxl::read_excel("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/analyses/Historical relative contributions to system/AllbasinsSummary_Annual_Stats_Contribution_Historical_20200721.xlsx")[1:3] 
+table
+
+#Binding the basins
+basins <- rbind(USJ, Mer, Tuo, Stn) %>%
+  rename(Gage = variable)
+basins
+
+#Here I'm joining box files in one tibble, by the name of the gage
+basins2 <- dplyr::inner_join(table[c(2,3)], basins[c(1:4,6)], by = "Gage")
+basins2
+
+#Here I'm saving it as a file, so I can just copy and paste the info in the actual table on Box
+readr::write_csv(basins2, "C:/Users/gusta/Desktop/PhD/CERCWET/PH_basins.csv")
+```
+
+```{r}
+table2 <- xlsx::read.xlsx("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/analyses/Historical relative contributions to system/AllbasinsSummary_Annual_Stats_Contribution_Historical_20200721.xlsx", sheetIndex = 3)[1:4] 
+table2
+
+#Here I'm joining box files in one tibble, by the name of the gage
+basins3 <- dplyr::inner_join(table2[c(1:4)], basins[c(1:4,6)], by = "Gage")
+basins3
+
+#Here I'm saving it as a file, so I can just copy and paste the info in the actual table on Box
+readr::write_csv(basins3, "C:/Users/gusta/Desktop/PhD/CERCWET/IFR_basins.csv")
+```
+
+
+```{r}
+BigCreek6 <- read_csv("C:/Users/gusta/Documents/USGS 11238600 - Big Creek 6.csv", col_types = cols(Date = col_date()) )[-c(1:30),c(3:4)]%>%
+  mutate(Date = as.Date(X3, format = "%m/%d/%Y"),
+         `USGS 11238600 SAN JOAQUIN R AB STEVENSON C NR BIG CREEK CA` = as.numeric(X4))
+BigCreek6
+
+library(tibble)
+
+
+New_USJ <- add_column(streamflow_usj, `USGS 11238600 SAN JOAQUIN R AB STEVENSON C NR BIG CREEK CA` = BigCreek6$`USGS 11238600 SAN JOAQUIN R AB STEVENSON C NR BIG CREEK CA`, .after = 27)
+
+readr::write_csv(New_USJ, "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Upper San Joaquin River/gauges/streamflow_cfs2.csv")
+```
+
+
+```{r}
+storage <- function(basin, variables) { #basin = folder name after each basin, variables = # of columns besides the date column
+  #I'm using read.csv because, for some reason, read_csv wasn't working properly with dates
+storage_basin <- read.csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/",basin,"/gauges/storage_mcm.csv", sep =""), check.names=FALSE, colClasses=c("Date", rep("numeric",variables))) #I'm setting classes of columns because read.csv messes with that
+
+storage_basin}
+
+storage_mer <- storage("Merced River", 2)
+storage_mer
+
+storage_tuo <- storage("Tuolumne River", 4)
+storage_tuo
+
+storage_usj <- storage("Upper San Joaquin River", 9)
+storage_usj
+
+storage_stn <- storage("Stanislaus River", 11)[-c(5,6)]
+storage_stn
+
+```
+
+```{r}
+#we can reuse Streamflow_data function for storage
+Mer2 <- Streamflow_data(storage_mer) 
+Mer2
+
+Tuo2 <- Streamflow_data(storage_tuo)
+Tuo2
+
+USJ2 <- Streamflow_data(storage_usj)
+USJ2
+
+Stn2 <- Streamflow_data(storage_stn) 
+Stn2
+
+```
+
+```{r}
+table3 <- xlsx::read.xlsx("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/analyses/Historical relative contributions to system/AllbasinsSummary_Annual_Stats_Contribution_Historical_20200721.xlsx", sheetIndex = 5)[1:4] 
+table3
+
+#Binding the basins
+basins_stor <- rbind(USJ2, Mer2, Tuo2, Stn2) %>%
+  rename(Gauge = variable)
+basins_stor
+
+#Here I'm joining box files in one tibble, by the name of the gage
+basins3 <- dplyr::inner_join(table3[c(2,3)], basins_stor[c(1:4, 6)], by = "Gauge")
+basins3
+
+#Here I'm saving it as a file, so I can just copy and paste the info in the actual table on Box
+readr::write_csv(basins3, "C:/Users/gusta/Desktop/PhD/CERCWET/Storage_basins.csv")
+```

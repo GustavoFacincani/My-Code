@@ -1,0 +1,148 @@
+---
+title: "Comparison"
+author: "Gustavo Facincani Dourado"
+date: "8/25/2020"
+output: html_document
+---
+
+```{r}
+library(tidyr)
+library(tidyverse)
+
+filenames <- list.files('C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/bias correction/MERR/Catchment_RO_BC/CanESM2_rcp45/', pattern="*.csv", full.names=TRUE)
+Aditya <- lapply(filenames, function (x){
+ file <- read.csv(x)
+
+    suffix = sub(".*_", "", x)
+
+    colnames(file)[2] <- paste(colnames(file)[2], suffix, sep='_')
+    return(file)
+})
+Aditya
+
+Aditya2 <- Reduce(function(x, y) merge(x, y, by="Date"), Aditya) %>%
+  mutate(Total_Adi = rowSums(.[, -(1)])*70.0457, #cubic meters/second to acre-feet/day
+         monthyear = zoo::as.Date(zoo::as.yearmon(Date, "%Y-%m"))) %>%
+  aggregate(.~monthyear,
+             data=.,FUN=sum)
+
+Aditya2
+
+```
+
+```{r}
+filenames2 <- list.files('C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/MERR/Catchment_RO/', pattern="*.csv", full.names=TRUE)
+Gustavo <- lapply(filenames2, function (x){
+ file <- read.csv(x)
+
+    suffix = sub(".*_", "", x)
+
+    colnames(file)[2] <- paste(colnames(file)[2], suffix, sep='_')
+    return(file)
+})
+Gustavo
+
+Gustavo2 <- Reduce(function(x, y) merge(x, y, by="Date"), Gustavo) %>%
+  mutate(Total_Gus = rowSums(.[, -1])*810.714, #mcm/day to acre-feet/day
+         monthyear = zoo::as.Date(zoo::as.yearmon(Date, "%Y-%m")))%>%
+  aggregate(.~monthyear,
+             data=.,FUN=sum)
+
+Gustavo2
+
+
+CanESM2 <- cbind(Gustavo2[c(1, 9)], Aditya2[9])
+CanESM2
+```
+
+
+```{r}
+library(ggplot2)
+ggplot(CanESM2) +
+  geom_line(aes(x = monthyear, y =Total_Gus), color = "#5CDB5C") +
+  geom_line(aes(x = monthyear, y = Total_Adi), color = "#FF0000", alpha = 0.5)+
+  scale_y_log10() +
+  scale_x_date(limits = as.Date(c('2030-01-01','2050-12-31')),
+          #     labels = date_format("%Y-%m"),
+    breaks = "5 years") +
+  labs(y = "Inflow (Acre-feet/month)",
+       x = element_blank(),
+       title = "Merced (CanESM2 - RCP 4.5)")
+#  ylim(0, 10)
+```
+
+
+```{r}
+
+ggplot(livneh_mer) +
+  geom_line(aes(x = mer_gus.Date, y =mer_gus.total), color = "#5CDB5C") +
+  geom_line(aes(x = mer_gus.Date, y = mer_gust.total), color = "#FF0000", alpha = 0.5)+
+  scale_x_date(limits = as.Date(c('2030-01-01','2060-12-31')),
+          #     labels = date_format("%Y-%m"),
+    breaks = "5 years")
+#  ylim(0, 10)
+```
+
+
+```{r}
+library(ggpmisc)
+my.formula <- y ~ x
+
+ggplot(CanESM2, aes(x = Total_Adi, y =Total_Gus)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  geom_point()
+```
+
+```{r}
+
+my.formula <- y ~ x
+
+ggplot(livneh_mer, aes(x = mer_adi.total, y =mer_gust.total)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  geom_point()
+```
+
+
+
+```{r}
+SFPUC <- readxl::read_excel("C:/Users/gusta/OneDrive/Documentos/SFPUC.xlsx", sheet = "Sheet4") %>%
+  mutate(`Row Labels` = as.Date(`Row Labels`, format = "%Y")) 
+SFPUC[SFPUC == 0] <- NA
+SFPUC
+```
+
+```{r}
+ggplot(SFPUC, aes(x = `Sum of El Livneh`, y =`Sum of Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  labs(x = "Eleanor - Livneh", y = "Eleanor - SFPUC", title = "Annual Flow (mcm/year)")+
+  
+  geom_point()
+
+
+ggplot(SFPUC, aes(x = `Sum of HH Livneh`, y =`Sum of Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  labs(x = "Hetch Hetchy - Livneh", y = "Hetch Hetchy - SFPUC", title = "Annual Flow (mcm/year)")+
+  
+  geom_point()
+
+ggplot(SFPUC, aes(x = `Sum of Ch Livneh`, y =`Sum of Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)) +
+  geom_smooth(method = "lm", se=FALSE, color="black", formula = my.formula) +
+   stat_poly_eq(formula = my.formula, 
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) +    
+  labs(x = "Cherry - Livneh", y = "Cherry - SFPUC", title = "Annual Flow (mcm/year)")+
+  
+  geom_point()
+```

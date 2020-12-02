@@ -1,0 +1,129 @@
+---
+title: "March9"
+author: "Gustavo Facincani Dourado"
+date: "3/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+wq <- suppressMessages(read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/BayDeltaWQ.csv", col_names = TRUE, na = c("NA", "n/p", "n/a"), guess_max = 30000))
+
+```
+
+```{r}
+wq <- wq %>% 
+  filter(StationCode %in% c("C3", "D10", "D4", "D22", "D12", 
+                            "D16", "D26", "D19", "MD10", "D28A", 
+                            "P8", "C10", "D7", "D8", "D6", "D41"))
+wq <- wq %>% 
+  select(2:6, Oxygen, pH, `Secchi Depth`, Temperature, Turbidity) %>% 
+  na.omit()
+wq
+```
+
+```{r}
+ggplot(wq, aes(x = `Secchi Depth`, y = Turbidity)) + 
+  geom_point(alpha = 0.2) + theme_bw()
+
+```
+
+
+```{r}
+ggplot(wq, aes(x = log(`Secchi Depth`), y = log(Turbidity))) + 
+  geom_point(alpha = 0.2) + theme_bw()
+
+```
+
+
+```{r}
+lm1 <- lm(Turbidity ~ `Secchi Depth`, data = wq)
+summary(lm1)
+```
+
+```{r}
+lm2 <- lm(log(Turbidity) ~ log(`Secchi Depth`), data = wq)
+summary(lm2)
+```
+
+
+```{r}
+broom::tidy(summary(lm2))
+```
+
+
+```{r}
+broom::glance(summary(lm2))
+```
+
+
+```{r}
+ggplot(wq, aes(x = `Secchi Depth`, y = Turbidity)) + theme_bw() +
+  geom_point(alpha = 0.2) + geom_smooth(method = "lm") + ylim(c(0,400))
+```
+
+
+```{r}
+ggplot(wq, aes(x = log(`Secchi Depth`), y = log(Turbidity))) + theme_bw() +
+  geom_point(alpha = 0.2) + geom_smooth(method = "lm", se = TRUE)
+```
+
+
+```{r}
+d <- broom::tidy(summary(lm2)) %>% 
+  mutate(low = estimate - std.error,
+         high = estimate + std.error)
+d
+```
+
+
+```{r}
+ggplot(d, aes(estimate, term, xmin = low, xmax = high, heght = 0)) +
+  geom_point() + geom_vline(xintercept = 0) + geom_errorbarh()
+```
+
+
+```{r}
+names(lm1)
+```
+
+
+```{r}
+lm1$coefficients
+```
+
+
+```{r}
+head(lm1$residuals)
+```
+
+
+```{r}
+head(lm1$fitted.values)
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```

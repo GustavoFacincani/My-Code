@@ -1,0 +1,177 @@
+```{r}
+
+#Tuolumne (TUOR): Livneh
+#Before Using doc, Change the following:
+# - name on line 1
+# - working directory on line 22
+# - mdlname on line 25
+# - file path on line 26
+# - n on line 47
+# - File names starting line 135
+library(ncdf4)
+library(lubridate)
+library(reshape2)
+library(dplyr)
+library(hyfo)
+library(ggplot2)
+library(readxl)
+library(tidyr)
+#start with empty workspace
+rm(list=ls(all=TRUE))
+
+#Set working directory
+setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/")
+wd <- setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/")
+
+```
+
+```{r}
+#Read excel file with monthly bias-corrected flows
+# File name: 
+mdlname <- "Livneh"
+BCFlow_Liv <- read_csv(paste(wd,"/MERR/BC_Data_Berkeley/streamflow_observed_monthly_LK_MC.csv", sep="")) 
+BCFlow_Liv 
+
+```
+
+
+BCFlow_Liv <- BCFlow_Liv %>% gather(Month,Flw, Oct:Sep)
+BCFlow_Liv <- BCFlow_Liv[, -2]
+# Goal: extract the rows with oct nov and dec. Subtract one year from them
+x <- max(which(BCFlow_Liv$Month == month.abb[12]))
+BCFlow_Liv$`Water Year`[1:x] <- (BCFlow_Liv$`Water Year`[1:x]-1)
+BCFlow_Liv$Date <- paste(BCFlow_Liv$`Water Year`,'-', BCFlow_Liv$Month,'-15', sep="")
+BCFlow_Liv <- BCFlow_Liv[c(4,3)]
+BCFlow_Liv$Date <- as.Date(ymd(BCFlow_Liv$Date))
+BCFlow_Liv <- as.data.frame(BCFlow_Liv %>% arrange(Date))
+BCFlow_Liv <- extractPeriod(BCFlow_Liv,startDate = '1950-01-15', endDate = '2013-12-15')
+
+# Acre-feet/month to cubic meters/sec--------------------------------------------------------------------------------
+for(i in 1:nrow(BCFlow_Liv)){
+  BCFlow_Liv$Flw[i] <- (BCFlow_Liv$Flw[i]*1233480)/(days_in_month(BCFlow_Liv$Date[i])*86400)
+  
+}
+
+data <- list()
+# need to rename first 9 files: tot_runoff_sb01 to tot_runoff_sb1
+#n = the number tot_runoff files for this basin
+#REMEMBER TO CHANGE n !!!
+n <- 19
+for (f in (1:n)){
+  d <- read.csv(paste("./Catchment_RO_woBC/",mdlname,"/tot_runoff_sb",f,".csv", sep=""))
+  data[[f]] <- d
+}
+
+df <- Reduce(function(x,y) full_join(x,y, by=c('Date')), data) # eliminates all the duplicate date columns
+
+colnames(df) <-  c('Date',1:n)
+
+# automates the creation of the TotFlw column
+df$TotFlw <- rowSums(df[, -1])
+
+daily_flw_vic <- data.frame(df$Date,df$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+print(head(daily_flw_vic))
+
+
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic$Date <- as.Date(ymd(monthly_flw_vic$Date))
+monthly_flw_vic_orig <- monthly_flw_vic
+monthly_flw_vic_orig$Type <- 'Original'
+
+#Bias Correction
+new_df <- list()
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:12)){
+  print(i)
+  obs <- filter(BCFlow_Liv,month(BCFlow_Liv$Date)== i)#taking the BC info and filtering by the month 
+  hind <- filter(monthly_flw_vic,month(monthly_flw_vic$Date)== i)#taking our data and filtering that by month 
+  
+  bF <- getBiasFactor(hind,obs,method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")# getting the bias based on BC and using our data as hindcast data
+  for (f in (1:n)){
+    new_df[[f]] <- filter(data[[f]],month(data[[f]]$Date) ==i)#taking the every column of flow and filtering by month 
+    bc_df[[f]] <- applyBiasFactor(new_df[[f]],bF)#applying the bias factor to this column 
+    if (i==1){
+      fin_df[[f]] <- bc_df[[f]]# in order to start off the df. everything after get binded to this 
+    }
+    else {
+      fin_df[[f]] <- bind_rows(fin_df[[f]],bc_df[[f]])
+    }
+  }
+}
+
+#Sort and write 
+
+for(i in (1:n)){
+  fin_df[[i]] <- arrange(fin_df[[i]], Date)
+  write.csv(fin_df[[i]],file=paste("./Catchment_RO_BC/",mdlname,"/tot_runoff_sb",i,".csv", sep=""),row.names=F)
+}
+
+df_new <- Reduce(function(x,y) full_join(x,y, by=c('Date')), fin_df)
+colnames(df_new) <-  c('Date',1:n)
+
+df_new$TotFlw <- rowSums(df_new[, -1])
+daily_flw_vic <- data.frame(df_new$Date,df_new$TotFlw)
+colnames(daily_flw_vic) <- c('Date','Flw')
+daily_flw_vic$Date <- as.Date(ymd(daily_flw_vic$Date))
+
+#Aggregate to monthly value
+monthly_flw_vic <- aggregate(daily_flw_vic[,2],by=list(year(daily_flw_vic$Date),month(daily_flw_vic$Date)),FUN=mean,na.rm=TRUE)
+colnames(monthly_flw_vic) <- c('Year','Month','Flw')
+monthly_flw_vic <- monthly_flw_vic[with(monthly_flw_vic,order(monthly_flw_vic$'Year')),]
+monthly_flw_vic$Date <- paste(monthly_flw_vic$Year,'-', monthly_flw_vic$Month,'-15', sep="")
+monthly_flw_vic_mod <- monthly_flw_vic[,c(4,3)]
+monthly_flw_vic_mod$Date <- as.Date(ymd(monthly_flw_vic_mod$Date))
+monthly_flw_vic_mod$Type <- 'Bias Corrected'
+
+#Plot
+BCFlow_Liv$Type <- 'Cal-Adapt'
+monthly_flw_vic_orig <- extractPeriod(monthly_flw_vic_orig,startDate = '1950-01-15', endDate = '2013-12-15')
+monthly_flw_vic_mod <- extractPeriod(monthly_flw_vic_mod,startDate = '1950-01-15', endDate = '2013-12-15')
+BCFlow_Liv <- extractPeriod(BCFlow_Liv,startDate = '1950-01-15', endDate = '2013-12-15')
+data_to_plot <- bind_rows(monthly_flw_vic_orig,monthly_flw_vic_mod,BCFlow_Liv)
+data_to_plot <- melt(data_to_plot,id.vars=c('Date','Type'))
+data_to_plot <- data_to_plot[,c(1,2,4)]
+colnames(data_to_plot) <- c('Date','Data','Flow')
+print(head(data_to_plot))
+
+##Line Curve
+png(filename=paste("./Catchment_RO_BC/",mdlname,"/TUOR_",mdlname,"_line.png",sep=""), type="cairo", units="in",width=6.5,height=3,res=360)
+print(ggplot(data_to_plot,aes(x=Date, y=Flow, color=Data))+ geom_line())
+dev.off()
+
+##CFD Curve
+data.nm <- unique(data_to_plot$Data)
+data_to_plot$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- data_to_plot$Flow[data_to_plot$Data==data.nm[i]]
+  Fn <- ecdf(vls)
+  data_to_plot$FDC[data_to_plot$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+png(filename=paste("./Catchment_RO_BC/",mdlname,"/TUOR_",mdlname,"_fdc.png",sep=""), type="cairo", units="in",width=6.5,height=3.5,res=360)
+print(ggplot(data_to_plot, aes(x=FDC, y=Flow, color=Data)) + geom_line() + #geom_point(shape=21, size=0.05, alpha=0.25) + #[rvic.hist.all.m$Model=="ACCESS1-0_rcp45",]
+        scale_y_log10(limits=c(3e-1,3e3)) +
+        #        facet_wrap(~Data, ncol=2) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Exceedance probability"))
+dev.off()
+
+## Box&whisker
+png(filename=paste("./Catchment_RO_BC/",mdlname,"/TUOR_",mdlname,"_box.png",sep=""), type="cairo", units="in",width=6.5,height=4,res=360)
+print(ggplot(data_to_plot, aes(x=Data, y=Flow)) + geom_boxplot() +
+        #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Data"))
+dev.off()
+
+## Q-Q plot
+png(filename=paste("./Catchment_RO_BC/",mdlname,"/TUOR_",mdlname,"_qq.png",sep=""), type="cairo", units="in",width=6.5,height=3,res=360)
+print(ggplot(data_to_plot, aes(sample=Flow, color=Data)) + stat_qq(shape=21, size=0.75))
+#        + facet_wrap(~Data, ncol=2))
+dev.off()

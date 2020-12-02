@@ -1,0 +1,144 @@
+---
+title: "FacincaniDourado_HW4"
+author: "Gustavo Facincani Dourado"
+date: "2/17/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+Question 4.
+
+```{r}
+apa.data <- structure(.Data = list(apa = c(93.825, 96.1875, 120.6, 369.9, 299.113, 
+	359.332, 380.968, 403.958, 214.933, 582.35299999999992, 319.235, 
+	348.882, 71.5946, 139.626, 241.672, 194.283, 276.32100000000004, 
+	190.817, 875.457, 705.587, 633.52099999999992, 723.176, 812.118, 
+	756.529, 618.624, 1559.56, 797.196, 877.32, 421.2, 685.79999999999992,
+	454.225, 536.405, 489.445, 379.874, 510.65, 399.854, 60.57, 47.97, 
+	125.46, 108.768, 161.37200000000002, 173.13900000000002, 244.324, 
+	207.04, 211.85, 844.357, 745.104, 928.722, 172.817, 181.218, 408.338, 
+	84.826, 86.504, 933.111, 1027.6199999999998, 309.663, 277.385, 
+	276.471, 292.325, 548.42499999999992, 537.08399999999992, 1183.77, 
+	1157.47, 96.326, 102.73, 61.191, 173.02000000000002, 169.1, 155.16, 
+	265.45, 191.16, 200.53, 192.44, 226.21, 313.93, 413.85, 
+	261.14999999999996, 428.44, 551.79, 1327.6, 657.47, 834.11, 1106.3, 
+	1240.3, 753.11, 891.18, 1013.9, 821.88, 971.93, 876.44, 141.966, 
+	69.161, 57.338, 253.338, 217.47, 314.52499999999996, 
+	179.90100000000002, 133.554, 213.815, 237.373, 252.995, 376.551, 
+	22.92, 24.18, 29.01, 138.291, 171.066, 192.136, 240.68, 234.956, 
+	267.392, 612.759, 585.486, 595.403), tp = c(11.3, 11.3, 11.3, 13, 13, 
+	13, 9.1, 9.1, 9.1, 8.1, 8.1, 8.1, 13.7, 13.7, 13.7, 10.6, 10.6, 10.6, 
+	15, 15, 15, 11, 11, 11, 9.1, 9.1, 9.1, 8.1, 8.1, 8.1, 8.1, 8.1, 8.1, 
+	8.6, 8.6, 8.6, 11.1, 11.1, 11.1, 11.3, 11.3, 11.3, 7.2, 7.2, 7.2, 8.1,
+	8.1, 8.1, 100.8, 100.8, 78.45, 87.65, 87.65, 24.7, 24.7, 12.35, 12.35,
+	20.3, 20.3, 20.3, 20.3, 16.5, 16, 150.9, 150.9, 150.9, 100.5, 100.5, 
+	100.5, 28.1, 28.1, 28.1, 28.1, 28.1, 28.1, 13.55, 13.55, 13.55, 18.9, 
+	18.9, 18.9, 13.1, 13.1, 13.1, 8.7, 8.7, 8.7, 20.3, 20.3, 20.3, 95.1, 
+	95.1, 95.1, 15, 15, 15, 10.6, 10.6, 10.6, 8.1, 8.1, 8.1, 92.9, 92.9, 
+	92.9, 13.3, 13.3, 13.3, 9.1, 9.1, 9.1, 7.2, 7.2, 7.2)), row.names = 
+	c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13",
+	"14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", 
+	"25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", 
+	"36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", 
+	"47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", 
+	"58", "59", "60", "61", "62", "63", "64", "65", "66", "67", "68", 
+	"69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", 
+	"80", "81", "82", "83", "84", "85", "86", "87", "88", "89", "90", 
+	"91", "92", "93", "94", "95", "96", "97", "98", "99", "100", "101", 
+	"102", "103", "104", "105", "106", "107", "108", "109", "110", "111", 
+	"112", "113", "114"), class = "data.frame")
+
+TP <- apa.data$tp
+APA <- apa.data$apa
+
+plot(TP, APA,
+     xlab = "P Concentration (µg/L)",
+     ylab = "APA",
+     main = "Phosphatase activity (APA) as a function of Phosphorus (P)",
+     col = "orange",
+     abline(lm(APA~TP)))
+```
+
+a) See the graph. 
+
+b) In the graph, most of the points are found in places where the concentration of phosphorus (P) is below 30 µg/L. A few points are still found in environments with higher concentrations of P, but with lower phosphatase activity (APA) as the concentration of P increases.
+
+c) Through the regression line we can see the average APA goes from from high (~500) to low activity (0), when the concentration of P increases from 0 to 150 µg/L. It clearly shows that APA and P concentration have a negative correlation.
+
+
+Question 3.1.
+```{r}
+x <- c(6.0, 0.5, 0.4, 0.7, 0.8, 6.0, 5.0, 0.6, 1.2, 0.3, 0.2, 0.5, 0.5, 10, 0.2, 0.2, 1.7, 3.0 )
+y <- x[order(x)]
+plot(y)
+
+#Finding the non-parametric intervals
+
+#According to the table on page 367 of the book "Performance evaluation of computer and communication systems" (https://perfeval.epfl.ch/), the intervals for a dataset of 18 samples, the lower and upper bounds are the 5th and 14th numbers in the distribution (in ascending order). That gives us the Rl (Rl =  x' + 1) and Ru (Ru =  n − x' = x).
+
+lowerg <- y[5]
+upperg <- y[14]
+print(paste(y[5], "to", y[14], "mg/L"))
+
+#Finding the parametric intervals
+n = 18
+alpha = 0.05
+t.value <- qt(1-alpha/2, n-1)
+t.value2 <- qt(1-alpha/2, n-1)
+ln.grano <- log(x)
+var.grano <- var(ln.grano)
+mean.ln.grano <- mean(ln.grano)
+
+lower <- exp(mean.ln.grano-t.value*sqrt(var.grano/n))
+lower
+
+upper <- exp(mean.ln.grano+t.value2*sqrt(var.grano/n))
+upper
+
+print(paste(lower, "to", upper, "mg/L"))
+```
+
+The non-parametric 95% interval estimates for the median is from 0.4 to 3 mg/L, while the parametric ranges from 0.5 to 1.8 mg/L. As the dataset is small and non-normal it is better to use non-parametric, because the non-parametric provides a wider range for the confidence interval than the parametric.
+
+
+Question 3.4.
+
+```{r}
+library(tidyverse)
+
+Con_river <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/Conecuh_River_apxc2.csv", col_names =TRUE, cols(
+ 
+Year = col_double(),
+`Flow (cfs)` = col_double()))
+
+#As it is a small dataset (20 samples), the most appropriate choice will be a non-parametric 95% interval estimate.
+
+#Intervals for the median
+
+Flows <- Con_river$`Flow (cfs)`
+Flows.x <- Flows[order(Flows)]
+
+Flows
+
+plot(Flows.x, xlab = "Samples", ylab = "River flow (cfs)", main = "River flow")
+
+#According to the table on page 367 of the book "Performance evaluation of computer and communication systems" (https://perfeval.epfl.ch/), the intervals for a dataset of 20 samples, the lower and upper bounds are the 6th and 15th numbers in the distribution (in ascending order). That gives us the Rl (Rl =  x' + 1) and Ru (Ru =  n − x' = x).
+
+Flows.x[6]
+Flows.x[15]
+print(paste(Flows.x[6], "to", Flows.x[15], "cfs"))
+
+#Intervals for the mean (although the sample is small it is a binomial distribution)
+
+n =20
+alpha = 0.05
+t.value <- qt(1-alpha/2, n-1)
+varian <- var(Con_river$`Flow (cfs)`, na.rm = TRUE)
+lowflow <- mean(Con_river$`Flow (cfs)`, na.rm = TRUE) - t.value*(sqrt(varian/20))
+upperflow <- mean(Con_river$`Flow (cfs)`, na.rm = TRUE) + t.value*(sqrt(varian/20))
+print(paste(lowflow,"to", upperflow, "cfs"))
+
+```
+
+The lower and upper bounds for the non-parametric 95% interval estimates for the median are from 524 to 894 cfs. The lower and upper bounds for the 95% interval estimates for the mean are from 557 to 809 cfs. 

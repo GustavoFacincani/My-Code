@@ -1,0 +1,609 @@
+---
+title: "Storage"
+author: "Gustavo Facincani Dourado"
+date: "6/9/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(extrafont)
+library(ggplot2, quietly = TRUE)
+library(ggthemes, quietly = TRUE)
+library(stringr, quietly = TRUE)
+library(tidyr)
+library(grid)
+library(grDevices)
+library(ggpubr)
+library(scales)
+library(reshape)
+library(ggpmisc)
+library(gridExtra)
+library(cder)
+library(lubridate)
+
+```
+
+```{r}
+#Read storage data for Merced
+SimStorage_Mer <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/Reservoir_Storage_mcm.csv")[,-c(2)]
+#Sim_Storage_Mer <- melt(as.data.frame(Storage_Mer), id = "Date")%>%
+#  rename(c(variable = "Lake", 
+#           value = "Storage")) %>%
+#  filter(between(Date, as.Date("1980-10-01"), as.Date("2012-09-30")))
+
+#SimStorage_Mer[c(1:11321), 2] <- NA
+
+SimStorage_Mer
+
+ObsStorage_Mer <- read.csv("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/Observed/storage_mcm.csv")[,-c(2)]  %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>%
+  filter(between(Date, as.Date("1980-10-01"), as.Date("2012-09-30"))) %>%
+  dplyr::rename(#`Lake McSwain` = USGS.11270600.MCSWAIN.RES.NR.SNELLING.CA, 
+                `Lake McClure` = USGS.11269500.LK.MCCLURE.A.EXCHEQUER.CA) 
+
+ObsStorage_Mer
+
+
+
+```
+
+```{r}
+ObsStorage_Mer2 <- melt(ObsStorage_Mer, id = "Date") %>%
+  dplyr::rename("Obs_Storage(mcm)" = value)
+ObsStorage_Mer2
+
+SimStorage_Mer2 <- melt(SimStorage_Mer, id = "Date") %>%
+  dplyr::rename("Sim_Storage(mcm)" = value)
+SimStorage_Mer2
+
+Mer_Storage <- cbind(SimStorage_Mer2, ObsStorage_Mer2[3])%>%
+  dplyr::rename("Reservoir" = variable)
+
+Mer_Storage<-Mer_Storage %>%
+  mutate(Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B")))
+
+McSwain <- Mer_Storage %>%
+  filter(between(Date, as.Date("2011-10-01"), as.Date("2012-09-30")))
+McSwain
+
+```
+
+```{r}
+calc_pbias <- function(df) {
+  100*(sum(df[["Sim_Storage(mcm)"]] - df[["Obs_Storage(mcm)"]])/sum((df[["Obs_Storage(mcm)"]]), na.rm =TRUE))
+}
+
+calc_rsr <- function(df) {
+  sqrt( mean( (df[["Sim_Storage(mcm)"]] - df[["Obs_Storage(mcm)"]])^2, na.rm = TRUE))/sd(df[["Obs_Storage(mcm)"]])
+}
+
+calc_nse <- function(df) {
+  1 - sum((df[["Obs_Storage(mcm)"]] - df[["Sim_Storage(mcm)"]])^2)/sum((df[["Obs_Storage(mcm)"]] - mean(df[["Obs_Storage(mcm)"]]))^2)
+}
+
+#Using hydroGOF
+calc_pbias2 <- function(df) { require(hydroGOF)
+  pbias(df[["Sim_Storage(mcm)"]], df[["Obs_Storage(mcm)"]])
+}
+
+calc_rsr2 <- function(df) { require(hydroGOF)
+  rsr(df[["Sim_Storage(mcm)"]], df[["Obs_Storage(mcm)"]])
+}
+
+calc_nse2 <- function(df) { require(hydroGOF)
+  NSE(df[["Sim_Storage(mcm)"]], df[["Obs_Storage(mcm)"]])
+}
+```
+
+```{r}
+Mer_Storage <- Mer_Storage %>%
+  group_by(Month) %>%
+  nest() %>%
+  mutate(pbias_monthly = map(data, calc_pbias),
+         rsr_monthly = map(data, calc_rsr),
+         nse_monthly = map(data, calc_nse),
+         pbias_monthly2 = map(data, calc_pbias2),
+         rsr_monthly2 = map(data, calc_rsr2),
+         nse_monthly2 = map(data, calc_nse2)) %>%
+  unnest(cols = c(data, pbias_monthly, rsr_monthly, nse_monthly,
+                  pbias_monthly2, rsr_monthly2, nse_monthly2))
+Mer_Storage
+```
+```{r}
+test_table.mer <- Mer_Storage %>%
+  group_by(Month) %>%
+  dplyr::summarize(pbias = mean(pbias_monthly),
+            nse = mean(nse_monthly),
+            rsr = mean(rsr_monthly))
+test_table.mer
+
+write_csv(test_table.mer, "Mer_tests_storage.csv", append=FALSE, col_names=TRUE)
+```
+
+```{r}
+require(hydroGOF)
+
+rsr(SimStorage_Mer$`Lake McClure`, ObsStorage_Mer$`Lake McClure`, na.rm = TRUE)
+pbias(SimStorage_Mer$`Lake McClure`, ObsStorage_Mer$`Lake McClure`, na.rm = TRUE)
+NSE(SimStorage_Mer$`Lake McClure`, ObsStorage_Mer$`Lake McClure`, na.rm = TRUE)
+
+McClure <- model.assess(SimStorage_Mer$`Lake McClure`, ObsStorage_Mer$`Lake McClure`)
+
+```
+
+```{r}
+SimLakeMS <- SimStorage_Mer %>%
+  filter(between(Date, as.Date("2011-10-01"), as.Date("2012-09-30")))
+ObsLakeMS <- ObsStorage_Mer %>%
+  filter(between(Date, as.Date("2011-10-01"), as.Date("2012-09-30")))
+
+SimLakeMS1 <- SimLakeMS$`Lake McSwain`
+ObsLakeMS1 <- ObsLakeMS$`Lake McSwain`
+
+rsr(SimLakeMS1, ObsLakeMS1, na.rm = TRUE)
+pbias(SimLakeMS1, ObsLakeMS1, na.rm = TRUE)
+NSE(SimLakeMS1, ObsLakeMS1, na.rm = TRUE)
+
+McSwain <- model.assess(SimLakeMS1, ObsLakeMS1)
+
+```
+
+
+```{r}
+
+library(facetscales)
+scales_x <- list(
+  `Lake McClure` = scale_x_date(limits = c(as.Date("1980-10-01"), as.Date("2012-10-01")), date_breaks = "5 years"),
+  `Lake McSwain` = scale_x_date(limits = c(as.Date("2011-10-01"), as.Date("2012-10-01")), date_breaks = "1 year"))
+                                
+scales_y <- list(
+  `Lake McClure` = scale_y_continuous(limits = c(0, 1260), breaks = seq(0, 1260, 1250)),
+  `Lake McSwain` = scale_y_continuous(limits = c(0, 12), breaks = seq(0, 12, 3))
+  )
+```
+
+```{r}
+note_mer <- data.frame(x = c(#as.Date("2000-10-10"), 
+  as.Date("2000-10-10")),
+                   y = #c(3
+                      200, #adding where to add text 
+                   label = c(#paste(McSwain), 
+                     paste(McClure)),
+                   Reservoir = c(#"Lake McSwain", 
+                     "Lake McClure"))
+```
+
+```{r}
+McSwain %>%
+  filter(Reservoir == "Lake McSwain") %>%
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_line(aes(x = Date, y = `Sim_Storage(mcm)`), colour = "#56B4E9") +
+  geom_line(aes(x = Date, y = `ObsStorage_Mer2[, 3]`), colour = "#E69F00") +
+   scale_y_continuous(limits = c(0, 12),
+                      expand = c(0, 0)) +
+     scale_x_date(date_labels = "%b/%Y",
+                  date_breaks = "3 months")+
+                  #breaks = as.Date("1980-10-01") + #as.Date("1990-10-01")#,                             as.Date("2000-10-01"), as.Date("2010-10-01")),
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Lake McSwain",
+    x = element_blank(), 
+       y = "Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+```
+
+
+```{r}
+Mer_Storage %>%
+  filter(Reservoir == "Lake McClure") %>%
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+   geom_line(aes(x = Date, y = `ObsStorage_Mer2[, 3]`, colour = "#56B4E9")) +
+  geom_line(aes(x = Date, y = `Sim_Storage(mcm)`, colour = "#E69F00")) +
+   scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(date_labels = "%b/%Y",
+                  date_breaks = "5 years",
+                  breaks = as.Date(c("1980-10-01", "1990-10-01", "2000-10-01", "2010-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+       subtitle = "Lake McClure",
+    x = element_blank(), 
+       y = "Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+    geom_text(note_mer, #adding where to add text 
+              mapping = aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+#  facet_wrap(~ Reservoir, ncol=1, scales = "free")
+
+png("mer_storage_timeseries.png", units ="in", width=8, height=2, res = 300)
+
+```
+
+
+
+
+
+```{r}
+
+  ggplot(Mer_Storage) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+   geom_line(aes(x = Date, y = `Obs_Storage(mcm)`), colour = "#56B4E9") +
+  geom_line(aes(x = Date, y = `Sim_Storage(mcm)`), colour = "#E69F00") +
+   scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(date_labels = "%b/%Y",
+                  date_breaks = "5 years",
+                  breaks = as.Date("1980-10-01")) + #as.Date("1990-10-01")#,                             as.Date("2000-10-01"), as.Date("2010-10-01")),
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River",
+    x = element_blank(), 
+       y = "Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+    geom_text(note_mer, #adding where to add text 
+              mapping = aes(x=x, y=y, label = label), size=3, family= "Times New Roman") + 
+  
+  facet_wrap(~ Reservoir, ncol=1, scales = "free")
+
+```
++
+#plot monthly observed data in orange
+    scale_y_continuous(expand = c(0, 0))+
+     scale_x_date(date_breaks = "6 months", 
+                  date_labels = "%b/%Y",
+              #   limits = as.Date(c('1985-01-01','2000-12-31')),
+                  expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_identity(name = element_blank(),
+                      labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Merced River", #title
+       x = element_blank(), 
+       y = "Monthly full natural Flow (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) #center the title
+
+
+
+
+
+```{r}
+#Read storage data for Tuolumne
+
+SimStorage_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/results/baseline/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv") %>%
+#Sim_Storage_Mer <- melt(as.data.frame(Storage_Mer), id = "Date")%>%
+#  rename(c(variable = "Lake", 
+#           value = "Storage")) %>%
+  filter(between(Date, as.Date("1980-10-01"), as.Date("2012-09-30")))
+
+SimStorage_Tuo
+
+ObsStorage_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Tuolumne River/gauges/storage_mcm.csv")  %>%
+  filter(between(Date, as.Date("1980-10-01"), as.Date("2012-09-30"))) %>%
+  dplyr::rename("Hetch Hetchy Reservoir" = "USGS 11275500 HETCH HETCHY RES A HETCH HETCHY CA", `Lake Eleanor` = `USGS 11277500 LK ELEANOR NR HETCH HETCHY CA`, `Cherry Lake` = `USGS 11277200 CHERRY LK NR HETCH HETCHY CA`, `Don Pedro Reservoir` = `USGS 11287500 DON PEDRO RES NR LA GRANGE CA`)
+#  dplyr::rename(`Lake McSwain` = USGS.11270600.MCSWAIN.RES.NR.SNELLING.CA, `Lake McClure` = USGS.11269500.LK.MCCLURE.A.EXCHEQUER.CA) 
+ObsStorage_Tuo <- ObsStorage_Tuo[, c(1,3,2,5,4)]
+ObsStorage_Tuo
+
+```
+
+```{r}
+#Lake Eleanor
+RSR.E <-rsr(SimStorage_Tuo$`Lake Eleanor`, ObsStorage_Tuo$`Lake Eleanor`, na.rm = TRUE)
+PBIAS.E <- pbias(SimStorage_Tuo$`Lake Eleanor`, ObsStorage_Tuo$`Lake Eleanor`, na.rm = TRUE)
+NSE.E <- NSE(SimStorage_Tuo$`Lake Eleanor`, ObsStorage_Tuo$`Lake Eleanor`, na.rm = TRUE)
+
+#Eleanor <- model.assess(SimStorage_Tuo$`Lake Eleanor`, ObsStorage_Tuo$`Lake Eleanor`)
+#Eleanor #My function didn't work for Eleanor, so let's use HydroGOF's
+
+Eleanor <- print(paste0("RSR = ", sprintf("%.3f", round(RSR.E, digits=3)), "    PBIAS = ", sprintf("%.3f",round(PBIAS.E, digits=3)),"    NSE = ", sprintf("%.3f",round(NSE.E, digits=3))))  
+
+
+#Hetch Hetchy
+rsr(SimStorage_Tuo$`Hetch Hetchy Reservoir`, ObsStorage_Tuo$`Hetch Hetchy Reservoir`, na.rm = TRUE)
+pbias(SimStorage_Tuo$`Hetch Hetchy Reservoir`, ObsStorage_Tuo$`Hetch Hetchy Reservoir`, na.rm = TRUE)
+NSE(SimStorage_Tuo$`Hetch Hetchy Reservoir`, ObsStorage_Tuo$`Hetch Hetchy Reservoir`, na.rm = TRUE)
+
+Hetchy <- model.assess(SimStorage_Tuo$`Hetch Hetchy Reservoir`, ObsStorage_Tuo$`Hetch Hetchy Reservoir`)
+Hetchy
+
+#Don Pedro
+
+rsr(SimStorage_Tuo$`Don Pedro Reservoir`, ObsStorage_Tuo$`Don Pedro Reservoir`, na.rm = TRUE)
+pbias(SimStorage_Tuo$`Don Pedro Reservoir`, ObsStorage_Tuo$`Don Pedro Reservoir`, na.rm = TRUE)
+NSE(SimStorage_Tuo$`Don Pedro Reservoir`, ObsStorage_Tuo$`Don Pedro Reservoir`, na.rm = TRUE)
+
+Pedro <- model.assess(SimStorage_Tuo$`Don Pedro Reservoir`, ObsStorage_Tuo$`Don Pedro Reservoir`)
+Pedro
+
+#Cherry Lake
+
+rsr(SimStorage_Tuo$`Cherry Lake`, ObsStorage_Tuo$`Cherry Lake`, na.rm = TRUE)
+pbias(SimStorage_Tuo$`Cherry Lake`, ObsStorage_Tuo$`Cherry Lake`, na.rm = TRUE)
+NSE(SimStorage_Tuo$`Cherry Lake`, ObsStorage_Tuo$`Cherry Lake`, na.rm = TRUE)
+
+Cherry <- model.assess(SimStorage_Tuo$`Cherry Lake`, ObsStorage_Tuo$`Cherry Lake`)
+Cherry
+```
+
+```{r}
+ObsStorage_Tuo2 <- melt(ObsStorage_Tuo, id = "Date") %>%
+  dplyr::rename("Obs_Storage(mcm)" = value)
+ObsStorage_Tuo2
+
+SimStorage_Tuo2 <- melt(SimStorage_Tuo, id = "Date") %>%
+  dplyr::rename("Sim_Storage(mcm)" = value)
+SimStorage_Tuo2
+
+Tuo_Storage <- cbind(SimStorage_Tuo2, ObsStorage_Tuo2[3])%>%
+  dplyr::rename("Reservoir" = variable)
+
+Tuo_Storage <- Tuo_Storage %>%
+  mutate(Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B")))
+Tuo_Storage
+
+```
+
+```{r}
+Tuo_Storage <- Tuo_Storage %>%
+  group_by(Reservoir, Month) %>%
+  nest() %>%
+  mutate(pbias_monthly = map(data, calc_pbias),
+         rsr_monthly = map(data, calc_rsr),
+         nse_monthly = map(data, calc_nse),
+         pbias_monthly2 = map(data, calc_pbias2),
+         rsr_monthly2 = map(data, calc_rsr2),
+         nse_monthly2 = map(data, calc_nse2)) %>%
+  unnest(cols = c(data, pbias_monthly, rsr_monthly, nse_monthly,
+                  pbias_monthly2, rsr_monthly2, nse_monthly2))
+Tuo_Storage
+
+```
+
+```{r}
+test_table.tuo <- Tuo_Storage %>%
+  mutate(Month = factor(month.name[Month], levels = month.name)) %>% 
+   arrange(Month) %>%
+  group_by(Reservoir, Month) %>%
+  dplyr::summarize(pbias = mean(pbias_monthly),
+                   pbias2 = mean(pbias_monthly2),
+            nse = mean(nse_monthly2),
+            rsr = mean(rsr_monthly2))
+test_table.tuo
+
+write_csv(test_table.tuo, "Tuo_tests_storage2.csv", append=FALSE, col_names=TRUE)
+```
+
+```{r}
+
+Tuo_Storage <- Tuo_Storage %>%
+  mutate(Month = factor(format(as.Date(Date, format = "%Y/%m/%d"), "%B"))) %>%
+  group_by(Reservoir, Month) %>%
+  nest() %>%
+  mutate(pbias_monthly = map(data, calc_pbias),
+         rsr_monthly = map(data, calc_rsr),
+         nse_monthly = map(data, calc_nse)) %>%
+  unnest(cols = c(data, pbias_monthly, rsr_monthly, nse_monthly))
+Tuo_Storage
+
+test_table.tuo <- Tuo_Storage %>%
+  group_by(Reservoir, Month) %>%
+  dplyr::summarize(pbias = mean(pbias_monthly),
+            nse = mean(nse_monthly),
+            rsr = mean(rsr_monthly))
+test_table.tuo
+
+```
+
+```{r}
+note_tuo <- data.frame(x = as.Date(c("2006-08-01", "2006-08-01", "2006-08-01", "2006-08-01")),
+                   y = c(5, 60,300, 50), #adding where to add text 
+                   label = c(paste(Eleanor), paste(Hetchy), paste(Pedro), paste(Cherry)),
+                   Reservoir = c("Lake Eleanor", "Hetch Hetchy Reservoir", 
+                                 "Don Pedro Reservoir", "Cherry Lake"))
+
+```
+
+```{r}
+ggplot(Tuo_Storage) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+   geom_line(aes(x = Date, y = `ObsStorage_Tuo2[, 3]`, colour = "#56B4E9")) +
+  geom_line(aes(x = Date, y = `Sim_Storage(mcm)`, colour = "#E69F00")) +
+   scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, 0)) +
+     scale_x_date(expand = c(0, 0),
+                  date_labels = "%b/%Y",
+                 breaks = as.Date(c("1980-10-01", "1990-10-01", "2000-10-01", "2010-10-01"))) +
+   scale_color_identity(name = element_blank(),
+                         breaks = c("#56B4E9", "#E69F00"), #select the color
+                          labels = c("Observed (CDEC)","Simulated (Livneh)"), #select the variables
+                          guide = "legend")+
+  labs(title = "Tuolumne River",
+    x = element_blank(), 
+       y = "Storage (mcm)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+    geom_text(note_tuo, #adding where to add text 
+             mapping= aes(x=x, y=y, label = label), size=3.2, family= "Times New Roman") +
+  
+  facet_wrap(~ Reservoir, ncol=1, scales = "free_y") +
+  
+png("tuo_storage_timeseries.png", units ="in", width=8, height=5, res = 300)
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+#Read storage data for Upper San Joaquin
+
+SimStorage_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/results/baseline/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv")
+#Sim_Storage_Mer <- melt(as.data.frame(Storage_Mer), id = "Date")%>%
+#  rename(c(variable = "Lake", 
+#           value = "Storage")) %>%
+
+SimStorage_USJ
+
+ObsStorage_USJ <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/data/Upper San Joaquin River/gauges/storage_mcm.csv") %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  filter(between(Date, as.Date("1982-10-01"), as.Date("1985-06-30")))# %>%
+#  dplyr::rename("Hetch Hetchy Reservoir" = "USGS 11275500 HETCH HETCHY RES A HETCH HETCHY CA", `Lake Eleanor` = `USGS 11277500 LK ELEANOR NR HETCH HETCHY CA`, `Cherry Lake` = `USGS 11277200 CHERRY LK NR HETCH HETCHY CA`, `Don Pedro Reservoir` = `USGS 11287500 DON PEDRO RES NR LA GRANGE CA`)
+#  dplyr::rename(`Lake McSwain` = USGS.11270600.MCSWAIN.RES.NR.SNELLING.CA, `Lake McClure` = USGS.11269500.LK.MCCLURE.A.EXCHEQUER.CA) 
+#ObsStorage_Tuo <- ObsStorage_Tuo[, c(1,3,2,5,4)]
+ObsStorage_USJ
+ObsStorage_USJ <- ObsStorage_USJ[, c(1, 10, 9, 8, 2, 6, 7, 4, 5, 3)]
+
+colnames(ObsStorage_USJ) <- c("Date", "Shaver Lake", "Redinger Lake", "Millerton Lake", "Mammoth Pool Reservoir", "Lake Thomas A Edison", "Kerckhoff Lake", "Huntington Lake", "Florence Lake","Bass Lake")
+ObsStorage_USJ
+
+```
+
+```{r}
+#Shaver Lake
+rsr(SimStorage_USJ$`Shaver Lake`, ObsStorage_USJ$`Shaver Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Shaver Lake`, ObsStorage_USJ$`Shaver Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Shaver Lake`, ObsStorage_USJ$`Shaver Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Shaver Lake`, ObsStorage_USJ$`Shaver Lake`)
+
+#Redinger Lake
+rsr(SimStorage_USJ$`Redinger Lake`, ObsStorage_USJ$`Redinger Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Redinger Lake`, ObsStorage_USJ$`Redinger Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Redinger Lake`, ObsStorage_USJ$`Redinger Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Redinger Lake`, ObsStorage_USJ$`Redinger Lake`)
+
+#Millerton Lake
+rsr(SimStorage_USJ$`Millerton Lake`, ObsStorage_USJ$`Millerton Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Millerton Lake`, ObsStorage_USJ$`Millerton Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Millerton Lake`, ObsStorage_USJ$`Millerton Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Millerton Lake`, ObsStorage_USJ$`Millerton Lake`)
+
+#Mammoth Pool Reservoir
+rsr(SimStorage_USJ$`Mammoth Pool Reservoir`, ObsStorage_USJ$`Mammoth Pool Reservoir`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Mammoth Pool Reservoir`, ObsStorage_USJ$`Mammoth Pool Reservoir`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Mammoth Pool Reservoir`, ObsStorage_USJ$`Mammoth Pool Reservoir`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Mammoth Pool Reservoir`, ObsStorage_USJ$`Mammoth Pool Reservoir`)
+```
+
+```{r}
+#Lake Thomas A Edison
+rsr(SimStorage_USJ$`Lake Thomas A Edison`, ObsStorage_USJ$`Lake Thomas A Edison`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Lake Thomas A Edison`, ObsStorage_USJ$`Lake Thomas A Edison`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Lake Thomas A Edison`, ObsStorage_USJ$`Lake Thomas A Edison`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Lake Thomas A Edison`, ObsStorage_USJ$`Lake Thomas A Edison`)
+
+#Kerckhoff Lake
+#rsr(SimStorage_USJ$`Kerckhoff Lake`, ObsStorage_USJ$`Kerckhoff Lake`, na.rm = TRUE)
+#pbias(SimStorage_USJ$`Kerckhoff Lake`, ObsStorage_USJ$`Kerckhoff Lake`, na.rm = TRUE)
+#NSE(SimStorage_USJ$`Kerckhoff Lake`, ObsStorage_USJ$`Kerckhoff Lake`, na.rm = TRUE)
+
+#model.assess(SimStorage_USJ$`Kerckhoff Lake`, ObsStorage_USJ$`Kerckhoff Lake`)
+
+#Huntington Lake
+rsr(SimStorage_USJ$`Huntington Lake`, ObsStorage_USJ$`Huntington Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Huntington Lake`, ObsStorage_USJ$`Huntington Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Huntington Lake`, ObsStorage_USJ$`Huntington Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Huntington Lake`, ObsStorage_USJ$`Huntington Lake`)
+
+#Florence Lake
+rsr(SimStorage_USJ$`Florence Lake`, ObsStorage_USJ$`Florence Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Florence Lake`, ObsStorage_USJ$`Florence Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Florence Lake`, ObsStorage_USJ$`Florence Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Florence Lake`, ObsStorage_USJ$`Florence Lake`)
+
+#Bass Lake
+rsr(SimStorage_USJ$`Bass Lake`, ObsStorage_USJ$`Bass Lake`, na.rm = TRUE)
+pbias(SimStorage_USJ$`Bass Lake`, ObsStorage_USJ$`Bass Lake`, na.rm = TRUE)
+NSE(SimStorage_USJ$`Bass Lake`, ObsStorage_USJ$`Bass Lake`, na.rm = TRUE)
+
+model.assess(SimStorage_USJ$`Bass Lake`, ObsStorage_USJ$`Bass Lake`)
+```
+
+
+```{r}
+ObsStorage_USJ2 <- melt(ObsStorage_USJ, id = "Date") %>%
+  dplyr::rename("Obs_Storage(mcm)" = value)
+ObsStorage_USJ2
+
+SimStorage_USJ2 <- melt(SimStorage_USJ, id = "Date") %>%
+  dplyr::rename("Sim_Storage(mcm)" = value)
+SimStorage_USJ2
+
+USJ_Storage <- cbind(SimStorage_USJ2, ObsStorage_USJ2[,3])%>%
+  dplyr::rename("Reservoir" = variable)
+
+USJ_Storage
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+

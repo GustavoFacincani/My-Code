@@ -1,0 +1,203 @@
+---
+title: "Howerwork_3"
+author: "Gustavo Facincani Dourado"
+date: "2/12/2020"
+output: html_document
+---
+
+Exercise 4.
+
+```{r}
+#Getting the data 
+
+library(tidyverse)
+LakeErie <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/LakeErie1.csv")
+
+head(LakeErie)
+```
+
+```{r}
+#Comands for testing the TP distribution:
+
+ggplot(data=as.data.frame(qqnorm(LakeErie$TP , plot=F)), mapping=aes(x=x, y=y)) + geom_point() + geom_smooth(method="lm", se=FALSE)
+
+```
+Total phosphorus does not match the normal distribution as most points do not fall into the line, requiring non-parametric tests.
+```{r}
+
+#Comands for testing the chla distribution:
+
+library(tidyverse)
+LakeErie <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/LakeErie1.csv")
+
+
+qqnorm(log(LakeErie$ExChla+1))
+qqline(log(LakeErie$ExChla+1), col = 'red')
+
+```
+The central part of the samples of the chlorophil A are close to normal, but it is not normal even in log scale, having positive and negative skewed tails.
+
+```{r}
+#Comands to plot TP data using lattice
+
+
+library(lattice)
+qqmath(~TP | factor(Year), data = LakeErie, distribution = qnorm, panel = function(x, ...){
+    panel.qqmath(x, ...)
+    panel.qqmathline(x, ...)
+}) 
+      
+```
+The skewness varies among years. The year that has a distribution closer to normal is 2012. The most sweked year is 2008. 2009, 2011 and 2013 are mostly normal with a few skewed portions, and 2009, 2013 and 2014 have a few outliers. 
+
+```{r}
+#Comands to plot chla data using lattice
+
+library(lattice)
+qqmath(~ExChla | factor(Year), data = LakeErie, distribution = qnorm, panel = function(x, ...){
+    panel.qqmath(x, ...)
+    panel.qqmathline(x, ...)
+}) 
+
+```
+All years have data that are still skewed, with different shapes and intensity of skewness.
+
+Exercise 5.
+```{r}
+#Getting the data 
+
+LakeErie2 <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/LakeErie2.csv")
+
+head(LakeErie2)
+```
+
+```{r}
+NOAA<-(filter(LakeErie2, INSTITUTION=="NOAA")%>%pull(TP))
+ODNR<-(filter(LakeErie2, INSTITUTION=="ODNR")%>%pull(TP))
+hist(rnorm(NOAA), xlim=c(0,4), col='orange', border=T, main = "Comparison of TP concentration from NOAA and ODNR", ylab = "TP Concentration") 
+hist(rnorm(ODNR), add=T, col=scales::alpha('green',.7), border=T)
+legend("topright", c("NOAA", "ODNR"), col=c("orange", "green"), lw=10)
+```
+```{r}
+#Comparison using qqplot
+
+qqTP<-qqplot(x=NOAA, y=ODNR, plot.it=FALSE)
+qqTP<-as.data.frame(qqTP)
+xylim<-range(c(qqTP$x, qqTP$y))
+ggplot(qqTP, aes(x=x, y=y))+
+            geom_point()+
+            geom_abline(intercept = 0, slope = 1)+
+            coord_fixed(ratio=1, xlim=xylim, ylim=xylim)+
+            xlab("NOOA") + ylab("ODNR")+
+            ggtitle("Comparison of TP data from NOAA and ODNR")
+```      
+
+a) 
+
+i) Yes, the distributions are very different, not matching in location or spread.
+
+ii) The difference is multiplicative, which means that the sets of data have different means and standard deviations.
+
+iii)
+```{r}
+library(stats)
+var.NOAA <- var(NOAA,NULL, na.rm = TRUE)
+var.ODNR <- var(ODNR, NULL, na.rm = TRUE)
+paste("The variance of NOAA TP data is", var.NOAA)
+paste("The variance of ODNR TP data is", var.ODNR)
+
+```
+
+b) The distribution of both datasets differ in location and spread, although they have a similar shape (indicated by the line with slope not equal to 1). That indicates they have different means and standard deviations (difference in data points deviating from the average group as a whole).
+
+c) 
+```{r}
+#Comparison NOAA vs Toledo
+library(ggplot2)
+NO_TP<-(filter(LakeErie2, INSTITUTION=="NOAA")%>%pull(TP))
+TO_TP<-(filter(LakeErie2, INSTITUTION=="Toledo")%>%pull(TP))
+NO_TO<-qqplot(x=NO_TP, y=TO_TP, plot.it=FALSE)
+NO_TO<-as.data.frame(NO_TO)
+xylim<-range(c(NO_TO$x, NO_TO$y))
+ggplot(NO_TO, aes(x=x, y=y))+
+            geom_point()+
+            geom_abline(intercept = 0, slope = 1)+
+            coord_fixed(ratio=1, xlim=xylim, ylim=xylim)+
+            xlab("TP from NOOA") + ylab("TP from Toledo")+
+            ggtitle("TP concentration from NOAA and Toledo")
+
+```
+
+```{r}
+#Comparison ODNR vs Toledo
+
+ODNR_TP <-log(filter(LakeErie2, INSTITUTION=="ODNR")%>%pull(TP))
+TO_TP<-log(filter(LakeErie2, INSTITUTION=="Toledo")%>%pull(TP))
+OD_TO<-qqplot(x=ODNR_TP, y=TO_TP, plot.it=FALSE)
+OD_TO<-as_data_frame(OD_TO)
+xylim<-range(c(OD_TO$x, OD_TO$y))
+ggplot(OD_TO, aes(x=x, y=y))+
+            geom_point()+
+            geom_abline(intercept=0, slope=1)+
+            coord_fixed(ratio=1, xlim=xylim, ylim=xylim)+
+            xlab("TP from ODNR") + ylab("TP from Toledo")+
+            ggtitle("TP concentration from ODNR and Toledo")
+```
+
+The distribution of the Toledo and NOAA datasets also differ in location and spread, although they have a similar shape (indicated by the line with slope not equal to 1). That indicates they have different means and standard deviations.
+
+The distribution of the Toledo and ODRN are the closest related (in location and spread) but with some points disagreeing with a not-so-similar shape (indicated by the line with slope closer to 1). The outliers in both tails will cause a large difference between the means and standard deviations.
+
+Exercise 7.
+```{r}
+
+#Getting the data
+
+WindSpeed <- equal.count(airquality$Wind, 3, 0.25)
+Temperature <- equal.count(airquality$Temp, 3, 0.25)
+SolarR <- equal.count(airquality$Solar.R, 3, 0.25)
+
+```
+
+For the Ozone+Solar radiation on Wind and T -> OzonexTemperature on wind and solar x OzonexWind on solar and T
+
+```{r}
+print(
+  xyplot(sqrt(Ozone) ~ Temp|WindSpeed*SolarR,
+         data=airquality,
+         panel=function(x,y,...){
+           panel.grid()
+          panel.lmline(x, y, col="red",...)
+           panel.xyplot(x, y, col=1, cex=0.5, ...)
+         },
+         ylab=list(label="Sqrt Ozone", cex=0.6),
+         xlab=list(label="Temperature", cex=0.6),
+         scales=list(x=list(alternating=c(1, 2, 1))),
+         par.strip.text=list(cex=0.4), aspect=1,
+         par.settings=list(axis.text=list(cex=0.4)))
+)
+```
+
+Here we can see that the higher the higher the temperature, the higher the ozone concentration. We can also notice that wind speed tends to decrease the ozone concentration, more pronouncedly under low solar radiation. Solar radiation is not determinant factor of ozone concentration, as there are different responses to solar radiation in each scenario. For example, there was a decrease in ozone concentration under medium wind speed and high solar radiation, in comparison to medium wind speed and medium solar radiation. An increase in temperature always results in increased ozone concentration.
+
+
+Ozone+Solar on Wind and T -> Ozone+Wind on solar and T
+
+```{r}
+print(
+  xyplot(sqrt(Ozone) ~ Wind|SolarR*Temperature,
+         data=airquality,
+         panel=function(x,y,...){
+           panel.grid()
+          panel.lmline(x, y, col="red",...)
+           panel.xyplot(x, y, col=1, cex=0.5, ...)
+         },
+         ylab=list(label="Sqrt Ozone", cex=0.6),
+         xlab=list(label="Wind Speed", cex=0.6),
+         scales=list(x=list(alternating=c(1, 2, 1))),
+         par.strip.text=list(cex=0.4), aspect=1,
+         par.settings=list(axis.text=list(cex=0.4)))
+)
+```
+
+Here we can see better the effect of wind speed, which causes a decrease in ozone concentration in all scenarios but the one with low temperature and high solar radiation, in which it remains stable. We can see again the trend of increasing ozone concentration as temperature increases. The solar radiation again did not prove to have a significant effect on the outcomes.

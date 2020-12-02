@@ -1,0 +1,1285 @@
+---
+title: "Centroid_Timing"
+author: "Gustavo Facincani Dourado"
+date: "6/23/2020"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(fasstr)
+library(ggplot2)
+#Calculate centroid timing for full natural flow under RCP 8.5 scenario
+
+CT_Mer_Livneh8.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Mer_Livneh8.5
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Mer_CanES8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_CanES8.5
+
+CT_Mer_CNRM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_CNRM8.5
+
+CT_Mer_HadGEM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_HadGEM8.5
+
+CT_Mer_MIROC8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_MIROC8.5
+```
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 4.5 scenario
+CT_Mer_Livneh4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Mer_Livneh4.5
+
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Mer_CanES4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_CanES4.5
+
+CT_Mer_CNRM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_CNRM4.5
+
+CT_Mer_HadGEM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_HadGEM4.5
+
+CT_Mer_MIROC4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Mer_MIROC4.5
+```
+
+
+```{r}
+#fucntion to shorten the command of centroid timing
+Centroid <- function(x) {
+calc_annual_flow_timing(x, dates = date, values = flow, water_year_start = 10, percent_total = 50) }
+
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Mer_Livneh1 <- Centroid(CT_Mer_Livneh8.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Mer_Livneh1
+
+CT_Mer_CanES1 <- Centroid(CT_Mer_CanES8.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Mer_CanES1
+
+CT_Mer_CNRM1 <- Centroid(CT_Mer_CNRM8.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Mer_CNRM1
+
+CT_Mer_HadGEM1 <- Centroid(CT_Mer_HadGEM8.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Mer_HadGEM1
+
+CT_Mer_MIROC1 <- Centroid(CT_Mer_MIROC8.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Mer_MIROC1
+
+#bind them all into one object
+CT_Mer <- rbind(CT_Mer_Livneh1, CT_Mer_CanES1, CT_Mer_CNRM1, CT_Mer_HadGEM1, CT_Mer_MIROC1) %>%
+  mutate(Scenario = factor("RCP 8.5")) 
+#CT_Mer$GCM <- factor(CT_Mer$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Mer
+```
+
+```{r}
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Mer_Livneh2 <- Centroid(CT_Mer_Livneh4.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Mer_Livneh2
+
+CT_Mer_CanES2 <- Centroid(CT_Mer_CanES4.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Mer_CanES2
+
+CT_Mer_CNRM2 <- Centroid(CT_Mer_CNRM4.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Mer_CNRM2
+
+CT_Mer_HadGEM2 <- Centroid(CT_Mer_HadGEM4.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Mer_HadGEM2
+
+CT_Mer_MIROC2 <- Centroid(CT_Mer_MIROC4.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Mer_MIROC2
+
+#bind them all into one object
+CT_Mer2 <- rbind(CT_Mer_Livneh2, CT_Mer_CanES2, CT_Mer_CNRM2, 
+                 CT_Mer_HadGEM2, CT_Mer_MIROC2) %>%
+  mutate(Scenario = factor("RCP 4.5")) 
+#CT_Mer2$GCM <- factor(CT_Mer2$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Mer2
+```
+
+```{r}
+
+Centroid_Mer <- rbind(CT_Mer, CT_Mer2) %>%
+  mutate(Month = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%B"), "%b")),
+         Week = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%V"), "%V")))
+
+#Set the order of the factors to the way we want it to be displayed in the plot
+Centroid_Mer$Scenario <- factor(Centroid_Mer$Scenario, levels = c("RCP 4.5", "RCP 8.5"))
+Centroid_Mer$Month <- factor(Centroid_Mer$Month, levels = c("Feb", "Mar", "Apr", "May"))
+Centroid_Mer$GCM <- factor(Centroid_Mer$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+Centroid_Mer
+
+GCM.mean <- plyr::ddply(Centroid_Mer, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ))
+
+```
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 8.5 scenario
+
+CT_Tuo_Livneh8.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Tuo_Livneh8.5
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Tuo_CanES8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_CanES8.5
+
+CT_Tuo_CNRM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_CNRM8.5
+
+CT_Tuo_HadGEM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_HadGEM8.5
+
+CT_Tuo_MIROC8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_MIROC8.5
+```
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 4.5 scenario
+CT_Tuo_Livneh4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Tuo_Livneh4.5
+
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Tuo_CanES4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_CanES4.5
+
+CT_Tuo_CNRM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_CNRM4.5
+
+CT_Tuo_HadGEM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_HadGEM4.5
+
+CT_Tuo_MIROC4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Tuo_MIROC4.5
+```
+
+
+```{r}
+#fucntion to shorten the command of centroid timing
+Centroid <- function(x) {
+calc_annual_flow_timing(x, dates = date, values = flow, water_year_start = 10, percent_total = 50) }
+
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Tuo_Livneh1 <- Centroid(CT_Tuo_Livneh8.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Tuo_Livneh1
+
+CT_Tuo_CanES1 <- Centroid(CT_Tuo_CanES8.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Tuo_CanES1
+
+CT_Tuo_CNRM1 <- Centroid(CT_Tuo_CNRM8.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Tuo_CNRM1
+
+CT_Tuo_HadGEM1 <- Centroid(CT_Tuo_HadGEM8.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Tuo_HadGEM1
+
+CT_Tuo_MIROC1 <- Centroid(CT_Tuo_MIROC8.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Tuo_MIROC1
+
+#bind them all into one object
+CT_Tuo <- rbind(CT_Tuo_Livneh1, CT_Tuo_CanES1, CT_Tuo_CNRM1, CT_Tuo_HadGEM1, CT_Tuo_MIROC1) %>%
+  mutate(Scenario = factor("RCP 8.5")) 
+#CT_Tuo$GCM <- factor(CT_Tuo$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Tuo
+```
+
+```{r}
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Tuo_Livneh2 <- Centroid(CT_Tuo_Livneh4.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Tuo_Livneh2
+
+CT_Tuo_CanES2 <- Centroid(CT_Tuo_CanES4.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Tuo_CanES2
+
+CT_Tuo_CNRM2 <- Centroid(CT_Tuo_CNRM4.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Tuo_CNRM2
+
+CT_Tuo_HadGEM2 <- Centroid(CT_Tuo_HadGEM4.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Tuo_HadGEM2
+
+CT_Tuo_MIROC2 <- Centroid(CT_Tuo_MIROC4.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Tuo_MIROC2
+
+#bind them all into one object
+CT_Tuo2 <- rbind(CT_Tuo_Livneh2, CT_Tuo_CanES2, CT_Tuo_CNRM2, 
+                 CT_Tuo_HadGEM2, CT_Tuo_MIROC2) %>%
+  mutate(Scenario = factor("RCP 4.5")) 
+#CT_Tuo2$GCM <- factor(CT_Tuo2$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Tuo2
+```
+
+```{r}
+Centroid_Tuo <- rbind(CT_Tuo, CT_Tuo2) %>%
+  mutate(Month = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%B"), "%b")),
+         Week = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%V"), "%V")))
+
+#Set the order of the factors to the way we want it to be displayed in the plot
+Centroid_Tuo$Scenario <- factor(Centroid_Tuo$Scenario, levels = c("RCP 4.5", "RCP 8.5"))
+Centroid_Tuo$Month <- factor(Centroid_Tuo$Month, levels = c("Feb", "Mar", "Apr", "May"))
+Centroid_Tuo$GCM <- factor(Centroid_Tuo$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+Centroid_Tuo
+
+GCM.mean <- plyr::ddply(Centroid_Tuo, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ))
+
+
+
+```
+
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 8.5 scenario
+
+CT_Stn_Livneh8.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Stn_Livneh8.5
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Stn_CanES8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_CanES8.5
+
+CT_Stn_CNRM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_CNRM8.5
+
+CT_Stn_HadGEM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_HadGEM8.5
+
+CT_Stn_MIROC8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_MIROC8.5
+```
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 4.5 scenario
+CT_Stn_Livneh4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_Stn_Livneh4.5
+
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_Stn_CanES4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_CanES4.5
+
+CT_Stn_CNRM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_CNRM4.5
+
+CT_Stn_HadGEM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_HadGEM4.5
+
+CT_Stn_MIROC4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_Stn_MIROC4.5
+```
+
+
+```{r}
+#fucntion to shorten the command of centroid timing
+Centroid <- function(x) {
+calc_annual_flow_timing(x, dates = date, values = flow, water_year_start = 10, percent_total = 50) }
+
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Stn_Livneh1 <- Centroid(CT_Stn_Livneh8.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Stn_Livneh1
+
+CT_Stn_CanES1 <- Centroid(CT_Stn_CanES8.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Stn_CanES1
+
+CT_Stn_CNRM1 <- Centroid(CT_Stn_CNRM8.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Stn_CNRM1
+
+CT_Stn_HadGEM1 <- Centroid(CT_Stn_HadGEM8.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Stn_HadGEM1
+
+CT_Stn_MIROC1 <- Centroid(CT_Stn_MIROC8.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Stn_MIROC1
+
+#bind them all into one object
+CT_Stn <- rbind(CT_Stn_Livneh1, CT_Stn_CanES1, CT_Stn_CNRM1, CT_Stn_HadGEM1, CT_Stn_MIROC1) %>%
+  mutate(Scenario = factor("RCP 8.5")) 
+#CT_Stn$GCM <- factor(CT_Stn$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Stn
+```
+
+```{r}
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_Stn_Livneh2 <- Centroid(CT_Stn_Livneh4.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_Stn_Livneh2
+
+CT_Stn_CanES2 <- Centroid(CT_Stn_CanES4.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_Stn_CanES2
+
+CT_Stn_CNRM2 <- Centroid(CT_Stn_CNRM4.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_Stn_CNRM2
+
+CT_Stn_HadGEM2 <- Centroid(CT_Stn_HadGEM4.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_Stn_HadGEM2
+
+CT_Stn_MIROC2 <- Centroid(CT_Stn_MIROC4.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_Stn_MIROC2
+
+#bind them all into one object
+CT_Stn2 <- rbind(CT_Stn_Livneh2, CT_Stn_CanES2, CT_Stn_CNRM2, 
+                 CT_Stn_HadGEM2, CT_Stn_MIROC2) %>%
+  mutate(Scenario = factor("RCP 4.5")) 
+#CT_Stn2$GCM <- factor(CT_Stn2$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_Stn2
+```
+
+```{r}
+
+Centroid_Stn <- rbind(CT_Stn, CT_Stn2) %>%
+  mutate(Month = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%B"), "%b")),
+         Week = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%V"), "%V")))
+
+#Set the order of the factors to the way we want it to be displayed in the plot
+Centroid_Stn$Scenario <- factor(Centroid_Stn$Scenario, levels = c("RCP 4.5", "RCP 8.5"))
+Centroid_Stn$Month <- factor(Centroid_Stn$Month, levels = c("Feb", "Mar", "Apr", "May"))
+Centroid_Stn$GCM <- factor(Centroid_Stn$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+Centroid_Stn
+
+GCM.mean <- plyr::ddply(Centroid_Stn, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ))
+
+
+
+```
+
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 8.5 scenario
+
+CT_USJ_Livneh8.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_USJ_Livneh8.5
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_USJ_CanES8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_CanES8.5
+
+CT_USJ_CNRM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_CNRM8.5
+
+CT_USJ_HadGEM8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_HadGEM8.5
+
+CT_USJ_MIROC8.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_MIROC8.5
+```
+
+```{r}
+#Calculate centroid timing for full natural flow under RCP 4.5 scenario
+CT_USJ_Livneh4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+      filter(between(date, as.Date("1950-10-01"), as.Date("2013-09-30")))
+CT_USJ_Livneh4.5
+
+
+#Function to read csv files and filter 2030-2060 periods 
+CT <- function(x) {
+  read_csv(x) %>%
+    filter(between(date, as.Date("2029-10-01"), as.Date("2060-09-30")))}
+
+CT_USJ_CanES4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_CanES4.5
+
+CT_USJ_CNRM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_CNRM4.5
+
+CT_USJ_HadGEM4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_HadGEM4.5
+
+CT_USJ_MIROC4.5 <- CT("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv")
+CT_USJ_MIROC4.5
+```
+
+
+```{r}
+#fucntion to shorten the command of centroid timing
+Centroid <- function(x) {
+calc_annual_flow_timing(x, dates = date, values = flow, water_year_start = 10, percent_total = 50) }
+
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_USJ_Livneh1 <- Centroid(CT_USJ_Livneh8.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_USJ_Livneh1
+
+CT_USJ_CanES1 <- Centroid(CT_USJ_CanES8.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_USJ_CanES1
+
+CT_USJ_CNRM1 <- Centroid(CT_USJ_CNRM8.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_USJ_CNRM1
+
+CT_USJ_HadGEM1 <- Centroid(CT_USJ_HadGEM8.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_USJ_HadGEM1
+
+CT_USJ_MIROC1 <- Centroid(CT_USJ_MIROC8.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_USJ_MIROC1
+
+#bind them all into one object
+CT_USJ <- rbind(CT_USJ_Livneh1, CT_USJ_CanES1, CT_USJ_CNRM1, CT_USJ_HadGEM1, CT_USJ_MIROC1) %>%
+  mutate(Scenario = factor("RCP 8.5")) 
+#CT_USJ$GCM <- factor(CT_USJ$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_USJ
+```
+
+```{r}
+#Aplly the function to each object, creating a column to specify the climate scenario of each object
+CT_USJ_Livneh2 <- Centroid(CT_USJ_Livneh4.5) %>% 
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+CT_USJ_Livneh2
+
+CT_USJ_CanES2 <- Centroid(CT_USJ_CanES4.5) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+CT_USJ_CanES2
+
+CT_USJ_CNRM2 <- Centroid(CT_USJ_CNRM4.5) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CT_USJ_CNRM2
+
+CT_USJ_HadGEM2 <- Centroid(CT_USJ_HadGEM4.5) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+CT_USJ_HadGEM2
+
+CT_USJ_MIROC2 <- Centroid(CT_USJ_MIROC4.5) %>%
+    mutate(GCM = as.factor("MIROC5"))
+CT_USJ_MIROC2
+
+#bind them all into one object
+CT_USJ2 <- rbind(CT_USJ_Livneh2, CT_USJ_CanES2, CT_USJ_CNRM2, 
+                 CT_USJ_HadGEM2, CT_USJ_MIROC2) %>%
+  mutate(Scenario = factor("RCP 4.5")) 
+#CT_USJ2$GCM <- factor(CT_USJ2$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+CT_USJ2
+```
+
+```{r}
+Centroid_USJ <- rbind(CT_USJ, CT_USJ2) %>%
+  mutate(Month = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%B"), "%b")),
+         Week = as.factor(format(as.Date(Date_50pct_TotalQ, format = "%V"), "%V")))
+
+#Set the order of the factors to the way we want it to be displayed in the plot
+Centroid_USJ$Scenario <- factor(Centroid_USJ$Scenario, levels = c("RCP 4.5", "RCP 8.5"))
+Centroid_USJ$Month <- factor(Centroid_USJ$Month, levels = c("Feb", "Mar", "Apr", "May"))
+Centroid_USJ$GCM <- factor(Centroid_USJ$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+Centroid_USJ
+
+GCM.mean <- plyr::ddply(Centroid_USJ, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ))
+
+
+
+```
+
+```{r}
+#Facet wraps of all basins
+
+CT_Mer$Basin <- "Merced River"
+CT_Mer2$Basin <- "Merced River"
+CT_Tuo$Basin <- "Tuolumne River"
+CT_Tuo2$Basin <- "Tuolumne River"
+CT_Stn$Basin <- "Stanislaus River"
+CT_Stn2$Basin <- "Stanislaus River"
+CT_USJ$Basin <- "Upper San Joaquin River"
+CT_USJ2$Basin <- "Upper San Joaquin River"
+
+CT_FNF8.5 <-rbind(CT_Mer, CT_Tuo, CT_Stn, CT_USJ)
+CT_FNF8.5$GCM <- factor(CT_FNF8.5$GCM, levels = c("Livneh (Historical)","HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+CT_FNF8.5
+
+CT_FNF8.5$Basin <- factor(CT_FNF8.5$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+
+CT_FNF4.5 <- rbind(CT_Mer2, CT_Tuo2, CT_Stn2, CT_USJ2)
+CT_FNF4.5$GCM <- factor(CT_FNF4.5$GCM, levels = c("Livneh (Historical)","HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+CT_FNF4.5
+
+Centroid_Mer$Basin <- "Merced River"
+Centroid_Tuo$Basin <- "Tuolumne River"
+Centroid_Stn$Basin <- "Stanislaus River"
+Centroid_USJ$Basin <- "Upper San Joaquin River"
+
+
+
+all_CT_FNF <- rbind(Centroid_Mer, Centroid_Tuo, Centroid_Stn ,Centroid_USJ)
+
+all_CT_FNF$Basin <- factor(all_CT_FNF$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_CT_FNF
+```
+
+
+```{r}
+#Facet wrap of all
+ggplot(CT_FNF4.5, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(CT_FNF4.5, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(color = "RCP 4.5",
+       title = "Full Natural Flow",
+    y = "Density", 
+       x = "Centroid Timing (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "fixed")+
+  png("AllBasins_Centroid_Timing_FNF_scalesfixed.png", units ="in", width=6, height=6, res = 300)
+```
+
+```{r}
+#Facet wrap of all
+ggplot(CT_FNF4.5, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(CT_FNF4.5, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(color = "RCP 4.5",
+       title = "Full Natural Flow",
+    y = "Density", 
+       x = "Centroid Timing (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "free")+
+  png("AllBasins_Centroid_Timing_FNF_scalesfree.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+```{r}
+#Facet wrap of all
+CT_FNF8.5$Basin <- factor(CT_FNF8.5$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+
+ggplot(CT_FNF8.5, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(CT_FNF8.5, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=0.9) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(color = "RCP 8.5",
+       title = "Full Natural Flow",
+    y = "Density", 
+       x = "Centroid Timing (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "fixed")+
+  png("AllBasins_Centroid_Timing_FNF_scalesfixed2.png", units ="in", width=6, height=6, res = 300)
+```
+
+```{r}
+#Facet wrap of all
+
+ggplot(CT_FNF8.5, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(CT_FNF4.5, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+
+  labs(title = "Full Natural Flow",
+       color = "RCP 8.5",
+       y = "Density", 
+       x = "Centroid Timing (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "free")+
+  png("AllBasins_Centroid_Timing_FNF_scalesfree2.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+#note <- data.frame(x = 125, y = 1, label = c(paste(GCM.mean)))
+
+ggplot(CT_Mer) + 
+  theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ)) +
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(breaks = c(150, 175, 200, 225, 250),
+      limits = c(140,250),
+                      expand = c(0, NA))+
+#      labels = comma) +
+ # scale_y_date(breaks = as.Date(c(1950, 1970, 1990, 2010, 2035, 2045, 2055)))+
+  #scale_(breaks = c(1950, 1970, 1990, 2010))+
+#  scale_color_discrete(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess")) +
+  scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x")
+  
+#  png("Mer_Centroid_Timing2.png", units ="in", width=8, height=4, res = 300)
+
+```{r}
+#Density plot
+
+ggplot(Centroid_Mer, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(Centroid_Mer, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                  #     limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(92,106, 121,135, 151, 165, 182, 196, 
+                                  212, 226, 244, 258, 273),
+                       labels = c("Jan 1","Jan 15","Feb 1","Feb 15", "Mar 1",
+                                  "Mar 15", "Apr 1", "April 15", "May 1", 
+                                  "May 15", "Jun 1", "Jun 15", "Jul 1")) +
+  labs(subtitle = "Merced River",
+       title = "Full Natural Flow",
+    y = "Density", 
+       x = "Centroid Timing (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")+
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  png("Mer_Centroid_Timing.png", units ="in", width=6, height=5, res = 300)
+```
+
+```{r}
+#Black and White
+library(extrafont)
+
+ggplot(Centroid_Stn) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, #color = GCM,
+                   linetype = Scenario))+
+    scale_y_continuous(expand = c(0, NA),
+                  #     limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(93,107, 122,136, 152, 166, 183, 197, 
+                                  213, 227, 245, 259, 274),
+                       labels = c("Jan 1","Jan 15","Feb 1","Feb 15", "Mar 1",
+                                  "Mar 15", "Apr 1", "Apr 15", "May 1", 
+                                  "May 15", "Jun 1", "Jun 15", "Jul 1")) +  scale_x_continuous(breaks = c(1981, 1991, 2001, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", 
+                linetype = Scenario), color = "#000000",se = FALSE) +
+
+    labs(title = "Stanislaus River",
+       subtitle = "Full Natural Flow",
+    x = element_blank(), 
+       y = "Centroid Time (Days)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+    legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") +
+png("Stn_Centroid_FNF_Timing3.png", units ="in", width=10, height=4, res = 300)
+```
+
+
+```{r}
+#Black and white
+CT_FNF <- function(data, title, subtitle) {
+
+ggplot(data) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, #color = GCM,
+                   linetype = Scenario)) +
+    scale_y_continuous(expand = c(0, NA),
+                  #     limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(93,107, 122,136, 152, 166, 183, 197, 
+                                  213, 227, 245, 259, 274),
+                       labels = c("Jan 1","Jan 15","Feb 1","Feb 15", "Mar 1",
+                                  "Mar 15", "Apr 1", "Apr 15", "May 1", 
+                                  "May 15", "Jun 1", "Jun 15", "Jul 1")) +  scale_x_continuous(breaks = c(1981, 1991, 2001, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", 
+                linetype = Scenario), color = "#000000",se = FALSE) +
+
+    labs(title = title,
+       subtitle = subtitle,
+    x = element_blank(), 
+       y = "Centroid Time (Days)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+    legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") 
+}
+
+CT_FNF(Centroid_Mer, "Merced River", "Full Natural Flow") +
+png("Mer_Centroid_FNF_Timing3.png", units ="in", width=10, height=4, res = 300)
+
+CT_FNF(Centroid_Tuo, "Tuolumne River", "Full Natural Flow") +
+png("Tuo_Centroid_FNF_Timing3.png", units ="in", width=10, height=4, res = 300)
+
+CT_FNF(Centroid_Stn, "Stanislaus River", "Full Natural Flow") +
+png("Stn_Centroid_FNF_Timing3.png", units ="in", width=10, height=4, res = 300)
+
+CT_FNF(Centroid_USJ, "Upper San Joaquin River", "Full Natural Flow") +
+png("USJ_Centroid_FNF_Timing3.png", units ="in", width=10, height=4, res = 300)
+```
+
+
+
+#Black and white month
+ggplot(Centroid_Mer) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_point(aes( x = Year, y = as.Date(Date_50pct_TotalQ), #color = GCM,
+                   linetype = Scenario)) +
+   #geom_line(aes(x = node, y = value)) +
+ #   scale_y_discrete()+#breaks = c(150, 175, 200, 225, 250),
+   # limits = c(140,250))+
+  scale_y_date(#limits = c(0,366),
+                      expand = c(0, NA))+
+ # scale_x_continuous(breaks = c(1951, 1971, 1991, 2010, 2031, 2041, 2051, 2060),
+  #  expand = c(0, NA))+
+  #scale_(breaks = c(1950, 1970, 1990, 2010))+
+#  scale_color_discrete(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+#stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", linetype = Scenario),# color = GCM),
+ #               color = "#000000",se = FALSE) +
+#  scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+ # scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+    legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") +
+
+
+png("Mer_Centroid_Timing_Month_series.png", units ="in", width=10, height=4, res = 300)
+
+
+
+#Colored wrap
+ggplot(Centroid_Mer) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, color = GCM,
+                   linetype = Scenario)) +
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(breaks = c(150, 175, 200, 225, 250),
+      limits = c(140,250),
+                      expand = c(0, NA))+
+  scale_x_continuous(breaks = c(1951, 1971, 1991, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+  #scale_(breaks = c(1950, 1970, 1990, 2010))+
+#  scale_color_discrete(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", linetype = Scenario, color = GCM),
+                se = FALSE) +
+  scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+ # scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+ #   legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+ strip.text.x = element_blank(),
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") +
+
+
+png("Mer_Centroid_Timing8.png", units ="in", width=10, height=4, res = 300)
+
+
+
+#Colored grid
+ggplot(Centroid_Mer) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, color = GCM
+                   )) +
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(breaks = c(150, 175, 200, 225, 250),
+      limits = c(140,250),
+                      expand = c(0, NA))+
+  scale_x_continuous(breaks = c(1951, 1971, 1991, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+  #scale_(breaks = c(1950, 1970, 1990, 2010))+
+#  scale_color_discrete(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", color = GCM)
+                ,se = FALSE) +
+  scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+ # scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+ #   legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+   guides(color=FALSE)+
+#         linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_grid(Scenario~GCM, scales= "free_x")+#, strip.position = NULL) +
+
+
+png("Mer_Centroid_Timing7.png", units ="in", width=10, height=4, res = 300)
+
+
+#Black and White Grid
+ggplot(Centroid_Mer) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ #color = GCM,
+                   )) +
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(breaks = c(150, 175, 200, 225, 250),
+      limits = c(140,250),
+                      expand = c(0, NA))+
+  scale_x_continuous(breaks = c(1951, 1971, 1991, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+  #scale_(breaks = c(1950, 1970, 1990, 2010))+
+#  scale_color_discrete(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess"),# color = GCM),
+                color = "#000000",se = FALSE) +
+#  scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+ # scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+ #   legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_grid(Scenario~GCM, scales= "free_x")+#, strip.position = NULL) +
+
+
+png("Mer_Centroid_Timing5.png", units ="in", width=10, height=4, res = 300)
+
+
+
+#Density plot per month
+library(hrbrthemes)
+ggplot(Centroid_Mer, aes(x=Month, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(Centroid_Mer, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_discrete(expand = c(0, NA))+
+                     #  limits = c(100,280),
+                    #   breaks = c(100, 120, 140, 160, 180, 200, 220, 240, 260, 280)) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    y = "Density", 
+       x = "Centroid Time of Full Natural Flow (Month)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")+
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  png("Mer_Centroid_Timing_Month.png", units ="in", width=6, height=5, res = 300)
+
+
+
+#Density plot per month
+library(hrbrthemes)
+ggplot(Centroid_Mer, aes(x=Date_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+ # geom_vline(data = plyr::ddply(Centroid_Mer, c("GCM", "Scenario"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_date(expand = c(0, NA))+
+                     #  limits = c(100,280),
+                    #   breaks = c(100, 120, 140, 160, 180, 200, 220, 240, 260, 280)) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    y = "Density", 
+       x = "Centroid Time of Full Natural Flow (Month)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")+
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  png("Mer_Centroid_Timing_Date.png", units ="in", width=6, height=5, res = 300)
+
+
+
+#Density plot
+library(hrbrthemes)
+ggplot(Centroid_Mer, aes(x=Week, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(Centroid_Mer, c("GCM", "Scenario"), summarise, Week_mean=mean(as.numeric(Week))), aes(xintercept=Week_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_discrete(expand = c(0, NA))+
+                      # limits = c(100,280),
+                       #breaks = c(100, 120, 140, 160, 180, 200, 220, 240, 260, 280)) +
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    y = "Density", 
+       x = "Centroid Time of Full Natural Flow (Week Number)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")+
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  png("Mer_Centroid_Timing_week.png", units ="in", width=6, height=5, res = 300)
+
+
+
+#Bivariate Density plot
+Centroid_Mer %>%
+  filter(!GCM == "Livneh (Historical)") %>%
+ggplot() + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_density_2d(aes( y = DoY_50pct_TotalQ, x = Year, color = GCM))+
+   scale_color_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_x_continuous(expand = c(0, NA),
+ #                        limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+  #                     limits = c(120,280),
+                       breaks = c(120, 140, 160, 180, 200, 220, 240, 260, 280)) +
+#  scale_x_date(date_breaks = "6 years") + #breaks = c("1950", 1970, 1990, 2010, 2030, 2040, 2050, 2060))+
+  
+  labs(#subtitle = "RCP 8.5 Scenario",
+       title = "Merced River",
+    x = "Years", 
+       y = "Centroid Time of Full Natural Flow (Day of Water Year)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+    #    strip.placement = "outside",
+     #   strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+   #     panel.spacing.y = unit(0, "lines"))+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  png("Mer_Centroid_Timing4.png", units ="in", width=7, height=4, res = 300)
+
+
+
+ggplot(CT_Mer) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ)) +
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(breaks = c(150, 175, 200, 225, 250),
+      limits = c(140,250),
+                      expand = c(0, NA),
+      labels = comma) +
+#    scale_x_discrete()+
+  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+
+  labs(fill = "RCP 8.5",
+       title = "Tuolumne River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (MWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  facet_wrap(~GCM, ncol=4, scales= "free")
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

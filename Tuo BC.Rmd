@@ -1,0 +1,563 @@
+---
+title: "Bias Correction USJ"
+author: "Gustavo Facincani Dourado"
+date: "9/17/2020"
+output: html_document
+---
+
+
+```{r}
+library(readr)
+library(tidyverse)
+library(hyfo)
+library(ggplot2)
+library(lubridate)
+library(readxl)
+```
+
+```{r}
+#Reading Livneh data, that is going to be used for bias correction and filtering them to have objects with the same length of the observed data, to be used as the simulated vs observed
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh - original/runoff/"
+
+
+Sub10_PreBC <- read_csv(paste(path,"tot_runoff_sb10_mcm.csv",sep="")) #Cherry Lake
+Sub10_PreBC
+
+Sub10_Livneh <- Sub10_PreBC %>% #Cherry Lake
+   filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31")))
+Sub10_Livneh
+
+Sub11_PreBC <- read_csv(paste(path,"tot_runoff_sb11_mcm.csv",sep=""))  #Lake Eleanor
+Sub11_PreBC
+
+Sub11_Livneh <- Sub11_PreBC %>% #Lake Eleanor
+   filter(between(Date, as.Date("1997-02-22"), as.Date("2013-12-31")))
+Sub11_Livneh
+
+Sub13_Livneh <- read_csv(paste(path,"tot_runoff_sb13_mcm.csv",sep=""))  #Hetch Hetchy
+Sub13_Livneh
+
+
+```
+
+
+```{r}
+path2 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/References/Hetch Hetchy system/"
+
+Reservoir_flow <- read_excel(paste(path2, "HH-CV-LE Inflows-storage-PP-WB-WY Type 1930-2020.xlsx", sep = ""),  "Inflows")[c(1,2,8,14)] %>%#, col_types =c("date","numeric", "numeric", "numeric"))
+mutate(Date...1 = as.Date(Date...1),
+         `Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000),#transforming cfs to mcm/day
+       `Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000),#transforming cfs to mcm/day
+       `Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000)) %>% #transforming cfs to mcm/day
+       filter(between(Date...1, as.Date("1950-01-01"), as.Date("2013-12-31"))) %>% #select only date and inflows
+  rename(Date = Date...1, 
+         `HH inflow (mcm)` =  `Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`,
+         `LE inflow (mcm)` = `Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`,
+         `CL inflow (mcm)` =  `Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)#renaming columns
+Reservoir_flow
+
+HH <- Reservoir_flow[c(1,2)]
+HH
+
+LE <- Reservoir_flow[c(1,3)] %>%
+  filter(between(Date, as.Date("1997-02-22"), as.Date("2013-12-31"))) #select only date and inflows
+LE
+
+CL <- Reservoir_flow[c(1,4)] %>%
+     filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31"))) #select only date and inflows
+CL
+         
+```
+
+
+```{r}
+#Bias Correction with daily data
+
+  path3 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/SubCatchment_RO_BC"
+
+dates <- unique(paste0(lubridate::month(Sub13_Livneh$Date), "/", lubridate::day(Sub13_Livneh$Date)))
+
+BiasCorrection <- function(Observed, Simulated, ToBeCorrected, Subbasin){
+
+#Observed <- CherryLake
+#Simulated <- Sub10_Livneh
+#ToBeCorrected <- Sub10_Livneh
+#Subbasin <- "10"
+  
+bc_df <- list()
+fin_df <- list()
+bF_list <- list()
+
+for (i in dates){
+
+  obs <- filter(Observed, paste0(lubridate::month(Observed$Date), "/", lubridate::day(Observed$Date)) == i)
+    #filter(Observed, paste0(lubridate::day(Observed$Date), "/", lubridate::month(Observed$Date)) == i)
+  hind <- filter(Simulated, paste0(lubridate::month(Simulated$Date), "/", lubridate::day(Simulated$Date)) == i)
+    #filter(Simulated,yday(Simulated$Date)== i)
+
+  bF <- getBiasFactor(as.data.frame(hind),as.data.frame(obs),method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")
+  bF
+
+ # print(paste(i," bias factor is ", bF@biasFactor, sep = ""))
+    new_df <- filter(ToBeCorrected, paste0(lubridate::month(ToBeCorrected$Date), "/", lubridate::day(ToBeCorrected$Date)) == i)
+      #filter(ToBeCorrected,yday(as.Date(ToBeCorrected$Date, format = "%Y-%m-%d")) ==i)
+    bc_df <- applyBiasFactor(as.data.frame(new_df),bF)
+    if (i==1){
+      fin_df <- bc_df
+#      bF_list <- data.frame(Day = i, `Bias Factor` = bF@biasFactor[[1]])
+    }
+    else {
+    fin_df <- bind_rows(fin_df,bc_df)
+#bF_list <- bind_rows(bF_list, data.frame(Day = i, `Bias Factor` = bF@biasFactor[[1]]))
+    }
+  }
+fin_df2 <-  arrange(fin_df, Date) #bias corrected Florence Lake inflow
+head(fin_df2)
+
+
+write_csv(fin_df2, paste(path3,"/tot_runoff_sb",Subbasin,"_mcm.csv", sep=""))
+
+#write_csv(bF_list, paste(path3,"/Bias Correction Factors_sb",Subbasin,".csv", sep=""))
+}
+```
+
+```{r}
+
+BiasCorrection(CL, Sub10_Livneh, Sub10_PreBC, "10")
+BiasCorrection(LE, Sub11_Livneh, Sub11_PreBC, "11")
+BiasCorrection(HH, Sub13_Livneh, Sub13_Livneh, "13")
+
+```
+
+
+```{r}
+library(hydroGOF)
+
+model.assessment <- function(sim, obs, basinname) {
+  pbias <- pbias(sim,obs, na.rm=TRUE)
+  rsr <- rsr(sim, obs, na.rm=TRUE)
+  nse <- NSE(sim, obs, na.rm=TRUE)
+  
+  print(paste("For ", basinname, ", BIAS = ",pbias,"% ",
+              "RSR = "," ",rsr," ",
+              "NSE = ",nse,sep=""))
+  
+data.frame(Test = c("PBIAS (%)", "RSR", "NSE"), Results = c(pbias, rsr, nse))
+}
+
+```
+
+```{r}
+#Before
+model.assessment(Sub10_Livneh$flw, CL$`CL inflow (mcm)`, "Cherry Lake")
+model.assessment(Sub11_Livneh$flw, LE$`LE inflow (mcm)`, "Lake Eleanor")
+model.assessment(Sub13_Livneh$flw, HH$`HH inflow (mcm)`, "Hetch Hetchy Reservoir")
+
+
+#After
+
+Cherry <- read_csv(paste(path3,"/tot_runoff_sb10_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+   filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31")))
+
+Eleanor <- read_csv(paste(path3,"/tot_runoff_sb11_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+   filter(between(Date, as.Date("1997-02-22"), as.Date("2013-12-31")))
+
+Hetch <- read_csv(paste(path3,"/tot_runoff_sb13_mcm.csv", sep="")) #Getting the Bias Corrected data we generated
+
+
+model.assessment(Cherry$flw, CL$`CL inflow (mcm)`, "Cherry Lake")
+model.assessment(Eleanor$flw, LE$`LE inflow (mcm)`, "Lake Eleanor")
+model.assessment(Hetch$flw, HH$`HH inflow (mcm)`, "Hetch Hetchy Reservoir")
+```
+
+
+```{r}
+Make_Figures <- function(Observed, Simulated, Subbasin, StartDate, EndDate, Area){
+
+
+Pre_BC <- Simulated %>% #getting the data pre-bias correction
+  mutate(Data = "Pre-Bias Correction (Livneh)", #getting the numbers back into cms to plot
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2) 
+Pre_BC
+
+Pre_BC2 <- Pre_BC %>% #getting the data pre-bias correction
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  dplyr::select(Date, `Inflow (cfs)`, Data) 
+Pre_BC2
+
+
+BC_daily <- read_csv(paste(path3,"/tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Data = "Post-Bias Correction (Livneh)", 
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2) %>%
+   filter(between(Date, as.Date(StartDate), as.Date(EndDate)))
+
+BC_daily
+
+BC_daily2 <- BC_daily %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  dplyr::select(Date, `Inflow (cfs)`, Data)
+
+BC_daily2
+
+Reference <- Observed %>% #getting the observed data from SFPUC
+    mutate(Data = "SFPUC Reference (Observed)", 
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2)
+Reference
+
+Reference2 <- Reference %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  dplyr::select(Date, `Inflow (cfs)`, Data)
+Reference2
+
+Final <- rbind(Pre_BC, BC_daily, Reference)
+Final
+Final$Data <- factor(Final$Data, levels = c("SFPUC Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+Final2 <- rbind(Pre_BC2, BC_daily2, Reference2)
+Final2
+Final2$Data <- factor(Final2$Data, levels = c("SFPUC Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+Comparison_daily <- data.frame(cbind(Reference[c(1,2)], Pre_BC[2], BC_daily[2])) %>%
+  rename(`SFPUC Reference (Observed)` = 2,
+         `Pre-Bias Correction (Livneh)` = 3,
+         `Post-Bias Correction (Livneh)` = 4)
+
+Comparison_monthly <- data.frame(cbind(Reference2[c(1,2)], Pre_BC2[2], BC_daily2[2])) %>%
+  rename(`SFPUC Reference (Observed)` = 2,
+         `Pre-Bias Correction (Livneh)` = 3,
+         `Post-Bias Correction (Livneh)` = 4)
+
+ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `SFPUC Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `SFPUC Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily_log.png",sep=""), units="in",width=7,height=5)
+
+
+ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `SFPUC Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `SFPUC Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily_log.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly_log.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+ scale_y_log10() + scale_x_log10() +
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly_log.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , x = `SFPUC Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , y = `SFPUC Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily.png",sep=""), units="in",width=7,height=5)
+
+
+ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , x = `SFPUC Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , y = `SFPUC Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly.png",sep=""), units="in",width=7,height=5)
+
+
+ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_continuous(breaks = scales::pretty_breaks())+scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ theme(legend.position="bottom")+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(size = 0.3, alpha = 0.9)+ scale_y_continuous(breaks = scales::pretty_breaks())+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) +scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 +1, color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_log10() +scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+ggsave(filename=paste(path3,"/",Subbasin,"_line_daily_logscale.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(geom = "line", size = 0.3, alpha = 0.9)+ scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_log10() + theme(legend.position="bottom")+
+  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly_logscale.png",sep=""), units="in",width=7,height=5)
+
+##FDC Curve
+data.nm <- unique(Final$Data)
+Final$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- Final$`Inflow (cfs)`[Final$Data==data.nm[i]]+0.00001
+  Fn <- ecdf(vls)
+  Final$FDC[Final$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(Final, aes(x=FDC, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + geom_line(size = 0.6, alpha = 0.5) + #geom_point(shape=21, size=0.05, alpha=0.25) + #scale_y_log10(limits = c(min(Final$`Inflow (cfs)`+0.00001),NA))+
+        ylab(expression("Inflow ("*cfs*")")) + xlab("Exceedance probability") + ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom") +
+  ggsave(filename=paste(path3,"/",Subbasin,"_fdc.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+## Box&whisker
+ggplot(Final, aes(x=Data, y=`Inflow (cfs)`*35314666.21266/86400 )) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Inflow ("*cfs*")")) + xlab("Data")  +ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="bottom")+
+  ggsave(filename=paste(path3,"/",Subbasin,"_box.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+
+## Q-Q plot
+ggplot(Final, aes(sample=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + stat_qq(shape=21, size=0.75)+ylab(expression("Sample Quantiles ("*cfs*")"))+ xlab("Theorical Quantiles (Normal Distribution)")+ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+ scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  png(filename=paste(path3,"/",Subbasin,"_qq.png",sep=""), units="in",width=7,height=5,res=360)
+
+}
+
+```
+
+```{r}
+Make_Figures(CL, Sub10_Livneh, "sb10", "1959-01-01", "2013-12-31", "Cherry Lake")
+
+```
+
+```{r}
+Make_Figures(LE, Sub11_Livneh, "sb11", "1997-02-22", "2013-12-31", "Lake Eleanor") 
+
+```
+
+```{r}
+
+Make_Figures(HH, Sub13_Livneh, "sb13", "1950-01-01", "2013-12-31", "Hetch Hetchy Reservoir")
+
+```
+
+```{r}
+Scatterplots <- function(Subbasin, Area) {
+#Subbasin <- "sb22"
+
+After <- read_csv(paste(path3,"/tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>%
+  rename(`Bias Corrected (mcm)` = 2)
+  
+Before <- read_csv(paste(path,"tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>%
+  rename(`Pre-Bias Correction (mcm)` = 2)
+
+After2 <- After %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(`Bias Corrected (mcm)` = sum(`Bias Corrected (mcm)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Bias Corrected (mcm)`)
+
+Before2 <- Before %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(`Pre-Bias Correction (mcm)` = sum(`Pre-Bias Correction (mcm)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Pre-Bias Correction (mcm)`)
+
+Comparison <- cbind(Before, After[2])
+Comparison2 <- cbind(Before2, After2[2])
+
+ggplot(Comparison, aes(y = `Bias Corrected (mcm)`, x = `Pre-Bias Correction (mcm)`)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Bias Corrected (mcm)`, y = `Pre-Bias Correction (mcm)`), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+  ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_daily.png",sep=""), units="in",width=7,height=5)
+
+
+
+ggplot(Comparison2, aes(y = `Bias Corrected (mcm)`, x = `Pre-Bias Correction (mcm)`)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Bias Corrected (mcm)`, y = `Pre-Bias Correction (mcm)`), alpha = 0)+ ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+
+stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..eq.label..)), 
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+     stat_poly_eq(formula = "y~x", 
+             aes(label = paste0(..rr.label..)), 
+             parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
+  ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_monthly.png",sep=""), units="in",width=7,height=5)
+
+}
+
+```
+
+```{r}
+Scatterplots("sb13", "Hetch Hetchy Reservoir")
+Scatterplots("sb11", "Lake Eleanor")
+Scatterplots("sb10", "Cherry Lake")
+```
+
+```{r}
+#Extra figure using CDEC data
+library(cder)
+#TLN = FNF at Hetch Hetchy
+#TLM = FNF at Cherry
+#TLG = FNF of Tuolumne basin
+Obs_Tuo <- cdec_query("TLG", 65, "M",  "1950-01-01", "1993-09-30") %>%
+  mutate(Value = Value/810.71318210885,
+         Date = as.Date(DateTime, format = "%Y/%m/%d"),
+         month = month(DateTime), year = year(DateTime),
+         Data = "Tuolumne Basin",
+         flw = Value)
+Obs_Tuo
+```
+
+```{r}
+#Extra figure using CDEC data
+#Cherry CDEC FNF
+
+Obs_Ch <- cdec_query("TLM", 65, "M",  "1950-01-01", "1992-08-31") %>%
+  mutate(Value = Value/810.71318210885,
+         Date = as.Date(DateTime, format = "%Y/%m/%d"),
+         month = month(DateTime), year = year(DateTime),
+         Data = "CDEC - DWR",
+         flw = Value) 
+Obs_Ch
+#Read BC data
+Sim_Ch <- read_csv(paste(path3,"/tot_runoff_sb10_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(flw)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Bias Corrected Livneh") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1992-08-01")))
+  
+Sim_Ch
+
+CherryLake_SFPUC<- CherryLake %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(`CL inflow (mcm)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "SFPUC") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1992-08-01")))
+
+
+
+Cherry <- rbind(Obs_Ch[c(10,13,14)], Sim_Ch, CherryLake_SFPUC)
+#Cherry$Data <- factor(Cherry$Data, levels = c("CDEC - DWR", "Bias Corrected Livneh"))
+Cherry
+```
+
+```{r}
+#Hetch Hetchy CDEC FNF
+Obs_HH <- cdec_query("TLN", 65, "M",  "1950-01-01", "1993-09-30") %>%
+  mutate(Value = Value/810.71318210885,
+         DateTime = as.Date(DateTime, format = "%Y/%m/%d"),
+         month = month(DateTime), year = year(DateTime),
+         Data = "CDEC - DWR",
+         flw = Value)
+Obs_HH
+
+Sim_HH <- read_csv(paste(path3,"/tot_runoff_sb13_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(flw)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Bias Corrected Livneh") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1993-09-30")))
+  
+Sim_HH
+
+HetchHetchy_SFPUC<- HetchHetchy %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(`HH inflow (mcm)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "SFPUC") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1993-09-30")))
+
+Hetch <- rbind(Obs_Ch[c(10,13,14)], Sim_Ch, HetchHetchy_SFPUC)
+Hetch
+```
+
+
+```{r}
+ggplot(Hetch, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Hetch Hetchy Reservoir")+
+  png(filename=paste(path3,"/sb13_line_monthly_CDEC_line.png",sep=""), units="in",width=6.5,height=3,res=360)
+
+```
+
+
+
+```{r}
+Sim_El <- read_csv(paste(path3,"/tot_runoff_sb11_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(flw)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Lake Eleanor") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1993-09-30")))
+  
+Sim_El
+
+Sim_HH2 <- Sim_HH %>%
+  mutate(Data = "Hetch Hetchy Reservoir")
+
+Sim_Ch2 <- Sim_Ch %>%
+  mutate(Data = "Cherry Lake")
+
+
+Tuolumne <- rbind(Sim_HH2, Sim_Ch2, Sim_El, Obs_Tuo[c(10,13,14)])
+
+ggplot(Tuolumne, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Tuolumne Basin")+
+  png(filename=paste(path3,"/line_monthly_CDEC_Basin.png",sep=""), units="in",width=6.5,height=3,res=360)
+
+```
+
+```{r}
+ggplot(Cherry, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Cherry Lake")+ scale_linetype_manual(guide = guide_legend(reverse = TRUE), labels = c("Bias Corrected Livneh", "CDEC - DWR"))+
+  png(filename=paste(path3,"/sb10_line_monthly_CDEC_line.png",sep=""), units="in",width=6.5,height=3,res=360)
+
+```
+

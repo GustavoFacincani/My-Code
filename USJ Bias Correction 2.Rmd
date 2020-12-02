@@ -1,0 +1,266 @@
+---
+title: "Bias Correction USJ"
+author: "Gustavo Facincani Dourado"
+date: "9/17/2020"
+output: html_document
+---
+
+The Big Creek system is composed of subbasins 31-38, which discharge into Mammoth Pool Reservoir, together with subbasins 22 (ungauged) and 23 (gauged). Subbasins 32-35 have a very poor record of USGS gauge data. So, here we're collecting data as of an uncontrolled system, according to the data available, to bias correct the Livneh data for this regions, which does not represent this part of the system well.
+
+```{r}
+library(readr)
+library(tidyverse)
+library(dataRetrieval)
+```
+
+```{r}
+USJpath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/gauges/"
+
+Save_path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/USJR/SubCatchment_RO_BC"
+
+#Reading in the Storage and Streamflow data we have
+Reservoir_flow <- read_csv(paste0(USJpath, "streamflow_cfs.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()), na = "")%>%
+filter(between(Date, as.Date("1986-10-01"), as.Date("2013-09-30")))
+
+Reservoir_flow[2:49] <- (Reservoir_flow[2:49]/35.314666)*86400/1000000 #converting to mcm, as storage is in mcm
+Reservoir_flow
+
+Reservoir_stor <- read_csv(paste0(USJpath, "storage_mcm.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))%>%
+filter(between(Date, as.Date("1986-10-01"), as.Date("2013-09-30")))
+Reservoir_stor
+```
+
+
+```{r}
+#Subbasins using Livneh data, as they don't have USGS gauges
+#read_basin <- function(name){
+#  readr::read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff/",name, sep=""))%>%
+#filter(between(Date, as.Date("1986-10-01"), as.Date("2013-09-30")))
+#}
+
+#Sub20 <- read_basin(name = "tot_runoff_sb20_mcm.csv") #Below Mammoth
+
+#Sub22 <- read_basin("tot_runoff_sb22_mcm.csv") #Granite Creek -> San Joaquin River
+
+#Sub32 <- read_basin("tot_runoff_sb32_mcm.csv") #Camp 61 Creek
+
+#Sub33 <- read_basin("tot_runoff_sb33_mcm.csv") #Bolsillo Creek
+
+#Sub34 <- read_basin("tot_runoff_sb34_mcm.csv") #Camp 62 Creek
+
+#Sub35 <- read_basin("tot_runoff_sb35_mcm.csv") #Chinquapin Creek
+
+```
+
+```{r}
+#Water balance of reservoir to determine inflows
+#Subbasin 21 - Mammoth Pool Reservoir
+Sub21 <- Reservoir_stor[c(1,10)] %>% #selecting gauge below Thomas Edison
+#  replace(is.na(Reservoir_flow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`), 0) %>%
+   mutate(ChangeStorage = `USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA` - lag(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`, default = first(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`)), #getting change in storage
+          PH_Flow = Reservoir_flow$`USGS 11235100 MAMMOTH POOL PP NR BIG CREEK CA`, 
+          Below_Reservoir = Reservoir_flow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`,
+          Sub20 = Sub20$tot_runoff_sb20) %>% #getting outflow, summing up the flow below the reservoir, flow to the PH and I'm subtracting the contribution from Subbasin 20, as it is below the reservoir, before the gauge
+          mutate(Inflow_Mammoth = rowSums(na.omit(.[3:5])) - Sub20) #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day)
+#ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) 
+Sub21
+
+#check when there are negative
+Sub21[Sub21$Inflow_Mammoth < 0,]
+
+#Percentage of record with negative values
+paste(nrow(Sub21[Sub21$Inflow_Mammoth < 0,])/nrow(Sub21)*100, "%", sep="")
+```
+
+```{r}
+
+#As Florence Lake only has an older record (up to 1980), I'm bias correcting it separately using the period of WYs 1950-1980
+#Subbasin 38 - Florence Lake
+Below_Florence <- read_csv(paste0(USJpath, "streamflow_cfs.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))[c(1,3,4)]%>% #selecting data for gauges below Florence and intake to Ward Tunnel
+filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-30"))) %>% #reading the data for the period of record available
+  mutate(`USGS 11230000 SF SAN JOAQUIN R NR FLORENCE LK CA` = (`USGS 11230000 SF SAN JOAQUIN R NR FLORENCE LK CA`/35.314666)*86400/1000000, #converting to mcm, as storage is in mcm
+         `USGS 11229500 WARD TUNNEL A INTAKE A FLORENCE LAKE CA` = (`USGS 11229500 WARD TUNNEL A INTAKE A FLORENCE LAKE CA`/35.314666)*86400/1000000) #converting to mcm, as storage is in mcm
+Below_Florence
+
+Sub38 <- read_csv(paste0(USJpath, "storage_mcm.csv", sep = ""))[c(1,8)] %>% #selecting storage
+filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-30"))) %>% #same period as of available flow
+   mutate(ChangeStorage = `USGS 11229600 FLORENCE LK NR BIG C CA` - lag(`USGS 11229600 FLORENCE LK NR BIG C CA`, default = first(`USGS 11229600 FLORENCE LK NR BIG C CA`)), #getting change in storage
+          Outflow = rowSums(Below_Florence[2:3]), #sum of USGS 11229500 and USGS 11230000 
+          Inflow_Florence = (ChangeStorage + Outflow))  #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day)
+#ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) 
+Sub38
+
+#check when there are negative
+Sub38[Sub38$Inflow_Florence < 0,]
+
+#Percentage of record with negative values
+paste(nrow(Sub38[Sub38$Inflow_Florence < 0,])/nrow(Sub38)*100, "%", sep="")
+```
+
+```{r}
+#Bias Correction of Sub38 (Florence Lake) using daily values
+Florence_USGS <- Sub38[c(1,5)] #Reference data for BC (Observed)
+Florence_USGS
+
+Florence_PreBC_Livneh <- Florence_Livneh%>%
+filter(between(date, as.Date("1950-01-01"), as.Date("1980-09-30"))) #Simulated
+Florence_PreBC_Livneh
+
+
+Florence_Livneh <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff_aggregated/Florence Lake Inflow mcm.csv") #input data to be bias corrected
+Florence_Livneh
+
+```
+
+```{r}
+#I just tried the bias correction at monthly timestep, but the daily gives better results
+
+library(hyfo)
+#Bias Correction
+#new_df <- list()
+bc_df <- list()
+fin_df <- list()
+
+for (i in (1:366)){
+
+  obs <- filter(Florence_USGS,yday(Florence_USGS$Date)== i)
+  hind <- filter(Florence_PreBC_Livneh,yday(Florence_PreBC_Livneh$date)== i)
+
+  bF <- getBiasFactor(as.data.frame(hind),as.data.frame(obs),method = "scaling", scaleType = "multi",preci = FALSE, prThreshold = 0, extrapolate = "no")
+  bF
+  print(paste(i," bias factor is ", bF@biasFactor, sep = ""))
+    new_df <- filter(Florence_Livneh, yday(as.Date(Florence_Livneh$date, format = "%Y-%m-%d")) ==i)
+    bc_df <- applyBiasFactor(new_df,bF)
+    if (i==1){
+      fin_df <- bc_df
+    }
+    else {
+      fin_df <- bind_rows(fin_df,bc_df)
+     
+    }
+  }
+Florence_daily <-  arrange(fin_df, date) #bias corrected Florence Lake inflow
+head(Florence_daily)
+
+#write_csv(Florence_daily, paste(Save_path,"/Florence_inflow_BC_daily_withnegative.csv", sep=""))
+
+```
+
+```{r}
+Florence_LivnehPreBC <- Florence_PreBC_Livneh %>%
+  mutate(Data = "Pre Bias Correction") 
+Florence_LivnehPreBC
+
+BC_daily <- Florence_daily %>%
+  mutate(Data = "BC Corrected - Daily") %>%
+filter(between(date, as.Date("1950-01-01"), as.Date("1980-09-30")))
+BC_daily
+
+Florence_Reference <- Florence_USGS %>%
+    mutate(Data = "USGS Reference")%>%
+  rename(date = Date,
+         flow = Inflow_Florence)
+Florence_Reference
+
+Final <- rbind(Florence_LivnehPreBC, BC_daily, Florence_Reference)
+Final
+```
+
+
+```{r}
+#Figures for Florence Lake Bias Correction 
+##Line Curve
+ggplot(Final,aes(x=date, y=flow, color=Data))+ geom_line()+  scale_x_date()
+
+```
+
+```{r}
+##CFD Curve
+data.nm <- unique(Final$Data)
+Final$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- Final$flow[Final$Data==data.nm[i]]
+  Fn <- ecdf(vls)
+  Final$FDC[Final$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(Final, aes(x=FDC, y=flow, color=Data)) + geom_line() + geom_point(shape=21, size=0.05, alpha=0.25) + 
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Exceedance probability") #+
+
+```
+
+```{r}
+## Box&whisker
+ggplot(Final, aes(x=Data, y=flow)) + geom_boxplot() +
+        ylab(expression("Q ("*m^3/s*")")) + xlab("Data")
+```
+
+```{r}
+## Q-Q plot
+ggplot(Final, aes(sample=flow, color=Data)) + stat_qq(shape=21, size=0.75) 
+```
+
+
+```{r}
+#Subbasins 31 - Lake Thomas Edison
+Sub31 <- Reservoir_stor[c(1,6)] %>% #selecting gauge below Thomas Edison
+   mutate(ChangeStorage = `USGS 11231000 LK THOMAS A. EDISON NR BIG C CA` - lag(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`, default = first(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`)), #getting change in storage
+          Outflow = Reservoir_flow$`USGS 11231500 MONO C BL LK THOMAS A EDISON CA`, #getting outflow
+          Inflow_Thomas = (ChangeStorage + Outflow)) #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day)
+#ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) 
+Sub31
+
+#check when there are negative
+Sub31[Sub31$Inflow_Thomas < 0,]
+
+#Percentage of record with negative values
+paste(nrow(Sub31[Sub31$Inflow_Thomas < 0,])/nrow(Sub31)*100, "%", sep="")
+```
+
+
+```{r}
+
+#Subbasin 36
+Sub23 <- Reservoir_flow[c(1,2)] #San Joaquin River
+Sub23
+
+#Subbasin 36
+Sub36 <- Reservoir_flow[c(1,7)] #Bear Creek
+Sub36
+
+#Subbasin 37
+#Subbasin 36 feeds into 37 (from Florence Lake), so let's not double count it, subtracting the Bias Corrected inflow from Florence
+Florence_outflow <- Florence_daily %>%
+  filter(between(date, as.Date("1986-10-01"), as.Date("2013-09-30")))
+  
+
+Sub37 <- Reservoir_flow[c(1,6)] %>%
+  mutate(Inflow = (`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - #11230070)) 
+Sub37
+```
+
+```{r}
+#To calculate the Portal PH flow, I used the gauge below it, subtracting from it the intakes to Ward Tunnel, from Florence, Mono Creek and Bear Creek (as this water is technically already considered from the inflow calculation from those basins).
+#According to a document from Southern California Edison "The water delivered to Huntington Lake may also pass through Portal Powerhouse at the exit of the Ward Tunnel depending upon the amount of water being transported."
+#So, not all the water diverted through Ward Tunnel goes to the PH, that might explain why there are many negative numbers in the calculation below
+
+PortalPH <- Reservoir_flow[c(1,3,8,14,18)] %>% 
+  mutate(PH_flow = `USGS 11235500 PORTAL POWERPLANT AT HUNTINGTON LAKE CA` - `USGS 11231550 MONO C CONDUIT NR MONO HOT SPRINGS CA` - `USGS 11230520 BEAR C CONDUIT NR LAKE THOMAS A EDISON CA` - `USGS 11229500 WARD TUNNEL A INTAKE A FLORENCE LAKE CA`)
+PortalPH$
+
+#check when there are negative
+PortalPH[PortalPH$PH_flow < 0,]
+
+#Percentage of record with negative values
+paste(nrow(PortalPH[PortalPH$PH_flow < 0,])/nrow(PortalPH)*100, "%", sep="")
+
+#If that's right, here I'm omitting those negative values
+Portal_PH <- PortalPH[c(1,6)] %>%
+  mutate(PH_flow = ifelse((PH_flow) < 0, 0, (PH_flow))) 
+Portal_PH
+```
+
+
+```
+
+

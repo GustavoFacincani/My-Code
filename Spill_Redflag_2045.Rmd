@@ -1,0 +1,356 @@
+---
+title: "Spill_Redflag"
+author: "Gustavo Facincani Dourado"
+date: "6/28/2020"
+output: html_document
+---
+
+```{r}
+#Spill redflags
+
+Livneh_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)]%>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+Livneh_Spill_Mer$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Mer
+
+
+CanESM2_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)]
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CanESM2_Spill_Mer$GCM <- as.factor("CanESM2")
+CanESM2_Spill_Mer
+
+CNRM_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)] 
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CNRM_Spill_Mer$GCM <- as.factor("CNRM-CM5")
+CNRM_Spill_Mer
+
+
+HadGEM2_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM2_Spill_Mer$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_Spill_Mer 
+
+MIROC5_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)] 
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+MIROC5_Spill_Mer$GCM <- as.factor("MIROC5")
+MIROC5_Spill_Mer
+
+```
+
+
+```{r}
+Spill_Mer1 <- rbind(Livneh_Spill_Mer, CanESM2_Spill_Mer, CNRM_Spill_Mer, 
+                 HadGEM2_Spill_Mer, MIROC5_Spill_Mer) %>% 
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 4.5",
+         Basin = "Merced River")
+Spill_Mer1
+
+Spill_Mer <- melt(Spill_Mer1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) %>%
+  mutate(value = round(value, digits = 1))
+Spill_Mer
+```
+
+```{r}
+#Maximum flow at Shaffer Bridge is 6500 cfs (561,600,000 cfs in a day) = 15.90274111328398 mcm
+Spill_Mer2 <- Spill_Mer %>%
+  mutate(MaxFlow = as.numeric(15.9),
+         Spill = as.numeric(value - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+
+Spill_Mer2
+```
+
+
+```{r}
+#Goodwin - Final point of spill at the Tuolumne River
+Livneh_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)]%>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+Livneh_Spill_Tuo$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Tuo
+
+
+CanESM2_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)]
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CanESM2_Spill_Tuo$GCM <- as.factor("CanESM2")
+CanESM2_Spill_Tuo
+
+CNRM_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)] 
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CNRM_Spill_Tuo$GCM <- as.factor("CNRM-CM5")
+CNRM_Spill_Tuo
+
+
+HadGEM2_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM2_Spill_Tuo$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_Spill_Tuo 
+
+MIROC5_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)] 
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+MIROC5_Spill_Tuo$GCM <- as.factor("MIROC5")
+MIROC5_Spill_Tuo
+
+```
+
+```{r}
+Spill_Tuo1 <- rbind(Livneh_Spill_Tuo, CanESM2_Spill_Tuo, CNRM_Spill_Tuo, 
+                 HadGEM2_Spill_Tuo, MIROC5_Spill_Tuo) %>% 
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 4.5",
+         Basin = "Tuolumne River")
+Spill_Tuo1
+
+Spill_Tuo <- melt(Spill_Tuo1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) %>%
+  mutate(value = round(value, digits = 1))
+Spill_Tuo
+```
+
+```{r}
+#Maximum flow at La Grande is 9000 cfs (777,600,000 cfs in a day) = 22.01918000300859 mcm
+Spill_Tuo2 <- Spill_Tuo %>%
+  mutate(MaxFlow = as.numeric(22),
+         Spill = as.numeric(value - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+
+Spill_Tuo2
+```
+
+```{r}
+Livneh_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,36)]%>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+Livneh_Spill_Stn$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Stn
+
+
+CanESM2_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,36)]
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CanESM2_Spill_Stn$GCM <- as.factor("CanESM2")
+CanESM2_Spill_Stn
+
+CNRM_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,36)]
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CNRM_Spill_Stn$GCM <- as.factor("CNRM-CM5")
+CNRM_Spill_Stn
+
+
+HadGEM2_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,36)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM2_Spill_Stn$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_Spill_Stn 
+
+MIROC5_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,36)]
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+MIROC5_Spill_Stn$GCM <- as.factor("MIROC5")
+MIROC5_Spill_Stn
+```
+
+```{r}
+Spill_Stn1 <- rbind(Livneh_Spill_Stn, CanESM2_Spill_Stn, CNRM_Spill_Stn, 
+                 HadGEM2_Spill_Stn, MIROC5_Spill_Stn) %>% 
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 4.5",
+         Basin = "Stanislaus River")
+Spill_Stn1
+
+Spill_Stn <- melt(Spill_Stn1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) %>%
+  mutate(value = round(value, digits = 1))
+Spill_Stn
+```
+
+```{r}
+#Maximum flow at Goodwin Reservoir is 8000 cfs (691,200,000 cf in a day) = 19.572604447118746 mcm
+Spill_Stn2 <- Spill_Stn %>%
+  mutate(MaxFlow = as.numeric(19.6),
+         Spill = as.numeric(value - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+
+Spill_Stn2
+```
+
+```{r}
+Livneh_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)]%>%
+    filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+Livneh_Spill_USJ$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_USJ
+
+
+CanESM2_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)]
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CanESM2_Spill_USJ$GCM <- as.factor("CanESM2")
+CanESM2_Spill_USJ
+
+CNRM_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)]
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CNRM_Spill_USJ$GCM <- as.factor("CNRM-CM5")
+CNRM_Spill_USJ
+
+
+HadGEM2_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM2_Spill_USJ$GCM <- as.factor("HadGEM2-ES")
+HadGEM2_Spill_USJ 
+
+MIROC5_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp45/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)]
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+MIROC5_Spill_USJ$GCM <- as.factor("MIROC5")
+MIROC5_Spill_USJ
+```
+
+```{r}
+Spill_USJ1 <- rbind(Livneh_Spill_USJ, CanESM2_Spill_USJ, CNRM_Spill_USJ, 
+                 HadGEM2_Spill_USJ, MIROC5_Spill_USJ) %>% 
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 4.5",
+         Basin = "Upper San Joaquin River")
+Spill_USJ1
+
+Spill_USJ <- melt(Spill_USJ1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) %>%
+  mutate(value = round(value, digits = 1))
+Spill_USJ
+```
+
+```{r}
+#Maximum flow bl Millerton Lake is 8000 cfs (691,200,000 cfs in a day) = 19.572604447118746 mcm
+Spill_USJ2 <- Spill_USJ %>%
+  mutate(MaxFlow = as.numeric(19.6),
+         Spill = as.numeric(value - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+
+Spill_USJ2
+```
+
+```{r}
+Total_Spill <- rbind(Spill_Mer2, Spill_Stn2, Spill_Tuo2, Spill_USJ2)
+
+Total_Spill$Basin <- factor(Total_Spill$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+Total_Spill$GCM <- factor(Total_Spill$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+Total_Spill
+```
+
+```{r}
+ggplot(Total_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,160), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(GCM~Basin, scales = "free_x", ncol = 4) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+      subtitle = "RCP 4.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetWrap.png", units ="in", width=8, height=8, res = 300)
+```
+
+
+```{r}
+ggplot(Total_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,160), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", 
+                              "2031", "2041","2051"),
+                    expand = c(0, NA))+
+
+  facet_grid(Basin~GCM, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "RCP 4.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetGrid.png", units ="in", width=8.5, height=7, res = 300)
+```
+
+
+```{r}
+#Spill for each basin
+
+Spill <- function (Data, Basins, Title, Subtitle) {
+Data%>%
+  filter(Basin == Basins) %>%
+ggplot() +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,160), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = Title,
+       subtitle = Subtitle,
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill Occurrence (Days)") +
+ theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())
+#        panel.spacing.y = unit(0, "lines")) +
+}
+```
+
+```{r}
+  Spill(Total_Spill, "Merced River", "Merced River", "RCP 4.5 Scenario") +
+png("Mer_Spill.png", units ="in", width=3.5, height=8, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill, "Upper San Joaquin River", "Upper San Joaquin River", "RCP 4.5 Scenario") +
+png("USJ_Spill.png", units ="in", width=3.5, height=8, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill, "Tuolumne River", "Tuolumne River", "RCP 4.5 Scenario") +
+png("Tuo_Spill.png", units ="in", width=3.5, height=8, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill, "Stanislaus River", "Stanislaus River", "RCP 4.5 Scenario") +
+png("Stn_Spill.png", units ="in", width=3.5, height=8, res = 300)
+```

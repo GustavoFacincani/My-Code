@@ -1,0 +1,425 @@
+---
+title: "Bias Correction USJ"
+author: "Gustavo Facincani Dourado"
+date: "9/17/2020"
+output: html_document
+---
+
+The Big Creek system is composed of subbasins 31-38, which discharge into Mammoth Pool Reservoir (subbasin 21), together with subbasins 22 and 23 (both gauged). Subbasins 32-35 have a very poor record of USGS gauge data. There are many mismatches on the time that the gauges in the region present historical records. So, here we're collecting data as of an uncontrolled system, according to the data available for each subbasin, to bias correct the Livneh data for these regions per subbasin individually, as the VIC runoff is not well represented in this part of the Upper San Joaquin river system.
+
+
+```{r}
+library(readr)
+library(tidyverse)
+library(hyfo)
+library(lubridate)
+```
+
+```{r}
+#Reading Livneh data, that is going to be used for bias correction and filtering them to have objects with the same length of the observed data, to be used as the simulated vs observed
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff/"
+
+Sub20_Livneh <- read_csv(paste(path,"tot_runoff_sb20_mcm.csv",sep="")) %>% #below Mammoth Pool
+   filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
+
+Sub21_Livneh <- read_csv(paste(path,"tot_runoff_sb21_mcm.csv",sep="")) %>%
+  rename(Inflow = tot_runoff_sb21)
+
+Sub21_PreBC <- Sub21_Livneh%>% #Mammoth Pool
+   filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
+
+
+Sub22_Livneh <- read_csv(paste(path,"tot_runoff_sb22_mcm.csv",sep="")) %>%
+  rename(Inflow = tot_runoff_sb22)
+Sub22_PreBC <- Sub22_Livneh %>% #Granite Creek
+   filter(between(Date, as.Date("1965-10-01"), as.Date("1986-09-29")))
+
+Sub23_Livneh <- read_csv(paste(path,"tot_runoff_sb23_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb23)
+Sub23_PreBC <- Sub23_Livneh%>% #San Joaquin River
+    filter(between(Date, as.Date("1951-10-01"), as.Date("1991-09-29")))
+
+
+Sub31_Livneh <- read_csv(paste(path,"tot_runoff_sb31_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb31) 
+Sub31_PreBC <-  Sub31_Livneh %>% #Thomas Edison Lake
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31")))
+
+
+Sub36_Livneh <- read_csv(paste(path,"tot_runoff_sb36_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb36)
+Sub36_PreBC <- Sub36_Livneh %>% #Bear Creek
+   filter(between(Date, as.Date("1975-10-01"), as.Date("1986-09-29")))
+
+Sub37_Livneh <- read_csv(paste(path,"tot_runoff_sb37_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb37)
+Sub37_PreBC <-  Sub37_Livneh %>% #SF San Joaquin River
+  filter(between(Date, as.Date("2009-10-01"), as.Date("2013-12-31")))
+
+
+Sub38_Livneh <- read_csv(paste(path,"tot_runoff_sb38_mcm.csv",sep=""))%>%
+  rename(Inflow = tot_runoff_sb38)
+Sub38_PreBC <- Sub38_Livneh %>% #Florence Lake
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-29")))
+
+
+```
+
+```{r}
+#Read the gauge data for the same period of the data we have for Livneh
+USJpath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/"
+
+#Subbasins 21, 31 and 38 have Florence Lake, Thomas A. Edison Lake and Mammoth Pool Reservoir respectively
+Reservoir_stor <- read_csv(paste0(USJpath, "gauges/storage_mcm.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+#filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #selecting period of available gauged data
+Reservoir_stor[2:10] <- (Reservoir_stor[2:10])*810.7131821 #transform mcm/day to ACF/day
+Reservoir_stor
+#The other subbasins only streamflow
+Reservoir_flow <- read_csv(paste0(USJpath, "gauges/streamflow_cfs.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+#filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #selecting period of available gauged data
+
+Reservoir_flow[2:50] <- (Reservoir_flow[2:50]*86400)/43560 #transform cfs to ACF/day
+                         #/35.314666)*86400/1000000 #as reservoir data is in million cubic meters (mcm), let's convert cfs to mcm
+Reservoir_flow
+```
+
+```{r}
+#Water balance of reservoirs to determine inflows
+#Subbasin 38 - Florence
+Florence_outflow <- Reservoir_flow[c(1,3,4)] %>% #gauges 11229500 and USGS 11230000, outflow of Florence
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-29")))
+
+Sub38 <- Reservoir_stor[c(1,8)] %>% #selecting gauge with storage data
+filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-29"))) %>%
+   mutate(ChangeStorage = `USGS 11229600 FLORENCE LK NR BIG C CA` - lag(`USGS 11229600 FLORENCE LK NR BIG C CA`, default = first(`USGS 11229600 FLORENCE LK NR BIG C CA`)), #getting daily change in storage
+          Outflow = rowSums(Florence_outflow[2:3], na.rm=T), #sum of USGS 11229500 and USGS 11230000, which correspond to flow below the reservoir and Ward Tunnel intake, respectively 
+          flow = ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) %>% #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day
+           select(Date, flow)#remove the already used column 
+Sub38
+
+#Subbasins 31 - Thomas Edison
+Thomas_outflow <- Reservoir_flow[c(1,14)] %>%
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31")))
+
+Sub31 <- Reservoir_stor[c(1,6)] %>% #selecting gauge with storage data
+  filter(between(Date, as.Date("1954-10-12"), as.Date("2013-12-31"))) %>%
+   mutate(ChangeStorage = `USGS 11231000 LK THOMAS A. EDISON NR BIG C CA` - lag(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`, default = first(`USGS 11231000 LK THOMAS A. EDISON NR BIG C CA`)), #getting daily change in storage
+          Outflow = Thomas_outflow$`USGS 11231500 MONO C BL LK THOMAS A EDISON CA`, #getting outflow
+          flow = ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) %>% 
+           select(Date, flow)#remove the already used column 
+Sub31
+
+#Subbasin 21 - Mammoth Pool Reservoir
+#Mammoth_outflow <- Reservoir_flow[c(1,17,18)] %>%
+#   filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
+
+#Sub21 <- Reservoir_stor[c(1,10)] %>% #selecting gauge below Thomas Edison
+#    filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31"))) %>%
+#  replace(is.na(Reservoir_flow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`), 0) %>%
+#   mutate(ChangeStorage = `USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA` - lag(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`, default = first(`USGS 11234700 MAMMOTH POOL RE NR BIG CREEK CA`)), #getting change in storage
+#          PH_Flow = Mammoth_outflow$`USGS 11235100 MAMMOTH POOL PP NR BIG CREEK CA`, 
+#          Below_Reservoir = Mammoth_outflow$`USGS 11234760 SAN JOAQUIN R AB SHAKEFLAT C NR BIG CREEK CA`,
+#          Sub20 = Sub20_Livneh$tot_runoff_sb20) %>% #getting outflow, summing up the flow below the reservoir, flow to the PH and I'm subtracting the contribution from Subbasin 20, as it is below the reservoir, before the gauge
+#          mutate(Inflow = rowSums(na.omit(.[3:5])) - Sub20) %>% #here I'm subtracting the contribution of Sub20, which is a small area below the dam, above the USGS gauge, and omitting NAs as we have 2 years of missing data in the record
+#           select(Date, Inflow) #remove the already used column  
+#Sub21
+```
+
+
+```{r}
+#Subbasin 22
+Sub22 <- Reservoir_flow[c(1,3)] %>% #Granite Creek
+   filter(between(Date, as.Date("1965-10-01"), as.Date("1986-09-29"))) %>%
+  rename(flow = 2)
+Sub22
+
+#Subbasin 23
+Sub23 <- Reservoir_flow[c(1,2)]%>% #San Joaquin River
+    filter(between(Date, as.Date("1951-10-01"), as.Date("1991-09-29")))%>%
+  rename(flow = 2)
+Sub23
+
+#Subbasin 36
+Sub36 <- Reservoir_flow[c(1,8)]%>% #Bear Creek
+   filter(between(Date, as.Date("1975-10-01"), as.Date("1986-09-29")))%>%
+  rename(flow = 2)
+Sub36
+
+#Subbasin 37 
+#If we consider these gauges, around 24% of the days will have negative values
+
+#Sub37 <- Reservoir_flow[c(1,5,7)] %>% #SF San Joaquin, with inflow from Florence Lake
+#   filter(between(Date, as.Date("1975-10-01"), as.Date("1980-09-29"))) %>%
+#  mutate(Inflow = (`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - `USGS 11230000 SF SAN JOAQUIN R NR FLORENCE LK CA`)) 
+#Sub37
+
+#Considering this slightly shorter record, we only have 4 days with negative flow
+Sub37 <- Reservoir_flow[c(1,6,7)] %>% #SF San Joaquin, with inflow from Florence Lake
+   filter(between(Date, as.Date("2009-10-01"), as.Date("2013-12-31"))) %>%
+  mutate(flow = ifelse((`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - `USGS 11230070 SF SAN JOAQUIN R AB HOOPER C NR FLORENCE LAKE CA`) < 0,0, (`USGS 11230215 SF SAN JOAQUIN R BL HOOPER C NR FLORENCE LAKE CA` - `USGS 11230070 SF SAN JOAQUIN R AB HOOPER C NR FLORENCE LAKE CA`)))%>%
+           select(Date, flow)#remove the already used column 
+Sub37
+
+#PortalPH <- Reservoir_flow[17] #Portal is ignored by now, as "The water delivered to Huntington Lake may also pass through Portal Powerhouse at the exit of the Ward Tunnel depending upon the amount of water being transported. Page 71 https://www.sce.com/sites/default/files/inline-files/p120bc3_initialstatement_and_exhibitsad_and_h.pdf
+#PortalPH
+```
+
+
+```{r}
+
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/USJR/SubCatchment_RO_BC"
+
+Make_Figures <- function(Observed, Simulated, Subbasin, StartDate, EndDate, Area){
+Area <- "Florence Lake" 
+Observed <- Sub38 
+Simulated<-  Sub38_PreBC
+Subbasin <- "sb38"
+StartDate <- "1950-01-01"
+EndDate <- "1980-09-29"
+
+Pre_BC <- Simulated %>% #getting the data pre-bias correction
+  mutate(Data = "Pre-Bias Correction (Livneh)") %>% #getting the numbers back into cfs to plot
+  rename(`Inflow (ft^3/s)` = 2) %>%
+  mutate(`Inflow (ft^3/s)` = (`Inflow (ft^3/s)`*810.7131821/86400))
+Pre_BC
+
+Pre_BC2 <- Pre_BC %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% #summarise by month-year
+  summarise(`Inflow (ft^3/s)` = sum(`Inflow (ft^3/s)`)) %>% #getting ACF back to cfs for plotting
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (ft^3/s)`, Data) 
+Pre_BC2
+
+BC_daily <- read_csv(paste(path,"/tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Data = "Post-Bias Correction (Livneh)") %>%
+  rename(`Inflow (ft^3/s)` = 2) %>%
+  mutate(`Inflow (ft^3/s)` = (`Inflow (ft^3/s)`*810.7131821/86400)) %>%
+   filter(between(Date, as.Date(StartDate), as.Date(EndDate)))
+
+BC_daily
+
+BC_daily2 <- BC_daily %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (ft^3/s)` = sum(`Inflow (ft^3/s)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (ft^3/s)`, Data) 
+BC_daily2
+
+Reference <- Observed %>% #getting the observed data from USGS
+    mutate(Data = "USGS Reference (Observed)") %>%
+  rename(`Inflow (ft^3/s)` = 2)%>%
+  mutate(`Inflow (ft^3/s)` = `Inflow (ft^3/s)`/(86400/43560))
+Reference
+
+Reference2 <- Reference %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (ft^3/s)` = sum(`Inflow (ft^3/s)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (ft^3/s)`, Data)
+Reference2
+
+Final <- rbind(Pre_BC, BC_daily, Reference)
+Final
+Final$Data <- factor(Final$Data, levels = c("USGS Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+Final2 <- rbind(Pre_BC2, BC_daily2, Reference2)
+Final2
+Final2$Data <- factor(Final2$Data, levels = c("USGS Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+##Line Curve
+#Final2 <- Final %>%
+#  mutate(Yearmon = zoo::as.yearmon(Date)) %>%
+#  group_by(Yearmon, Data) %>%
+#  summarise(Inflow = sum(Inflow)) %>%
+#  ungroup() %>%
+#  mutate(Date = as.Date(Yearmon))
+
+ggplot(Final,aes(x=Date, y=`Inflow (ft^3/s)`, color=Data ))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*ft^3/s*")"))+ scale_x_date(date_labels = "%Y-%m", breaks = "years")+ scale_y_continuous(breaks = scales::pretty_breaks())+
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily.png",sep=""), units="in",width=6.5,height=3)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (ft^3/s)`, color=Data ))+ ylab(expression("Inflow ("*ft^3/month*")"))+ geom_line()+ scale_x_date(date_labels = "%Y-%m", breaks = "years") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_continuous(breaks = scales::pretty_breaks())+
+  ggsave(filename=paste(path,"/",Subbasin,"_line_monthly.png",sep=""), units="in",width=6.5,height=3)
+
+ggplot(Final,aes(x=Date, y=`Inflow (ft^3/s)`+0.00001, color=Data ))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*ft^3/s*")"))+ scale_x_date(date_labels = "%Y-%m", breaks = "years")+ scale_y_log10(breaks = scales::pretty_breaks())+
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily_logscale.png",sep=""), units="in",width=6.5,height=3)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (ft^3/s)`+0.00001, color=Data ))+ ylab(expression("Inflow ("*ft^3/month*")"))+ geom_line()+ scale_x_date(date_labels = "%Y-%m", breaks = "years") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_log10(breaks = scales::pretty_breaks())+
+  ggsave(filename=paste(path,"/",Subbasin,"_line_monthly_logscale.png",sep=""), units="in",width=6.5,height=3)
+
+##FDC Curve
+data.nm <- unique(Final$Data)
+Final$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- Final$`Inflow (ft^3/s)`[Final$Data==data.nm[i]]+0.00001
+  Fn <- ecdf(vls)
+  Final$FDC[Final$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(Final, aes(x=FDC, y=`Inflow (ft^3/s)`, color=Data)) + geom_line(size = 0.6, alpha = 0.5) + #geom_point(shape=21, size=0.05, alpha=0.25) + #scale_y_log10(limits = c(min(Final$`Inflow (ft^3/s)`+0.00001),NA))+
+        ylab(expression("Inflow ("*ft^3/s*")")) + xlab("Exceedance probability") + ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+
+  ggsave(filename=paste(path,"/",Subbasin,"_fdc.png",sep=""), units="in",width=6.5,height=3.5)#,res=360)
+
+## Box&whisker
+ggplot(Final, aes(x=Data, y=`Inflow (ft^3/s)`)) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Inflow ("*ft^3/s*")")) + xlab("Data")  +ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+
+  ggsave(filename=paste(path,"/",Subbasin,"_box.png",sep=""), units="in",width=6.5,height=4)#,res=360)
+
+
+## Q-Q plot
+ggplot(Final, aes(sample=`Inflow (ft^3/s)`, color=Data)) + stat_qq(shape=21, size=0.75)+ylab(expression("Sample Quantiles ("*ft^3/s*")"))+ xlab("Theorical Quantiles (Normal Distribution)")+ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+
+  png(filename=paste(path,"/",Subbasin,"_qq.png",sep=""), units="in",width=6.5,height=3,res=360)
+#}
+
+
+```
+
+```{r}
+#Make_Figures(Sub21, Sub21_PreBC, "sb21", "1980-10-01", "2013-12-31")
+Make_Figures(Sub22, Sub22_PreBC, "sb22", "1965-10-01" ,"1986-09-29", "Granite Creek") 
+```
+
+```{r}
+Make_Figures(Sub23, Sub23_PreBC, "sb23", "1951-10-01", "1991-09-29", "San Joaquin River")
+```
+
+```{r}
+Make_Figures(Sub31, Sub31_PreBC, "sb31", "1954-10-12", "2013-12-31", "Thomas A. Edison Lake")
+```
+
+```{r}
+Make_Figures(Sub36, Sub36_PreBC, "sb36", "1975-10-01", "1986-09-29", "Bear Creek")
+```
+
+```{r}
+Make_Figures(Sub37, Sub37_PreBC, "sb37", "2009-10-01", "2013-12-31", "Hooper Creek")
+```
+
+```{r}
+Make_Figures(Sub38, Sub38_PreBC, "sb38", "1950-01-01", "1980-09-29", "Florence Lake")
+```
+
+
+```{r}
+#Extra figure using CDEC data
+#Florence Lake CDEC FNF
+
+Obs_Fl <- cdec_query("SFR", 65, "M",  "1950-01-01", "1980-09-30") %>%
+  mutate(Value = Value/810.71318210885,
+         Date = as.Date(DateTime, format = "%Y/%m/%d"),
+         month = month(DateTime), year = year(DateTime),
+         Data = "CDEC - DWR",
+         flw = Value) 
+Obs_Fl
+
+Sim_Fl <- read_csv(paste(path,"/tot_runoff_sb38_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Bias Corrected Livneh") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-30")))
+  
+Sim_Fl
+
+Florence_USGS<- Sub38 %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(flow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "USGS") %>%
+  select(Date, Data, flw) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("1980-09-30")))
+
+Florence <- rbind(Obs_Fl[c(10,13,14)], Sim_Fl, Florence_USGS)
+Florence
+```
+
+```{r}
+ggplot(Florence, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Florence Lake")+
+  png(filename=paste(path,"/sb38_line_monthly_CDEC_line.png",sep=""), units="in",width=6.5,height=3,res=360)
+
+```
+
+
+```{r}
+#Extra figure using CDEC data
+library(cder)
+#SJF = FNF of USJ basin
+Obs_USJ <- cdec_query("SJF", 65, "M",  "1950-01-01", "2013-12-31") %>%
+  mutate(Value = Value/810.71318210885,
+         Date = as.Date(DateTime, format = "%Y/%m/%d"),
+         month = month(DateTime), year = year(DateTime),
+         Data = "Upper San Joaquin Basin",
+         flw = Value)
+Obs_USJ
+
+Florence <- Sim_Fl %>%
+  mutate(Data = "Florence Lake")
+
+Granite <- read_csv(paste(path,"/tot_runoff_sb22_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Granite Creek") %>%
+  select(Date, Data, flw)
+  
+SJR <- read_csv(paste(path,"/tot_runoff_sb23_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "San Joaquin River") %>%
+  select(Date, Data, flw)
+
+Thomas <- read_csv(paste(path,"/tot_runoff_sb31_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Thomas A. Edison Lake") %>%
+  select(Date, Data, flw)
+
+Bear <- read_csv(paste(path,"/tot_runoff_sb36_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Bear Creek") %>%
+  select(Date, Data, flw)
+
+Hooper <- read_csv(paste(path,"/tot_runoff_sb37_mcm.csv", sep="")) %>%
+  group_by(yr = year(Date), mon = month(Date)) %>% 
+  summarise(flw = sum(Inflow)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep=""))),
+         Data = "Hooper Creek") %>%
+  select(Date, Data, flw)
+
+```
+
+```{r}
+USJBasin <- rbind(Obs_USJ[c(10,13,14)], Florence, Hooper, Bear, Granite, SJR, Thomas)
+#Cherry$Data <- factor(Cherry$Data, levels = c("CDEC - DWR", "Bias Corrected Livneh"))
+USJBasin 
+```
+
+```{r}
+ggplot(USJBasin, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Upper San Joaquin Basin")+ scale_x_date(limits = as.Date(c("1980-01-01","2010-12-31")))+ scale_y_log10() +
+  png(filename=paste(path,"/line_monthly_CDEC_Basin.png",sep=""), units="in",width=6.5,height=3,res=360)
+```
+
+```{r}
+ggplot(USJBasin, aes(x = Date, y = flw, color = Data)) + geom_line(size = 0.3, alpha = 0.9) +
+   ylab("Flow (mcm/month)")+ggtitle("Upper San Joaquin Basin")+ scale_x_date(limits = as.Date(c("1980-01-01","2010-12-31")))+ #scale_y_log10() +
+  png(filename=paste(path,"/line_monthly_CDEC_Basin2.png",sep=""), units="in",width=6.5,height=3,res=360)
+```

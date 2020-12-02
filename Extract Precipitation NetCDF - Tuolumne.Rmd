@@ -1,0 +1,111 @@
+##This script was written by Vicky Espinoza
+##For use by Aditya Sood for CERC-WET
+#this script extracts rainfall data from a single grid point (in this case the grid cell closest to 37.9491N, 119.7739W associated with Hetch Hethcy)
+#prints csv file with date and water year, month
+
+ 
+```{r}
+
+
+library(raster)
+library(ncdf4)
+library(maptools)
+library(foreign)
+library(RNetCDF)
+library(rgdal)
+library(lubridate)
+library(readxl)
+#rm(list=ls(all=TRUE)) #start with empty workspace
+
+``` 
+
+```{r}
+#extract_single_grid <- function(path, nc_file, output_path){
+  
+  
+precipitation_path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/precipitation"
+
+ 
+
+GCMs <- c("ACCESS1-0", "CCSM4", "CESM1-BGC", "CMCC-CMS", 
+          "GFDL-CM3", "HadGEM2-CC")
+rcps <- c("rcp45", "rcp85")
+
+ 
+
+# output_path <- "../../Box/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp85/precipitation"
+
+ 
+
+# Loop through all GCMs for this specific function
+
+ 
+
+for(gcm in GCMs){
+  for(rcp in rcps){
+      for(year in 2006:2099){
+      gcm_path <- paste(precipitation_path,"/",gcm,"/",rcp,"/","rainfall.",
+                  as.character(year),".v0.CA_NV.nc", sep="")
+  
+      nc_files <- list.files(path = gcm_path)
+    output_path <- paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/", gcm, "_", rcp,"/precipitation/")
+    	#if the directory doesn't exist, make it!
+		if (!dir.exists(output_path)){
+			dir.create(file.path(output_path), recursive = TRUE)
+		}
+   # for(nc_file in nc_files){
+ #     extract_single_grid(gcm_path, nc_file, output_path)
+ # date.start<- '2006-01-01'
+  #date.end<-'2099-12-31'
+  
+  obsdata <- nc_open(paste(gcm_path, sep = "/"))
+  print(obsdata) # check that dims are lon-lat-time
+  
+  # location of interest
+  lon <- 37.9491  # longitude of a
+  lat <- -119.7739 # latitude  of location
+  
+  # get values at location lonlat
+  obsoutput <- ncvar_get(obsdata, varid = 'rainfall',
+                         start= c(which.min(abs(obsdata$dim$Lon$vals - lon)), # look for closest long
+                                  which.min(abs(obsdata$dim$Lat$vals - lat)),  # look for closest lat
+                                  1),
+                         count = c(1,1,-1)) #count '-1' means 'all values along that dimension'that dimension'
+  # create dataframe
+  #datafinal <- data.frame(dates= obsdatadates, obs = obsoutput)
+  datafinal <- data.frame(date = seq(from = as.Date(paste(year,"-01-01", sep="")), to = as.Date(paste(year,"-12-31", sep="")), by = 'day'), precip = obsoutput) %>%
+    rename(`precip (mm)` = precip)
+  
+  # get dates
+  #obsdatadates <- as.Date(obsdata$dim$Time$vals, origin = '1950-01-01')
+  
+  # d <- seq(as.Date(date.start), as.Date(date.end),1)
+  # datafinal$dates <- d
+  # datafinal$month <-month(d)
+  # datafinal$year <-year(d)
+  # datafinal$day <-day(d)
+  # datafinal$WY <- datafinal$year + (datafinal$month %in% 10:12) #this method is called vectorization
+
+  write.table(datafinal, #vector we want to save
+            file= paste0(output_path, "/precipitation_Hetch_Hetchy_mm.csv.csv"), #save csv files per basin
+            append=TRUE, #this gathers all the loop's results, if FALSE we'll have results being overwritten over and over again in the first line
+            sep=",",
+            col.names=!file.exists(paste0(output_path,"/precipitation_Hetch_Hetchy_mm.csv.csv")), #if we set as TRUE, we'll have headings repeated per each row, in this way we just have one heading
+            row.names=FALSE, #no names for rows
+            quote = FALSE) 
+  
+#write.csv(datafinal, file = paste0(output_path,"/precipitation_Hetch_Hetchy_mm.csv.csv"))
+
+
+ 
+
+    }
+  }
+}
+
+
+ 
+```
+
+
+

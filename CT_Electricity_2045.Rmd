@@ -1,0 +1,663 @@
+---
+title: "Centroid_Timing_Energy"
+author: "Gustavo Facincani Dourado"
+date: "6/29/2020"
+output: html_document
+---
+
+```{r}
+#Centroid Timing - RCP 8.5
+
+Livneh_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Mer <- Livneh_Gen_Mer %>%
+  mutate(Total = rowSums(Livneh_Gen_Mer[c(2:4)]))
+Livneh_Gen_Mer
+
+CanES_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+CanES_Gen_Mer<- CanES_Gen_Mer %>%
+  mutate(Total = rowSums(CanES_Gen_Mer[c(2:4)]))
+CanES_Gen_Mer
+
+CNRM_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+CNRM_Gen_Mer<- CNRM_Gen_Mer  %>%
+  mutate(Total = rowSums(CNRM_Gen_Mer[c(2:4)]))
+CNRM_Gen_Mer
+
+
+HadGEM_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+HadGEM_Gen_Mer<- HadGEM_Gen_Mer %>%
+  mutate(Total = rowSums(HadGEM_Gen_Mer[c(2:4)]))
+HadGEM_Gen_Mer
+
+
+MIROC_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)] 
+MIROC_Gen_Mer<- MIROC_Gen_Mer  %>%
+  mutate(Total = rowSums(MIROC_Gen_Mer[c(2:4)]))
+MIROC_Gen_Mer
+```
+
+
+```{r}
+Livneh_Gen_Mer4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Mer4.5 <- Livneh_Gen_Mer4.5 %>%
+  mutate(Total = rowSums(Livneh_Gen_Mer4.5[c(2:4)]))
+Livneh_Gen_Mer4.5
+
+CanES_Gen_Mer4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+CanES_Gen_Mer4.5<- CanES_Gen_Mer4.5 %>%
+  mutate(Total = rowSums(CanES_Gen_Mer4.5[c(2:4)]))
+CanES_Gen_Mer4.5
+
+CNRM_Gen_Mer4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/CNRM-CM5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+CNRM_Gen_Mer4.5<- CNRM_Gen_Mer4.5  %>%
+  mutate(Total = rowSums(CNRM_Gen_Mer4.5[c(2:4)]))
+CNRM_Gen_Mer4.5
+
+
+HadGEM_Gen_Mer4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/HadGEM2-ES_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)]
+
+HadGEM_Gen_Mer4.5<- HadGEM_Gen_Mer4.5 %>%
+  mutate(Total = rowSums(HadGEM_Gen_Mer4.5[c(2:4)]))
+HadGEM_Gen_Mer4.5
+
+
+MIROC_Gen_Mer4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/merced/gcms/MIROC5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12)] 
+MIROC_Gen_Mer4.5<- MIROC_Gen_Mer4.5  %>%
+  mutate(Total = rowSums(MIROC_Gen_Mer4.5[c(2:4)]))
+MIROC_Gen_Mer4.5
+```
+
+```{r}
+#Centroid timing of generation
+
+#Function to calculate CT for generation
+CT_Generation <- function(V, W, X, Y, Z) {
+Liv <- calc_annual_flow_timing(V, dates = node, values =Total, water_year_start = 10, percent_total = 50) %>%
+  mutate(GCM = as.factor("Livneh (Historical)")) 
+Liv
+
+Can <- calc_annual_flow_timing(W, dates = node, values = Total, water_year_start = 10, percent_total = 50) %>%
+    mutate(GCM = as.factor("CanESM2")) 
+Can
+
+CNR <- calc_annual_flow_timing(X, dates = node, values =Total, water_year_start = 10, percent_total = 50) %>%
+    mutate(GCM = as.factor("CNRM-CM5"))
+CNR
+
+Had <- calc_annual_flow_timing(Y, dates = node, values = Total, water_year_start = 10, percent_total = 50) %>%
+    mutate(GCM = as.factor("HadGEM2-ES"))
+Had
+
+Mir <- calc_annual_flow_timing(Z, dates = node, values = Total, water_year_start = 10, percent_total = 50) %>%
+    mutate(GCM = as.factor("MIROC5"))
+Mir
+
+rbind(Liv, Can, CNR, Had, Mir)
+}
+
+```
+
+
+```{r}
+#Centroid Timing - RCP 8.5
+
+CT <- function(x) {
+  read_csv(x, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10)] %>%
+    filter(between(date, as.Date("2030-10-01"), as.Date("2060-09-30")))}
+
+Livneh_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Tuo <- Livneh_Gen_Tuo %>%
+  mutate(Total = rowSums(Livneh_Gen_Tuo[c(2:5)]))
+Livneh_Gen_Tuo
+
+CanES_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+CanES_Gen_Tuo<- CanES_Gen_Tuo %>%
+  mutate(Total = rowSums(CanES_Gen_Tuo[c(2:5)]))
+CanES_Gen_Tuo
+
+CNRM_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+CNRM_Gen_Tuo<- CNRM_Gen_Tuo  %>%
+  mutate(Total = rowSums(CNRM_Gen_Tuo[c(2:5)]))
+CNRM_Gen_Tuo
+
+
+HadGEM_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+HadGEM_Gen_Tuo<- HadGEM_Gen_Tuo %>%
+  mutate(Total = rowSums(HadGEM_Gen_Tuo[c(2:5)]))
+HadGEM_Gen_Tuo
+
+
+MIROC_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)] 
+MIROC_Gen_Tuo<- MIROC_Gen_Tuo  %>%
+  mutate(Total = rowSums(MIROC_Gen_Tuo[c(2:5)]))
+MIROC_Gen_Tuo
+```
+
+
+```{r}
+Livneh_Gen_Tuo4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Tuo4.5 <- Livneh_Gen_Tuo4.5 %>%
+  mutate(Total = rowSums(Livneh_Gen_Tuo4.5[c(2:5)]))
+Livneh_Gen_Tuo4.5
+
+CanES_Gen_Tuo4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CanESM2_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+CanES_Gen_Tuo4.5<- CanES_Gen_Tuo4.5 %>%
+  mutate(Total = rowSums(CanES_Gen_Tuo4.5[c(2:5)]))
+CanES_Gen_Tuo4.5
+
+CNRM_Gen_Tuo4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/CNRM-CM5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+CNRM_Gen_Tuo4.5<- CNRM_Gen_Tuo4.5  %>%
+  mutate(Total = rowSums(CNRM_Gen_Tuo4.5[c(2:5)]))
+CNRM_Gen_Tuo4.5
+
+
+HadGEM_Gen_Tuo4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/HadGEM2-ES_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)]
+
+HadGEM_Gen_Tuo4.5<- HadGEM_Gen_Tuo4.5 %>%
+  mutate(Total = rowSums(HadGEM_Gen_Tuo4.5[c(2:5)]))
+HadGEM_Gen_Tuo4.5
+
+
+MIROC_Gen_Tuo4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/tuolumne/gcms/MIROC5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16)] 
+MIROC_Gen_Tuo4.5<- MIROC_Gen_Tuo4.5  %>%
+  mutate(Total = rowSums(MIROC_Gen_Tuo4.5[c(2:5)]))
+MIROC_Gen_Tuo4.5
+```
+
+```{r}
+#Centroid Timing - RCP 8.5
+
+CT <- function(x) {
+  read_csv(x, col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10)] %>%
+    filter(between(date, as.Date("2030-10-01"), as.Date("2060-09-30")))}
+
+Livneh_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Stn <- Livneh_Gen_Stn %>%
+  mutate(Total = rowSums(Livneh_Gen_Stn[c(2:12)]))
+Livneh_Gen_Stn
+
+CanES_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+CanES_Gen_Stn<- CanES_Gen_Stn %>%
+  mutate(Total = rowSums(CanES_Gen_Stn[c(2:12)]))
+CanES_Gen_Stn
+
+CNRM_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+CNRM_Gen_Stn<- CNRM_Gen_Stn  %>%
+  mutate(Total = rowSums(CNRM_Gen_Stn[c(2:12)]))
+CNRM_Gen_Stn
+
+
+HadGEM_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+HadGEM_Gen_Stn<- HadGEM_Gen_Stn %>%
+  mutate(Total = rowSums(HadGEM_Gen_Stn[c(2:12)]))
+HadGEM_Gen_Stn
+
+
+MIROC_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)] 
+MIROC_Gen_Stn<- MIROC_Gen_Stn  %>%
+  mutate(Total = rowSums(MIROC_Gen_Stn[c(2:12)]))
+MIROC_Gen_Stn
+```
+
+
+```{r}
+Livneh_Gen_Stn4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Stn4.5 <- Livneh_Gen_Stn4.5 %>%
+  mutate(Total = rowSums(Livneh_Gen_Stn4.5[c(2:12)]))
+Livneh_Gen_Stn4.5
+
+CanES_Gen_Stn4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CanESM2_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+CanES_Gen_Stn4.5<- CanES_Gen_Stn4.5 %>%
+  mutate(Total = rowSums(CanES_Gen_Stn4.5[c(2:12)]))
+CanES_Gen_Stn4.5
+
+CNRM_Gen_Stn4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/CNRM-CM5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+CNRM_Gen_Stn4.5<- CNRM_Gen_Stn4.5  %>%
+  mutate(Total = rowSums(CNRM_Gen_Stn4.5[c(2:12)]))
+CNRM_Gen_Stn4.5
+
+
+HadGEM_Gen_Stn4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/HadGEM2-ES_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)]
+
+HadGEM_Gen_Stn4.5<- HadGEM_Gen_Stn4.5 %>%
+  mutate(Total = rowSums(HadGEM_Gen_Stn4.5[c(2:12)]))
+HadGEM_Gen_Stn4.5
+
+
+MIROC_Gen_Stn4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/stanislaus/gcms/MIROC5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44)] 
+MIROC_Gen_Stn4.5<- MIROC_Gen_Stn4.5  %>%
+  mutate(Total = rowSums(MIROC_Gen_Stn4.5[c(2:12)]))
+MIROC_Gen_Stn4.5
+```
+
+
+```{r}
+#Centroid Timing - RCP 8.5
+
+Livneh_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_USJ <- Livneh_Gen_USJ %>%
+  mutate(Total = rowSums(Livneh_Gen_USJ[c(2:17)]))
+Livneh_Gen_USJ
+
+CanES_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+CanES_Gen_USJ<- CanES_Gen_USJ %>%
+  mutate(Total = rowSums(CanES_Gen_USJ[c(2:17)]))
+CanES_Gen_USJ
+
+CNRM_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+CNRM_Gen_USJ<- CNRM_Gen_USJ  %>%
+  mutate(Total = rowSums(CNRM_Gen_USJ[c(2:17)]))
+CNRM_Gen_USJ
+
+
+HadGEM_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+HadGEM_Gen_USJ<- HadGEM_Gen_USJ %>%
+  mutate(Total = rowSums(HadGEM_Gen_USJ[c(2:17)]))
+HadGEM_Gen_USJ
+
+
+MIROC_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)] 
+MIROC_Gen_USJ<- MIROC_Gen_USJ  %>%
+  mutate(Total = rowSums(MIROC_Gen_USJ[c(2:17)]))
+MIROC_Gen_USJ
+```
+
+
+```{r}
+Livneh_Gen_USJ4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_USJ4.5 <- Livneh_Gen_USJ4.5 %>%
+  mutate(Total = rowSums(Livneh_Gen_USJ4.5[c(2:17)]))
+Livneh_Gen_USJ4.5
+
+CanES_Gen_USJ4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CanESM2_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+CanES_Gen_USJ4.5<- CanES_Gen_USJ4.5 %>%
+  mutate(Total = rowSums(CanES_Gen_USJ4.5[c(2:17)]))
+CanES_Gen_USJ4.5
+
+CNRM_Gen_USJ4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/CNRM-CM5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+CNRM_Gen_USJ4.5<- CNRM_Gen_USJ4.5  %>%
+  mutate(Total = rowSums(CNRM_Gen_USJ4.5[c(2:17)]))
+CNRM_Gen_USJ4.5
+
+
+HadGEM_Gen_USJ4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/HadGEM2-ES_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)]
+
+HadGEM_Gen_USJ4.5<- HadGEM_Gen_USJ4.5 %>%
+  mutate(Total = rowSums(HadGEM_Gen_USJ4.5[c(2:17)]))
+HadGEM_Gen_USJ4.5
+
+
+MIROC_Gen_USJ4.5 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/Pywr models/results/Binary IFRs x Prices/upper_san_joaquin/gcms/MIROC5_rcp45/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4,8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 64)] 
+MIROC_Gen_USJ4.5<- MIROC_Gen_USJ4.5  %>%
+  mutate(Total = rowSums(MIROC_Gen_USJ4.5[c(2:17)]))
+MIROC_Gen_USJ4.5
+```
+
+
+```{r}
+#bind RCPs separately and add basin name to divide basins by facets
+#RCP 8.5
+CT_Gen_8.5_Mer <- CT_Generation(Livneh_Gen_Mer, CanES_Gen_Mer, CNRM_Gen_Mer, HadGEM_Gen_Mer, MIROC_Gen_Mer) %>%
+  mutate(Basin = "Merced River")
+
+CT_Gen_8.5_Tuo <- CT_Generation(Livneh_Gen_Tuo, CanES_Gen_Tuo, CNRM_Gen_Tuo, HadGEM_Gen_Tuo, MIROC_Gen_Tuo) %>%
+  mutate(Basin = "Tuolumne River")
+
+CT_Gen_8.5_Stn <- CT_Generation(Livneh_Gen_Stn, CanES_Gen_Stn, CNRM_Gen_Stn, HadGEM_Gen_Stn, MIROC_Gen_Stn)  %>%
+  mutate(Basin = "Stanislaus River")
+
+CT_Gen_8.5_USJ <- CT_Generation(Livneh_Gen_USJ, CanES_Gen_USJ, CNRM_Gen_USJ, HadGEM_Gen_USJ, MIROC_Gen_Mer)  %>%
+  mutate(Basin = "Upper San Joaquin River")
+
+CT_Gen8.5 <- rbind(CT_Gen_8.5_Mer, CT_Gen_8.5_Stn, CT_Gen_8.5_Tuo, CT_Gen_8.5_USJ) %>%
+  mutate(Scenario = "RCP 8.5")
+
+
+CT_Gen8.5$GCM <- factor(CT_Gen8.5$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+CT_Gen8.5
+
+
+#RCP 4.5
+CT_Gen_4.5_Mer4.5 <- CT_Generation(Livneh_Gen_Mer4.5, CanES_Gen_Mer4.5, CNRM_Gen_Mer4.5, HadGEM_Gen_Mer4.5, MIROC_Gen_Mer4.5)  %>%
+  mutate(Basin = "Merced River")
+
+CT_Gen_4.5_Tuo4.5 <- CT_Generation(Livneh_Gen_Tuo4.5, CanES_Gen_Tuo4.5, CNRM_Gen_Tuo4.5, HadGEM_Gen_Tuo4.5, MIROC_Gen_Tuo4.5)  %>%
+  mutate(Basin = "Tuolumne River")
+
+CT_Gen_4.5_Stn4.5 <- CT_Generation(Livneh_Gen_Stn4.5, CanES_Gen_Stn4.5, CNRM_Gen_Stn4.5, HadGEM_Gen_Stn4.5, MIROC_Gen_Stn4.5) %>%
+  mutate(Basin = "Stanislaus River")
+
+CT_Gen_4.5_USJ4.5 <- CT_Generation(Livneh_Gen_USJ4.5, CanES_Gen_USJ4.5, CNRM_Gen_USJ4.5, HadGEM_Gen_USJ4.5, MIROC_Gen_Mer4.5)  %>%
+  mutate(Basin = "Upper San Joaquin River")
+
+CT_Gen4.5 <- rbind(CT_Gen_4.5_Mer4.5, CT_Gen_4.5_Stn4.5, CT_Gen_4.5_Tuo4.5, CT_Gen_4.5_USJ4.5) %>%
+  mutate(Scenario = "RCP 4.5")
+
+CT_Gen4.5$GCM <- factor(CT_Gen4.5$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+CT_Gen4.5
+```
+
+```{r}
+#bind them all into one object
+CT_Gen <- rbind(CT_Gen4.5, CT_Gen8.5)
+
+CT_Gen
+
+CT_Gen$Scenario <- factor(CT_Gen$Scenario, levels = c("RCP 4.5", "RCP 8.5"))
+CT_Gen$GCM <- factor(CT_Gen$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+
+
+
+
+```
+
+```{r}
+#Density plot
+
+Density_plot_Gen <- function(data, title, Legend) {
+ggplot(data, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(data, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(color = Legend,
+       linetype = FALSE,
+       title = "Electricity Generation (2045 prices)",
+    y = "Density", 
+       x = "Centroid Time (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "free")
+    #facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  
+}
+
+```
+
+```{r}
+Density_plot_Gen(CT_Gen4.5, element_blank(), "RCP 4.5") +
+  png("AllBasins_CT_Timing_Electricity_RCP45_Scalesfree_NoIFR.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+```{r}
+Density_plot_Gen(CT_Gen8.5, element_blank(), "RCP 8.5") +
+  png("AllBasins_CT_Electricity_RCP85_Scalesfree_NoIFR.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+```{r}
+#Density plot
+
+Density_plot_Gen2 <- function(data, title, Legend) {
+ggplot(data, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(data, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(color = Legend,
+       linetype = FALSE,
+       title = "Electricity Generation (2045 prices)",
+    y = "Density", 
+       x = "Centroid Time (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line"))+
+  facet_wrap(~Basin, ncol=1, scales = "fixed")
+    #facet_wrap(~Scenario, ncol=1, scales = "free_y", strip.position = "left")
+#        panel.spacing.y = unit(0, "lines")+
+#geom_text(note, #adding where to add text 
+#              mapping = aes(x=x, y=y, label = label), size=3) + #, family= "Times New Roman")
+  
+}
+
+```
+
+```{r}
+Density_plot_Gen2(CT_Gen4.5, element_blank(), "RCP 4.5") +
+  png("AllBasins_CT_Timing_Electricity_RCP45_Scalesfixed_NoIFR.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+```{r}
+Density_plot_Gen2(CT_Gen8.5, element_blank(), "RCP 8.5") +
+  png("AllBasins_CT_Electricity_RCP85_Scalesfixed_NoIFR.png", units ="in", width=5.5, height=6, res = 300)
+```
+
+
+```{r}
+ggplot(CT_Gen4.5, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
+      theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt
+     geom_density(adjust=1.5, alpha=.1, size = 1.1) +
+  geom_vline(data = plyr::ddply(data, c("GCM", "Basin"), summarise, GCM_mean=mean(DoY_50pct_TotalQ)), aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+    #data=GCM.mean, aes(xintercept=GCM_mean, color= GCM), linetype="dashed", size=1) +
+   scale_color_manual(values = c("#5A5A5A", "#FF6103", "#FBB117", "#009E73", "#56B4E9")) +
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+      scale_y_continuous(expand = c(0, NA),
+                         limits = c(0, 1.05),
+                         breaks = c(0, 0.25, 0.50, 0.75, 1))+
+    scale_x_continuous(expand = c(0, NA),
+                 #      limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(61, 92, 121, 151, 
+                                  182, 212, 244, 273, 304),
+                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+  labs(subtitle = "Electricity Generation (2045 prices)",
+       title = element_blank(),
+    y = "Density", 
+       x = "Centroid Time (Day)") + 
+ theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+   legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"))+
+    facet_wrap(~Basin, ncol=1, scales = "fixed")
+```
+
+
+
+```{r}
+#Black and white
+CT_Generation <- function(data, title, subtitle) {
+ggplot(data) + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, #color = GCM,
+                   linetype = Scenario)) +
+    scale_y_continuous(expand = c(0, NA),
+                  #     limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(31, 61, 93, 122, 152, 
+                                  183, 213, 245, 274),
+                       labels = c("Nov 1", "Dez 1", "Jan 1", "Feb 1",
+                                  "Mar 1", "Apr 1", 
+                                  "May 1", "Jun 1", "Jul 1")) + 
+    scale_x_continuous(breaks = c(1981, 1991, 2001, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", 
+                linetype = Scenario), color = "#000000",se = FALSE) +
+
+    labs(title = title,
+       subtitle = subtitle,
+    x = element_blank(), 
+       y = "Centroid Time (Days)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+    legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") 
+}
+
+```
+
+```{r}
+CT_Generation(CT_MerGen, "Merced River", "Electricity Generation")+
+png("Mer_CT_generation2.png", units ="in", width=10, height=4, res = 300)
+```
+
+
+```{r}
+CT_Generation(CT_TuoGen, "Tuolumne River", "Electricity Generation")+
+png("Tuo_CT_generation2.png", units ="in", width=10, height=4, res = 300)
+```
+
+```{r}
+#Function for Black and White time series of CT
+CentrTiming <- function(Data, Basins, Title)  {
+Data %>%
+  filter(Basin == Basins) %>%
+ggplot() + 
+    theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_line(aes( x = Year, y = DoY_50pct_TotalQ, #color = GCM,
+                   linetype = Scenario)) +
+    scale_y_continuous(expand = c(0, NA),
+                  #     limits = c(93,280), #From Jan 1 to Jul 15
+                       breaks = c(31, 61, 93, 122, 152, 
+                                  183, 213, 245, 274),
+                       labels = c("Nov 1", "Dez 1", "Jan 1", "Feb 1",
+                                  "Mar 1", "Apr 1", 
+                                  "May 1", "Jun 1", "Jul 1")) + 
+    scale_x_continuous(breaks = c(1981, 1991, 2001, 2010, 2031, 2041, 2051, 2060),
+    expand = c(0, NA))+
+stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess", 
+                linetype = Scenario), color = "#000000",se = FALSE) +
+
+    labs(title = Title,
+       subtitle = "Electricity Generation (2045 prices)",
+    x = element_blank(), 
+       y = "Centroid Time (Days)") + #name of x axis
+  theme(plot.margin = margin(c(12,10,1,1, "cm")),
+    panel.spacing = unit(1.4, "lines"),
+        legend.position = "bottom",
+    legend.title = element_blank(),
+        legend.direction = "horizontal",
+    legend.box = "vertical",
+    legend.spacing.y = unit(-0.38, 'cm'),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+#   guides(color=guide_legend("Climate Scenario"),
+ #        linetype=guide_legend("Emission Scenario"))+
+    #  guides(fill = guide_legend(nrow = 11)) +
+  facet_wrap(~GCM, ncol=5, scales= "free_x") 
+  
+}
+
+```
+
+```{r}
+CentrTiming(CT_Gen, "Tuolumne River", "Tuolumne River") +
+  png("Tuo_CT_generation.png", units ="in", width=10, height=4, res = 300)
+
+```
+```{r}
+CentrTiming(CT_Gen, "Merced River", "Merced River") +
+  png("Mer_CT_generation.png", units ="in", width=10, height=4, res = 300)
+
+```
+
+```{r}
+CentrTiming(CT_Gen, "Stanislaus River", "Stanislaus River") +
+  png("Stn_CT_generation.png", units ="in", width=10, height=4, res = 300)
+
+```
+
+```{r}
+CentrTiming(CT_Gen, "Upper San Joaquin River", "Upper San Joaquin River") +
+  png("USJ_CT_generation.png", units ="in", width=10, height=4, res = 300)
+
+```
