@@ -1,0 +1,68 @@
+//this code will generate a file containing the surface area of reservoirs in Landsat imagery available with <1% cloud coverage over the reservoir area
+
+var reservoirs = ee.FeatureCollection('users/gufacincani/Don_Pedro');
+//here Don_Pedro is the shapefile containing the borders of Don Pedro Reservoir
+
+var reservoirs_geo = reservoirs.geometry()
+var reservoirs_geo = reservoirs_geo.buffer(150); // Apply the 150-m buffer method to the Polygon object (reservoir) to make sure no water area is left out.
+
+Map.addLayer(reservoirs, {color: 'red'}, 'Reservoirs');
+//Map.addLayer(reservoirs_geo, {color: 'blue'}, 'Reservoirs2');
+
+// 2. Get Landsat data.
+var l8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_TOA')//change to 'LANDSAT/LT05/C01/T1_TOA' for Landsat 5
+                            .filterBounds(reservoirs_geo)//.filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',20))
+                            .filterDate('2013-01-01','2021-12-31');//adapt dates for each Landsat
+
+var c = l8.filterBounds(reservoirs_geo);
+
+var withCloudiness = c.map(function(image) {
+  var cloud = ee.Algorithms.Landsat.simpleCloudScore(image).select('cloud');
+  var cloudiness = cloud.reduceRegion({
+    reducer: 'mean', 
+    geometry: reservoirs_geo, 
+    scale: 30,
+  });
+  return image.set(cloudiness);
+});
+
+var filteredCollection = withCloudiness.filter(ee.Filter.lt('cloud', 1)); //get images with basically no cloud cover (no more than 1%)
+print(filteredCollection);
+
+var waterThreshold = 0; 
+
+// water function:
+var waterfunction = function(image){
+  //add the NDWI band to the image
+  var ndwi = image.normalizedDifference(['B3', 'B6']).rename('NDWI');
+  //get pixels above the threshold
+  var water01 = ndwi.gt(waterThreshold);
+  //mask those pixels from the image
+  image = image.updateMask(water01).addBands(ndwi);
+
+  var area = ee.Image.pixelArea();
+  var waterArea = water01.multiply(area).rename('waterArea');
+
+  image = image.addBands(waterArea);
+
+  var stats = waterArea.reduceRegion({
+    reducer: ee.Reducer.sum(), 
+    geometry: reservoirs_geo, 
+    scale: 30,
+  });
+
+  return image.set(stats);
+};
+
+var collection = filteredCollection.map(waterfunction);
+print(collection);
+
+Map.addLayer(collection)
+
+var chart = ui.Chart.image.series({
+  imageCollection: collection.select('waterArea'), 
+  region: reservoirs_geo, 
+  reducer: ee.Reducer.sum(), 
+  scale: 30,
+});
+print(chart);
