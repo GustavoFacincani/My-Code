@@ -1,4 +1,4 @@
-//this code will generate a file containing the surface area of reservoirs in Landsat imagery available with <1% cloud coverage over the reservoir area
+//this JavaScript code will generate a file containing the surface area of reservoirs in Landsat imagery available with <1% cloud coverage over the reservoir area
 
 var reservoirs = ee.FeatureCollection('users/gufacincani/Don_Pedro');
 //here Don_Pedro is the shapefile containing the borders of Don Pedro Reservoir
