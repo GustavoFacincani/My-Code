@@ -1,0 +1,10 @@
+```{r}
+
+library(lubridate)
+hydro.day.new = function(x, start.month = 10L){
+  start.yr = year(x) - (month(x) < start.month)
+  start.date = make_date(start.yr, start.month, 1L)
+  as.integer(x - start.date + 1L)
+}
+
+```
