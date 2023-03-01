@@ -28,12 +28,12 @@ write_csv(WY_Type, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/WYT_P200
 
 ```{r}
 gcms2 <- c("ACCESS1-0", "CCSM4", "CanESM2", "HadGEM2-ES", "HadGEM2-CC", "GFDL-CM3", "MIROC5", "CESM1-BGC", "CNRM-CM5", "CMCC-CMS")
-for(gcm in gcms)
+for(gcm in gcms2){
 
-WY_Type2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/Exchequer_WYT.csv") %>%
+WY_Type2 <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/",gcm,"_rcp85/preprocessed/Exchequer_WYT.csv",sep="")) %>%
   mutate(Scenario = "RCP 8.5") %>%
-  mutate(GCM = "Livneh (Historical)")
-
+  mutate(GCM = gcm)
+#"Livneh (Historical)"
 WY_Type2$Type <- NA
 WY_Type2$Type[WY_Type2$WYT == 1] <- paste('Wet')
 WY_Type2$Type[WY_Type2$WYT == 2] <- paste('Dry')
@@ -43,8 +43,8 @@ WY_Type2$Type[WY_Type2$WYT == 2] <- paste('Dry')
 #WY_Type2$Type[WY_Type2$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
 WY_Type2
 
-write_csv(WY_Type2, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/Livneh_Exchequer_WYT.csv", sep=""))
-
+write_csv(WY_Type2, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/",gcm,"_rcp85_Exchequer_WYT.csv", sep=""))
+}
 ```
 
 
@@ -73,7 +73,7 @@ WYT_GMCs <- rbindlist(WYTlist) %>%
   mutate(GCM = as.factor(GCM),
          Scenario = as.factor(Scenario),
          Type = as.factor(Type)) %>%
-  filter(`WY` %in% (2040:2059))
+  filter(`WY` %in% (2030:2059))
 
 
 
@@ -94,6 +94,49 @@ write.csv(Ensemble, "C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/E
 ```{r}
 #WYT
 
+WYT.GCMs <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/*")
+#WYT.GCMs2 <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/rcp45/*")
+
+WYT.Livneh <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/Livneh/*")
+
+WYTlist <- lapply(WYT.GCMs, read_csv)
+WYTlist
+
+
+
+WYT_GMCs <- rbindlist(WYTlist) %>%
+  ungroup() %>%
+  mutate(#RCP = as.factor(RCP),
+         Scenario = as.factor(Scenario),
+         Type = as.factor(Type)) %>%
+  filter(WY %in% (2031:2090))
+
+
+
+WYT_GMCs
+
+```
+
+```{r}
+WYTLivneh <- lapply(WYT.Livneh, read_csv)
+WYTLivneh
+
+WYT_Livneh <- rbindlist(WYTLivneh) %>%
+  ungroup() %>%
+  mutate(#RCP = as.factor(RCP),
+         Scenario = as.factor(Scenario),
+         Type = as.factor(Type)) %>%
+  filter(WY %in% (1951:2010))
+#  filter(`Water Year` %in% (1981:2010))
+
+WYT_Livneh
+
+```
+
+
+```{r}
+#WYT
+
 WYT.GCMs <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/SJVI/*")
 #WYT.GCMs2 <- Sys.glob("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Merced/SJVI/rcp45/*")
 
@@ -109,7 +152,7 @@ WYT_GMCs <- rbindlist(WYTlist) %>%
   mutate(RCP = as.factor(RCP),
          Scenario = as.factor(Scenario),
          WYT = as.factor(WYT)) %>%
-  filter(`Water Year` %in% (2031:2090))
+  filter(`Water Year` %in% (2030:2059))
 
 
 
@@ -136,44 +179,39 @@ WYT_Livneh
 
 ```{r}
 WYT_SJVI <- rbind(WYT_Livneh, WYT_GMCs) %>%
-  mutate(#variable = Scenario,
+  mutate(variable = Scenario,
          #Scenario = NULL,
         # variable=ifelse(variable=="CanESM2" | variable=="MIROC5"| variable == "CNRM-CM5" | variable == "HadGEM2-ES",paste(variable,"\u2020",sep=""),paste(variable)),
-         Year = as.factor(`Water Year`),
-         `Water Year`= NULL)  
+         Year = as.factor(WY),
+         WY= NULL)  
 WYT_SJVI
 #WYT_SJVIScenario
 #  group_by(GCM, Scenario) %>%
 #  table()
 
-WYT_SJVI$Scenario <- factor(WYT_SJVI$Scenario, levels = c("Livneh (Historical)", "ACCESS1-0","CMCC-CMS","MIROC5", "GFDL‐CM3", "CCSM4",  "HadGEM2-ES", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5"))
-WYT_SJVI$WYT <- factor(WYT_SJVI$WYT, levels = c(#"Dry", "Normal"))
-  #"Dry", "Wet"))
+WYT_SJVI$GCM <- factor(WYT_SJVI$GCM, levels = c("Livneh (Historical)", "ACCESS1-0","CMCC-CMS","MIROC5", "GFDL‐CM3", "CCSM4",  "HadGEM2-ES", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5"))
+WYT_SJVI$Type <- factor(WYT_SJVI$Type, levels = c(#"Dry", "Normal"))
+  "Dry", "Wet"))
   #"Critical-Low","Critical-High", "Dry", "Normal-Dry", "Normal-Wet", "Wet"))
   #"Critically Dry","Dry", "Normal-Dry", "Normal-Wet", "Wet"))
 #"Driest WY", "2nd Driest WY", "3rd Driest WY", "4th Driest WY", "Normal/Wet WY"))
   #"Wet", "Above Normal", "Below Normal", "Dry", "Critical"))# 
-  "Critical","Dry", "Below Normal", "Above Normal", "Wet"))
+  #"Critical","Dry", "Below Normal", "Above Normal", "Wet"))
 
 WYT_SJVI <- WYT_SJVI %>%
-  mutate(Scenario= as.factor(ifelse(Scenario=="CanESM2" | Scenario=="MIROC5"| Scenario == "CNRM-CM5" | Scenario == "HadGEM2-ES",paste(Scenario,"\u2020",sep=""),paste(Scenario)))) %>%
- # filter(as.numeric(as.character(Year)) < 2061)
-     filter(!as.numeric(as.character(Year)) > 2010 | !as.numeric(as.character(Year)) < 2031 & !as.numeric(as.character(Year)) > 2090) 
+  mutate(variable= as.factor(ifelse(variable=="CanESM2" | variable=="MIROC5"| variable == "CNRM-CM5" | variable == "HadGEM2-ES",paste(variable,"\u2020",sep=""),paste(variable)))) %>%
+#  filter(as.numeric(as.character(Year)) < 2061)
+    filter(as.numeric(as.character(Year)) < 2030 | as.numeric(as.character(Year)) > 2061)
   
-
-
-WYT_SJVI$Scenario <- factor(WYT_SJVI$Scenario, levels = c("Livneh (Historical)", "ACCESS1-0","CMCC-CMS","MIROC5\u2020", "GFDL‐CM3", "CCSM4",  "HadGEM2-ES\u2020", "CESM1-BGC", "HadGEM2‐CC","CanESM2\u2020",  "CNRM-CM5\u2020"))
-
-
   WYT_SJVI
 ```
 
 ```{r}
 WYT_SJVI1 <- WYT_SJVI %>%
   mutate(Count = 1) %>%
-    group_by(WYT, RCP, Scenario) %>%
+    group_by(Type, WYT, variable, GCM) %>%
   summarize(Count = sum(Count)) %>%
-    group_by(WYT, RCP, Scenario) %>%
+    group_by(Type, variable, GCM) %>%
   mutate(perc = Count/sum(Count))
 
 WYT_SJVI1
@@ -183,9 +221,9 @@ WYT_SJVI1
 
 ```{r}
 WYT_SJVI1 %>%
-  filter(!Scenario == "RCP4.5") %>% # & !GCM == "Ensemble") %>%
+ # filter(!Scenario == "RCP4.5") %>% # & !GCM == "Ensemble") %>%
            #GCM == "Ensemble" & !GCM == "ACCESS1-0" & !GCM == "CMCC-CMS" & !GCM == "GFDL‐CM3" & !GCM == "CCSM4" & !GCM == "HadGEM2‐CC"& !GCM == "CESM1-BGC") %>%
-ggplot(., aes(fill=WYT, y = Count, x=fct_rev(factor(Scenario)))) + #fct_rev reverts the order
+ggplot(., aes(fill=Type, y = Count, x=fct_rev(factor(GCM)))) + #fct_rev reverts the order
 #theme_bw(base_size=12, base_family='Times New Roman') +
     geom_bar(stat="identity", position = position_fill(reverse = TRUE))+
 # geom_bar(color = "black", position = "stack", stat = "count") +
@@ -194,7 +232,7 @@ ggplot(., aes(fill=WYT, y = Count, x=fct_rev(factor(Scenario)))) + #fct_rev reve
   scale_y_continuous(labels=scales::percent, #reverts the colors
                      expand = c(0,NA)) +
            
-  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+  scale_fill_manual(values = c("tomato2", "dodgerblue2"))+
     #"Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
   labs(title = "Frequency of Water Year Types",
        x = element_blank(), 
@@ -223,7 +261,7 @@ ggplot(., aes(fill=WYT, y = Count, x=fct_rev(factor(Scenario)))) + #fct_rev reve
    # facet_wrap(~ Scenario, ncol=1, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
  guides(fill=guide_legend(nrow=1,
                           hjust=0.5))+
-png("WYT_Frequency_coordflip_yreversed_initials_10GCMs_WYT_SJVI_ES240_2061_2090.png", units ="in", width=6, height=4, res = 300)
+png("WYT_Frequency_coordflip_yreversed_initials_10GCMs_WYT_Exchequer_ES240_2061_2090.png", units ="in", width=6, height=4, res = 300)
 
 ```
 

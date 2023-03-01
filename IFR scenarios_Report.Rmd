@@ -1,0 +1,2691 @@
+---
+title: "Storage_GCMs"
+author: "gustavo Facincani Dourado"
+date: "6/14/2020"
+output: html_document
+---
+
+```{r}
+#Baselien 20009
+#Mer 1,6
+#Tuo 1,2,6,10,14
+#Stn 1,2,6,10,14,18,22,26,30,34,38
+#USJ 1,2,6,10,14,18,22,26,30,34
+
+#No IFR 20009
+#Mer 1,7
+#Tuo 1,3,7,11,15
+#Stn 1,3,7,11,15,19,23,27,31,35,39
+#USJ 1,3,7,11,15,19,23,27,31,35
+
+#Baselien 20045
+#Mer 1,8
+#Tuo 1,4,8,12,16
+#Stn 1,4,8,12,16,20,24,28,32,36,40
+#USJ 1,4,8,12,16,20,24,28,32,36
+
+#No IFR 20045
+#Mer 1,9
+#Tuo 1,5,9,13,17
+#Stn 1,5,9,13,17,21,25,29,33,37,41
+#USJ 1,5,9,13,17,21,25,29,33,37
+library(ggplot2)
+```
+
+```{r}
+Livneh_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `Livneh (Historical)` = as.numeric(`Lake McClure`)) %>%
+    filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Mer
+
+CanES_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           "CanESM2\u2020" = as.numeric(`Lake McClure`))
+CanES_Stor_Mer
+
+CNRM_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+        mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           "CNRM-CM5\u2020" = as.numeric(`Lake McClure`))
+CNRM_Stor_Mer
+
+
+HadGEM_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           "HadGEM2-ES\u2020" = as.numeric(`Lake McClure`))
+HadGEM_Stor_Mer
+
+
+MIROC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           "MIROC5\u2020" = as.numeric(`Lake McClure`))
+MIROC_Stor_Mer
+
+
+HadGEMCC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `HadGEM2-CC` = as.numeric(`Lake McClure`))
+HadGEMCC_Stor_Mer
+
+
+CESM1_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `CESM1-BGC` = as.numeric(`Lake McClure`))
+CESM1_Stor_Mer
+
+
+CCSM4_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           CCSM4 = as.numeric(`Lake McClure`))
+CCSM4_Stor_Mer
+
+
+GFDL_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `GFDL-CM3` = as.numeric(`Lake McClure`))
+GFDL_Stor_Mer
+
+
+ACCESS_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `ACCESS1-0` = as.numeric(`Lake McClure`))
+ACCESS_Stor_Mer
+
+
+CMCC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+ mutate(node = as.Date(node, format = "%Y-%m-%d"),
+           `CMCC-CMS` = as.numeric(`Lake McClure`))
+CMCC_Stor_Mer
+
+```
+
+
+
+
+```{r}
+Livneh_Mer_Stor1 <- Livneh_Stor_Mer[(-2)] 
+Livneh_Mer_Stor1 <- melt(Livneh_Mer_Stor1, id = "node")
+Livneh_Mer_Stor1
+
+
+Stor_Mer <- cbind(CanES_Stor_Mer[(-2)], CNRM_Stor_Mer[(-2)], 
+                HadGEM_Stor_Mer[(-2)], MIROC_Stor_Mer[(-2)], ACCESS_Stor_Mer[(-2)], CMCC_Stor_Mer[(-2)], HadGEMCC_Stor_Mer[(-2)],
+                GFDL_Stor_Mer[(-2)], CESM1_Stor_Mer[(-2)], CCSM4_Stor_Mer[(-2)])
+ 
+
+Stor_Mer1 <- melt(Stor_Mer, id = "node") %>%
+  filter(between(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+Stor_Mer1
+```
+
+```{r}
+#Total capacity is 1238.6 mcm, 142 mcm is dead pool, so 1/3 of it is 365.533 
+
+OperCap_McClure <- rbind(Stor_Mer1, Livneh_Mer_Stor1) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(142),
+         OperatingCapacity = (value - DeadPool),
+         Count = ifelse(OperatingCapacity > 365.533, 0,1))
+
+OperCap_McClure$GCM <- OperCap_McClure$variable
+OperCap_McClure$variable <- as.factor("Lake McClure")
+OperCap_McClure
+
+OperCap_McClure$GCM <- factor(OperCap_McClure$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+
+Spill_Mer <- OperCap_McClure %>%
+         #Scenario = as.factor("RCP 8.5"),
+         #DeadPool = as.numeric(142),
+         #OperatingCapacity = (Reservoir - DeadPool),
+         mutate(Count = ifelse(value == 1238.6, 1,0),
+         variable = as.factor("Lake McClure"),
+         Basin = "Merced River")
+Spill_Mer
+
+
+
+```
+
+
+```{r}
+Stor_Mer2 <- rbind(Stor_Mer1, Livneh_Mer_Stor1) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+
+  
+
+Stor_Mer2$variable <- factor(Stor_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+ 
+
+Stor_Mer3 <- Stor_Mer2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Mer3
+```
+
+
+
+Stor_Mer2 %>%
+  filter(variable == "MIROC5") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Merced River",
+    subtitle = "MIROC5",
+    x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+png("Mer_storage_MIROC5_March.png", units ="in", width=8, height=5, res = 300)
+
+
+```{r}
+ggplot(Stor_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Merced River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Mer3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+   # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Merced River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Mer_annual_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+       `Livneh (Historical)` = rowSums(.[c(2,3,4,5)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Tuo
+
+CanES_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2,3,4,5)]))
+CanES_Stor_Tuo
+
+CNRM_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2,3,4,5)]))
+CNRM_Stor_Tuo
+
+
+HadGEM_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2,3,4,5)]))
+HadGEM_Stor_Tuo
+
+
+MIROC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2,3,4,5)]))
+MIROC_Stor_Tuo
+
+
+HadGEMCC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2,3,4,5)]))
+HadGEMCC_Stor_Tuo
+
+
+CESM1_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2,3,4,5)]))
+CESM1_Stor_Tuo
+
+
+CCSM4_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2,3,4,5)]))
+CCSM4_Stor_Tuo
+
+
+GFDL_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2,3,4,5)]))
+GFDL_Stor_Tuo
+
+
+ACCESS_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2,3,4,5)]))
+ACCESS_Stor_Tuo
+
+
+CMCC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2,3,4,5)]))
+CMCC_Stor_Tuo
+
+```
+
+```{r}
+Livneh_Tuo_Stor <- Livneh_Stor_Tuo[-c(2,3,4,5)] 
+Livneh_Tuo_Stor <- melt(Livneh_Tuo_Stor, id = "node")
+Livneh_Tuo_Stor
+
+
+Stor_Tuo <- cbind(CanES_Stor_Tuo[-c(2,3,4,5)], CNRM_Stor_Tuo[-c(1,2,3,4,5)], 
+                HadGEM_Stor_Tuo[-c(1,2,3,4,5)], MIROC_Stor_Tuo[-c(1,2,3,4,5)],
+                CMCC_Stor_Tuo[-c(1,2,3,4,5)], ACCESS_Stor_Tuo[-c(1,2,3,4,5)],
+                GFDL_Stor_Tuo[-c(1,2,3,4,5)], CCSM4_Stor_Tuo[-c(1,2,3,4,5)],
+                CESM1_Stor_Tuo[-c(1,2,3,4,5)], HadGEMCC_Stor_Tuo[-c(1,2,3,4,5)])
+Stor_Tuo
+ 
+
+Stor_Tuo1 <- melt(Stor_Tuo, id = "node")
+Stor_Tuo1
+```
+
+
+```{r}
+Stor_Tuo2 <- rbind(Stor_Tuo1, Livneh_Tuo_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+Stor_Tuo2
+  
+
+Stor_Tuo2$variable <- factor(Stor_Tuo2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Stor_Tuo3 <- Stor_Tuo2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Tuo3
+
+```
+
+```{r}
+
+Stor_DonPedro <- rbind(CanES_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "CanESM2\u2020"), 
+                       CNRM_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "CNRM-CM5\u2020"), 
+                       HadGEM_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "HadGEM2-ES\u2020"),
+                       MIROC_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "MIROC5\u2020"),
+                       CMCC_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "CMCC-CMS"),
+                       ACCESS_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "ACCESS1-0"),
+                       GFDL_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "GFDL-CM3"), 
+                       CCSM4_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "CCSM4"),
+                       CESM1_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "CESM1-BGC"), 
+                       HadGEMCC_Stor_Tuo[-c(2,3,5,6)]%>%mutate(GCM = "HadGEM2-CC")) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"))
+Stor_DonPedro
+
+Stor_DonPedro <- rbind(Stor_DonPedro, Livneh_Tuo_Stor %>% rename(GCM = variable,`Don Pedro Reservoir` = value)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")))
+
+Stor_DonPedro1 <- melt(Stor_DonPedro, id = c("node", "GCM"))
+#Stor_DonPedro1[3] <- NULL
+Stor_DonPedro1
+#colnames(Livneh_Stor_Tuo)[6] <- "GCM"
+
+#Stor_DonPedro <- rbind(Stor_Tuo1, Livneh_Tuo_Stor)# %>%
+#  mutate(#Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+        #                   Year = water_year(node, origin = "usgs"),
+        # Scenario = as.factor("RCP 8.5"))
+#Stor_DonPedro
+ 
+
+#Stor_DonPedro1 <- melt(Stor_DonPedro, id = c("node", "value"))
+#colnames(Stor_DonPedro1)[4] <- "variable"
+#Stor_DonPedro1[3] <- NULL
+#Stor_DonPedro1
+```
+
+```{r}
+#Total capacity of Don Pedro is 2504 mcm, 381.0965 mcm is dead pool, so 1/3 of it is 707.6345 
+
+
+
+OperCap_DonPedro <- Stor_DonPedro1  %>%
+#  rename(GCM=variable)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(381.0965),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 707.6345, 0,1),
+         variable = as.factor("Don Pedro Reservoir"))
+
+OperCap_DonPedro$GCM <- factor(OperCap_DonPedro$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_DonPedro
+
+Spill_Tuo <- OperCap_DonPedro %>%
+         mutate(Count = ifelse(value == 2504, 1,0),
+         variable = as.factor("Don Pedro Reservoir"),
+         Basin = "Tuolumne River")
+Spill_Tuo
+Spill_Mer
+
+```
+
+
+
+Stor_Tuo2 %>%
+  filter(variable == "CanESM2") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Tuolumne River",
+    subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+
+```{r}
+ggplot(Stor_Tuo2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Tuolumne River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Tuo_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Tuo3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+   # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Tuolumne River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Tuo_annual_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+       `Livneh (Historical)` = rowSums(.[c(2:11)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Stn
+
+CanES_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2:11)]))
+CanES_Stor_Stn
+
+CNRM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2:11)]))
+CNRM_Stor_Stn
+
+
+HadGEM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2:11)]))
+HadGEM_Stor_Stn
+
+
+MIROC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2:11)]))
+MIROC_Stor_Stn
+
+
+HadGEMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2:11)]))
+HadGEMCC_Stor_Stn
+
+
+CESM1_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2:11)]))
+CESM1_Stor_Stn
+
+
+CCSM4_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2:11)]))
+CCSM4_Stor_Stn
+
+
+GFDL_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2:11)]))
+GFDL_Stor_Stn
+
+
+ACCESS_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2:11)]))
+ACCESS_Stor_Stn
+
+
+CMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2:11)]))
+CMCC_Stor_Stn
+
+```
+
+```{r}
+#Livneh_Stor_Stn$GCM <- "Livneh (Historical)" 
+#CanES_Stor_Stn$GCM <- "CanESM2\u2020"
+#CNRM_Stor_Stn$GCM <- "CNRM-CM5\u2020"
+#MIROC_Stor_Stn$GCM <- "MIROC5\u2020"
+#HadGEM_Stor_Stn$GCM <- "HadGEM2-ES\u2020"
+#HadGEMCC_Stor_Stn$GCM <- "HadGEM2-CC"
+#CESM1_Stor_Stn$GCM <- "CESM1-BGC"
+#CCSM4_Stor_Stn$GCM <- "CCSM4"
+#GFDL_Stor_Stn$GCM <- "GFDL-CM3"
+#CMCC_Stor_Stn$GCM <- "CMCC-CMS"
+#ACCESS_Stor_Stn$GCM <- "ACCESS1-0"
+
+Livneh_Stn_Stor <- Livneh_Stor_Stn[-c(2:11)] 
+Livneh_Stn_Stor <- melt(Livneh_Stn_Stor, id = "node")
+Livneh_Stn_Stor
+
+Stor_Stn <- cbind(CanES_Stor_Stn[-c(2:11)], CNRM_Stor_Stn[-c(2:11)], 
+                HadGEM_Stor_Stn[-c(2:11)], MIROC_Stor_Stn[-c(2:11)],
+                HadGEMCC_Stor_Stn[-c(2:11)], CESM1_Stor_Stn[-c(2:11)], 
+                CCSM4_Stor_Stn[-c(2:11)], GFDL_Stor_Stn[-c(2:11)], 
+                CMCC_Stor_Stn[-c(2:11)], ACCESS_Stor_Stn[-c(2:11)])
+Stor_Stn
+ 
+
+Stor_Stn1 <- melt(Stor_Stn, id = "node")
+Stor_Stn1
+```
+
+```{r}
+Stor_Stn2 <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         value = as.numeric(value)) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+ 
+  
+
+Stor_Stn2$variable <- factor(Stor_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+
+Stor_Stn3 <- Stor_Stn2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Stn3
+```
+
+```{r}
+Stor_NewMelones <-  rbind(CanES_Stor_Stn[c(1,7)]%>%mutate(GCM = "CanESM2\u2020"), 
+                       CNRM_Stor_Stn[c(1,7)]%>%mutate(GCM = "CNRM-CM5\u2020"), 
+                       HadGEM_Stor_Stn[c(1,7)]%>%mutate(GCM = "HadGEM2-ES\u2020"),
+                       MIROC_Stor_Stn[c(1,7)]%>%mutate(GCM = "MIROC5\u2020"),
+                       CMCC_Stor_Stn[c(1,7)]%>%mutate(GCM = "CMCC-CMS"),
+                       ACCESS_Stor_Stn[c(1,7)]%>%mutate(GCM = "ACCESS1-0"),
+                       GFDL_Stor_Stn[c(1,7)]%>%mutate(GCM = "GFDL-CM3"), 
+                       CCSM4_Stor_Stn[c(1,7)]%>%mutate(GCM = "CCSM4"),
+                       CESM1_Stor_Stn[c(1,7)]%>%mutate(GCM = "CESM1-BGC"), 
+                       HadGEMCC_Stor_Stn[c(1,7)]%>%mutate(GCM = "HadGEM2-CC")) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"))
+Stor_NewMelones
+
+Stor_NewMelones <- rbind(Stor_NewMelones, Livneh_Stn_Stor %>% rename(GCM = variable,`New Melones Lake` = value)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")))
+
+Stor_NewMelones1 <- melt(Stor_NewMelones, id = c("node", "GCM"))
+#Stor_NewMelones1[3] <- NULL
+Stor_NewMelones1
+
+```
+
+```{r}
+#Total capacity of New Melones is 2985 mcm, 98.6785 mcm is dead pool, so 1/3 of it is 962.1071667 
+
+
+
+OperCap_NewMelones <- Stor_NewMelones1 %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(98.6785),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 962.1072, 0,1))
+
+
+OperCap_NewMelones$GCM <- factor(OperCap_NewMelones$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_NewMelones
+
+OperCap_NewMelones <- OperCap_NewMelones %>%
+ # rename(GCM = variable) %>%
+  mutate(variable = as.factor("New Melones Lake"))
+OperCap_NewMelones
+
+
+Spill_Stn <- OperCap_NewMelones %>%
+         mutate(Count = ifelse(value == 2985, 1,0),
+         variable = as.factor("New Melones Lake"),
+         Basin = "Stanislaus River")
+Spill_Stn  
+```
+
+
+
+#Total capacity is 2985 mcm, 98.6785 mcm is dead pool, so 1/3 of it is 962.1072 mcm 
+OperCap_Stn <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(98.6785),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 962.1072, 0,1))
+OperCap_Stn
+
+
+
+
+Stor_Stn2 %>%
+  filter(variable == "CanESM2") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Stanislaus River",
+    subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+```{r}
+ggplot(Stor_Stn2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Stanislaus River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stn_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Stn3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+   # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Stanislaus River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Stn_annual_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+       `Livneh (Historical)` = rowSums(.[c(2:10)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_USJ
+
+CanES_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2:10)]))
+CanES_Stor_USJ
+
+CNRM_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2:10)]))
+CNRM_Stor_USJ
+
+
+HadGEM_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2:10)]))
+HadGEM_Stor_USJ
+
+
+MIROC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2:10)]))
+MIROC_Stor_USJ
+
+
+HadGEMCC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2:10)]))
+HadGEMCC_Stor_USJ
+
+
+CESM1_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2:10)]))
+CESM1_Stor_USJ
+
+
+CCSM4_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2:10)]))
+CCSM4_Stor_USJ
+
+
+GFDL_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2:10)]))
+GFDL_Stor_USJ
+
+
+ACCESS_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2:10)]))
+ACCESS_Stor_USJ
+
+
+CMCC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2:10)]))
+CMCC_Stor_USJ
+
+```
+
+
+```{r}
+Livneh_USJ_Stor <- Livneh_Stor_USJ[-c(2:10)] 
+Livneh_USJ_Stor <- melt(Livneh_USJ_Stor, id = "node")
+Livneh_USJ_Stor
+
+Stor_USJ <- cbind(CanES_Stor_USJ[-c(2:10)], CNRM_Stor_USJ[-c(2:10)], 
+                HadGEM_Stor_USJ[-c(2:10)], MIROC_Stor_USJ[-c(2:10)],
+                HadGEMCC_Stor_USJ[-c(2:10)], CCSM4_Stor_USJ[-c(2:10)],
+                CESM1_Stor_USJ[-c(2:10)], ACCESS_Stor_USJ[-c(2:10)], 
+                CMCC_Stor_USJ[-c(2:10)], GFDL_Stor_USJ[-c(2:10)])
+Stor_USJ
+ 
+
+Stor_USJ2 <- melt(Stor_USJ, id = "node")
+Stor_USJ2
+```
+
+```{r}
+Stor_USJ2 <- rbind(Stor_USJ2, Livneh_USJ_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(as.numeric(value)))
+ 
+  
+
+Stor_USJ2$variable <- factor(Stor_USJ2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Stor_USJ3 <- Stor_USJ2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_USJ3
+```
+
+```{r}
+#Storage capacity of Millerton
+Livneh_Stor_USJ$GCM <- "Livneh (Historical)" 
+CanES_Stor_USJ$GCM <- "CanESM2\u2020"
+CNRM_Stor_USJ$GCM <- "CNRM-CM5\u2020"
+MIROC_Stor_USJ$GCM <- "MIROC5\u2020"
+HadGEM_Stor_USJ$GCM <- "HadGEM2-ES\u2020"
+HadGEMCC_Stor_USJ$GCM <- "HadGEM2-CC"
+CESM1_Stor_USJ$GCM <- "CESM1-BGC"
+CCSM4_Stor_USJ$GCM <- "CCSM4"
+GFDL_Stor_USJ$GCM <- "GFDL-CM3"
+CMCC_Stor_USJ$GCM <- "CMCC-CMS"
+ACCESS_Stor_USJ$GCM <- "ACCESS1-0"
+
+Stor_Millerton <- rbind(Livneh_Stor_USJ[c(1,4,12)], CanES_Stor_USJ[c(1,4,12)],
+                       CNRM_Stor_USJ[c(1,4,12)], HadGEM_Stor_USJ[c(1,4,12)],
+                       MIROC_Stor_USJ[c(1,4,12)], HadGEMCC_Stor_USJ[c(1,4,12)],
+                       CESM1_Stor_USJ[c(1,4,12)], CCSM4_Stor_USJ[c(1,4,12)],
+                       GFDL_Stor_USJ[c(1,4,12)], CMCC_Stor_USJ[c(1,4,12)],
+                       ACCESS_Stor_USJ[c(1,4,12)]) #Select only New Melones
+Stor_Millerton
+ 
+
+Stor_Millerton1 <- melt(Stor_Millerton, id = c("node", "GCM"))
+Stor_Millerton1$variable <- as.factor("Millerton Lake")
+Stor_Millerton1
+
+```
+
+```{r}
+#Total capacity of Millerton is 641.42 mcm, 165.3532 mcm is dead pool, so 1/3 of it is 158.6889 
+
+
+
+OperCap_Millerton <- Stor_Millerton1 %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(165.3532),
+         OperatingCapacity = (value - DeadPool),
+         Count = ifelse(OperatingCapacity > 158.6889, 0,1))
+
+
+OperCap_Millerton$GCM <- factor(OperCap_Millerton$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_Millerton
+
+Spill_USJ <- OperCap_Millerton %>%
+         mutate(Count = ifelse(value == 641.42, 1,0),
+         variable = as.factor("Millerton Lake"),
+         Basin = "Upper San Joaquin River")
+Spill_USJ  
+
+```
+
+```{r}
+Spill <- rbind(Spill_Stn, Spill_Mer, Spill_Tuo, Spill_USJ)
+
+Spill$variable <- factor(Spill$variable, levels = c("Don Pedro Reservoir","New Melones Lake", "Lake McClure", "Millerton Lake"))
+Spill <- Spill %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2060-09-30"))) %>%
+  filter(!between(node, as.Date("2010-10-01"), as.Date("2013-09-30")))
+Spill
+```
+
+```{r}
+#Storage Capacity for STN
+
+Storage <- function (Data, Reservoir, Title, Subtitle) {
+Data %>%
+    #  filter() #GCM == "Livneh (Historical)") %>%# | GCM == "ACCESS1-0" | GCM == "CNRM-CM5") %>%
+  filter(variable == Reservoir) %>%
+ggplot() +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1980", "1985", "1990", "1995", "2000", "2005", "2010", 
+                              "2030", "2035", "2040", "2009", "2050", "2055", "2060"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = Title,
+       subtitle = Subtitle,
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Days") +
+ theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())
+#        panel.spacing.y = unit(0, "lines")) +
+  
+}
+```
+
+
+```{r}
+windowsFonts(Times=windowsFont("Times New Roman"))
+
+Storage(Basins_Capacity, "New Melones Lake", "Stanislaus River\nNew Melones Lake", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+png("Stn_BelowOneThird_Operating_Capacity_rcp85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r} 
+Storage(Basins_Capacity, "Millerton Lake", "Upper San Joaquin River\nMillerton Lake", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+png("USJ_BelowOneThird_Operating_Capacity_rcp85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+Storage(Basins_Capacity, "Lake McClure", "Merced River\nLake McClure", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+png("Mer_BelowOneThird_Operating_Capacity_rcp85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+Storage(Basins_Capacity, "Don Pedro Reservoir", "Tuolumne River\nDon Pedro Reservoir", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+png("Tuo_BelowOneThird_Operating_Capacity_rcp85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+Storage_csv <- Basins_Capacity %>%
+  group_by(variable, GCM, Year) %>%
+  summarize(Count = sum(Count, na.rm = T))
+Storage_csv
+
+write_csv(Storage_csv, "Allbasins_BelowOneThird_Storage_redflag.csv")
+```
+
+
+```{r}
+ggplot(Basins_Capacity) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(GCM~variable, scales = "free_x", ncol = 4)+#,  strip.position = "left") +
+  
+  
+  labs(title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Days") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_BelowOneThird_Operating_Capacity_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=8, height=16, res = 300)
+
+```
+
+
+```{r}
+ggplot(Basins_Capacity) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", 
+                              "2031", "2041", "2051"),
+                    expand = c(0, NA))+
+
+  facet_grid(variable~GCM, scales = "free_x") +
+  
+  
+  labs(title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Days") +
+ theme(strip.text.y.left = element_text(angle = 0),#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_BelowOneThird_Operating_Capacity_FacetGrid_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=18, height=6, res = 300)
+```
+
+
+
+Basins_Capacity %>%
+  filter(GCM == "CanESM2") %>%
+ggplot() +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = "New Melones Lake",
+       subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Days") +
+ theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())
+
+
+
+```{r}
+ggplot(Stor_USJ2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Upper San Joaquin River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_USJ3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+   # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Upper San Joaquin River",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("USJ_annual_storage_10GCMs_Baseline_2009prices_rcp85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+```{r}
+#Facet wraps of all basins
+
+Stor_Mer2$Basin <- "Merced River"
+Stor_Mer3$Basin <- "Merced River"
+Stor_Tuo2$Basin <- "Tuolumne River"
+Stor_Tuo3$Basin <- "Tuolumne River"
+Stor_Stn2$Basin <- "Stanislaus River"
+Stor_Stn3$Basin <- "Stanislaus River"
+Stor_USJ2$Basin <- "Upper San Joaquin River"
+Stor_USJ3$Basin <- "Upper San Joaquin River"
+
+
+
+all_storage_monthly <- rbind(Stor_Mer2, Stor_Tuo2, Stor_Stn2 ,Stor_USJ2)
+
+all_storage_monthly$Basin <- factor(all_storage_monthly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_monthly
+
+all_storage_year <- rbind(Stor_Mer3, Stor_Tuo3, Stor_Stn3 ,Stor_USJ3)
+
+all_storage_year$Basin <- factor(all_storage_year$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_year
+
+```
+
+```{r}
+all_storage_monthly$Month <- factor(all_storage_monthly$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+all_storage_monthly
+
+All_Montlhy_Stats_Stor <- aggregate(MonthlyTotal ~ Month+variable+Basin, all_storage_monthly, summary)
+write.csv(All_Montlhy_Stats_Stor, "All_Monthly_Stats_Storage_Baseline_2009prices_RCP85_Report.csv")
+
+All_Annual_Stats_Stor <- aggregate(AnnualTotal ~ variable+Basin, all_storage_year, summary)
+write.csv(All_Annual_Stats_Stor, "All_Annual_Stats_Storage_Baseline_2009prices_RCP85_Report.csv")
+```
+
+```{r}
+ggplot(all_storage_monthly) + 
+  theme_bw(base_size=18, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+png("AllBasins_storage_10GCMs_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=15, height=10, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(all_storage_year) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+#    scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+         axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"),
+        panel.spacing.y = unit(0, "lines"))+
+    facet_wrap(~Basin, scales = "free_y")+
+png("AllBasins_annual_storage_10GCMs_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=8, height=5, res = 300)
+```
+
+```{r}
+#Facet wraps of all basins
+
+Stor_Mer2$Basin <- "Merced River"
+Stor_Mer3$Basin <- "Merced River"
+Stor_Tuo2$Basin <- "Tuolumne River"
+Stor_Tuo3$Basin <- "Tuolumne River"
+Stor_Stn2$Basin <- "Stanislaus River"
+Stor_Stn3$Basin <- "Stanislaus River"
+Stor_USJ2$Basin <- "Upper San Joaquin River"
+Stor_USJ3$Basin <- "Upper San Joaquin River"
+
+
+
+all_storage_monthly <- rbind(Stor_Mer2, Stor_Tuo2, Stor_Stn2 ,Stor_USJ2)
+
+all_storage_monthly$Basin <- factor(all_storage_monthly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_monthly
+
+all_storage_year <- rbind(Stor_Mer3, Stor_Tuo3, Stor_Stn3 ,Stor_USJ3)
+
+all_storage_year$Basin <- factor(all_storage_year$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_year
+
+```
+
+```{r}
+all_storage_monthly$Month <- factor(all_storage_monthly$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+all_storage_monthly
+
+
+All_Annual_Stats_Stor <- aggregate(AnnualTotal ~ variable+Basin, all_storage_year, summary)
+write.csv(All_Annual_Stats_Stor, "All_Annual_Stats_Storage_Baseline_2009prices_RCP8.5_Report.csv")
+```
+
+
+```{r}
+Total_Spill1 <- Total_Spill %>%
+ # mutate(Year = as.numeric(Year)) %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2060-09-30"))) %>%
+  filter(!between(node, as.Date("2010-09-01"), as.Date("2030-09-30")))
+
+Total_Spill1
+
+```
+
+```{r}
+
+
+#Total_Spill$GCM <- factor(Total_Spill$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Spill_Mer$GCM <- factor(Spill_Mer$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Spill_Stn$GCM <- factor(Spill_Stn$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Spill_Tuo$GCM <- factor(Spill_Tuo$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Spill_USJ$GCM <- factor(Spill_USJ$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+Total_Spill <- rbind(Spill_Mer, Spill_Stn, Spill_Tuo, Spill_USJ)
+
+Total_Spill
+```
+
+```{r}
+spill_csv <- Total_Spill %>%
+  group_by(Basin, variable,GCM,Year) %>%
+  summarize(Count = sum(Count))
+
+spill_csv
+
+
+write_csv(spill_csv, "All_basins_Spill_count.csv")
+
+```
+
+
+```{r}
+ggplot(Total_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,160), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1980", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(GCM~Basin, scales = "free_x", ncol = 4) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+      subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetWrap_RCP85_2009prices_Baseline_Report_March.png", units ="in", width=8, height=8, res = 300)
+```
+
+
+```{r}
+ggplot(Total_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,160), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", 
+                              "2031", "2041","2051"),
+                    expand = c(0, NA))+
+
+  facet_grid(Basin~GCM, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetGrid.png", units ="in", width=12, height=8, res = 300)
+```
+
+
+```{r}
+#Spill for each basin
+
+Spill <- function (Data, Basins, Title, Subtitle) {
+Data%>%
+  #filter(Basin == Basins) %>%
+  #  filter(GCM == "Livneh (Historical)" | GCM == "ACCESS1-0" | GCM == "CNRM-CM5") %>%
+ggplot() +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = Title,
+       subtitle = Subtitle,
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill Occurrence (Days)") +
+ theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())
+#        panel.spacing.y = unit(0, "lines")) +
+}
+```
+
+```{r}
+  Spill(Total_Spill1 %>% filter(Basin == "Merced River"), "Merced River", "Merced River", "Baseline - 2009 prices (RCP 8.5 Scenario)") +
+png("Mer_Spill_Baseline_2009prices_RCP85_10GCMs_Report_2.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill1 %>% filter(Basin == "Upper San Joaquin River"),"Upper San Joaquin River", "Upper San Joaquin River", "Baseline - 2009 prices (RCP 8.5 Scenario)") +
+png("USJ_Spill_Baseline_2009prices_RCP85_10GCMs_Report.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill1 %>% filter(Basin == "Tuolumne River"), "Tuolumne River", "Tuolumne River", "Baseline - 2009 prices (RCP 8.5 Scenario)") +
+png("Tuo_Spill_Baseline_2009prices_RCP85_10GCMs_Report.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(Total_Spill1 %>% filter(Basin == "Stanislaus River"), "Stanislaus River", "Stanislaus River", "Baseline - 2009 prices (RCP 8.5 Scenario)") +
+png("Stn_Spill_Baseline_2009prices_RCP85_10GCMs_Report.png", units ="in",width=5, height=16, res = 300)
+```
+---
+  title: "Storage_GCMs"
+author: "gustavo Facincani Dourado"
+date: "6/14/2020"
+output: html_document
+---
+  
+  ```{r}
+#NoIFRs 2009
+#Mer 1,6
+#Tuo 1,2,6,10,14
+#Stn 1,2,6,10,14,18,22,26,30,34,38
+#USJ 1,2,6,10,14,18,22,26,30,34
+
+#No IFR 2009
+#Mer 1,7
+#Tuo 1,3,7,11,15
+#Stn 1,3,7,11,15,19,23,27,31,35,39
+#USJ 1,3,7,11,15,19,23,27,31,35
+
+#NoIFRs 2009
+#Mer 1,8
+#Tuo 1,4,8,12,16
+#Stn 1,4,8,12,16,20,24,28,32,36,40
+#USJ 1,4,8,12,16,20,24,28,32,36
+
+#No IFR 2009
+#Mer 1,9
+#Tuo 1,5,9,13,17
+#Stn 1,5,9,13,17,21,25,29,33,37,41
+#USJ 1,5,9,13,17,21,25,29,33,37
+library(ggplot2)
+```
+
+```{r}
+Livneh_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `Livneh (Historical)` = as.numeric(`Lake McClure`)) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Mer
+
+CanES_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = as.numeric(`Lake McClure`))
+CanES_Stor_Mer
+
+CNRM_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = as.numeric(`Lake McClure`))
+CNRM_Stor_Mer
+
+
+HadGEM_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = as.numeric(`Lake McClure`))
+HadGEM_Stor_Mer
+
+
+MIROC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = as.numeric(`Lake McClure`))
+MIROC_Stor_Mer
+
+
+HadGEMCC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = as.numeric(`Lake McClure`))
+HadGEMCC_Stor_Mer
+
+
+CESM1_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = as.numeric(`Lake McClure`))
+CESM1_Stor_Mer
+
+
+CCSM4_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = as.numeric(`Lake McClure`))
+CCSM4_Stor_Mer
+
+
+GFDL_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = as.numeric(`Lake McClure`))
+GFDL_Stor_Mer
+
+
+ACCESS_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = as.numeric(`Lake McClure`))
+ACCESS_Stor_Mer
+
+
+CMCC_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = as.numeric(`Lake McClure`))
+CMCC_Stor_Mer
+
+```
+
+
+
+
+```{r}
+Livneh_Mer_Stor1 <- Livneh_Stor_Mer[(-2)] 
+Livneh_Mer_Stor1 <- melt(Livneh_Mer_Stor1, id = "node")
+Livneh_Mer_Stor1
+
+
+Stor_Mer <- cbind(CanES_Stor_Mer[(-2)], CNRM_Stor_Mer[(-2)], 
+                  HadGEM_Stor_Mer[(-2)], MIROC_Stor_Mer[(-2)], ACCESS_Stor_Mer[(-2)], CMCC_Stor_Mer[(-2)], HadGEMCC_Stor_Mer[(-2)],
+                  GFDL_Stor_Mer[(-2)], CESM1_Stor_Mer[(-2)], CCSM4_Stor_Mer[(-2)])
+
+
+Stor_Mer1 <- melt(Stor_Mer, id = "node") %>%
+  filter(between(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+Stor_Mer1
+```
+
+```{r}
+#Total capacity is 1238.6 mcm, 142 mcm is dead pool, so 1/3 of it is 365.533 
+
+OperCap_McClure <- rbind(Stor_Mer1, Livneh_Mer_Stor1) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(142),
+         OperatingCapacity = (value - DeadPool),
+         Count = ifelse(OperatingCapacity > 365.533, 0,1))
+
+OperCap_McClure$GCM <- OperCap_McClure$variable
+OperCap_McClure$variable <- as.factor("Lake McClure")
+OperCap_McClure
+
+OperCap_McClure$GCM <- factor(OperCap_McClure$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+```
+
+
+```{r}
+Stor_Mer2 <- rbind(Stor_Mer1, Livneh_Mer_Stor1) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+
+
+
+Stor_Mer2$variable <- factor(Stor_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+
+Stor_Mer3 <- Stor_Mer2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Mer3
+```
+
+
+
+Stor_Mer2 %>%
+  filter(variable == "MIROC5") %>%
+  
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Merced River",
+       subtitle = "MIROC5",
+       x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  png("Mer_storage_MIROC5_March.png", units ="in", width=8, height=5, res = 300)
+
+
+```{r}
+ggplot(Stor_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Merced River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Mer3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Merced River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_annual_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `Livneh (Historical)` = rowSums(.[c(2,3,4,5)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Tuo
+
+CanES_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2,3,4,5)]))
+CanES_Stor_Tuo
+
+CNRM_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2,3,4,5)]))
+CNRM_Stor_Tuo
+
+
+HadGEM_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2,3,4,5)]))
+HadGEM_Stor_Tuo
+
+
+MIROC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2,3,4,5)]))
+MIROC_Stor_Tuo
+
+
+HadGEMCC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2,3,4,5)]))
+HadGEMCC_Stor_Tuo
+
+
+CESM1_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2,3,4,5)]))
+CESM1_Stor_Tuo
+
+
+CCSM4_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2,3,4,5)]))
+CCSM4_Stor_Tuo
+
+
+GFDL_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2,3,4,5)]))
+GFDL_Stor_Tuo
+
+
+ACCESS_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2,3,4,5)]))
+ACCESS_Stor_Tuo
+
+
+CMCC_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2,3,4,5)]))
+CMCC_Stor_Tuo
+
+```
+
+```{r}
+Livneh_Tuo_Stor <- Livneh_Stor_Tuo[-c(2,3,4,5)] 
+Livneh_Tuo_Stor <- melt(Livneh_Tuo_Stor, id = "node")
+Livneh_Tuo_Stor
+
+
+Stor_Tuo <- cbind(CanES_Stor_Tuo[-c(2,3,4,5)], CNRM_Stor_Tuo[-c(1,2,3,4,5)], 
+                  HadGEM_Stor_Tuo[-c(1,2,3,4,5)], MIROC_Stor_Tuo[-c(1,2,3,4,5)],
+                  CMCC_Stor_Tuo[-c(1,2,3,4,5)], ACCESS_Stor_Tuo[-c(1,2,3,4,5)],
+                  GFDL_Stor_Tuo[-c(1,2,3,4,5)], CCSM4_Stor_Tuo[-c(1,2,3,4,5)],
+                  CESM1_Stor_Tuo[-c(1,2,3,4,5)], HadGEMCC_Stor_Tuo[-c(1,2,3,4,5)])
+Stor_Tuo
+
+
+Stor_Tuo1 <- melt(Stor_Tuo, id = "node")
+Stor_Tuo1
+```
+
+
+```{r}
+Stor_Tuo2 <- rbind(Stor_Tuo1, Livneh_Tuo_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Stor_Tuo2
+
+
+Stor_Tuo2$variable <- factor(Stor_Tuo2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Stor_Tuo3 <- Stor_Tuo2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Tuo3
+
+```
+
+```{r}
+Stor_DonPedro <- rbind(Stor_Tuo1, Livneh_Tuo_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"))
+Stor_DonPedro
+
+Stor_DonPedro1 <- melt(Stor_DonPedro, id = c("node", "variable"))
+Stor_DonPedro1[3] <- NULL
+Stor_DonPedro1
+#colnames(Livneh_Stor_Tuo)[6] <- "GCM"
+
+#Stor_DonPedro <- rbind(Stor_Tuo1, Livneh_Tuo_Stor)# %>%
+#  mutate(#Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+#                   Year = water_year(node, origin = "usgs"),
+# Scenario = as.factor("RCP 8.5"))
+#Stor_DonPedro
+
+
+#Stor_DonPedro1 <- melt(Stor_DonPedro, id = c("node", "value"))
+#colnames(Stor_DonPedro1)[4] <- "variable"
+#Stor_DonPedro1[3] <- NULL
+#Stor_DonPedro1
+```
+
+```{r}
+#Total capacity of Don Pedro is 2504 mcm, 381.0965 mcm is dead pool, so 1/3 of it is 707.6345 
+
+
+
+OperCap_DonPedro <- Stor_DonPedro1  %>%
+  rename(GCM=variable)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(381.0965),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 707.6345, 0,1),
+         variable = as.factor("Don Pedro Reservoir"))
+
+
+OperCap_DonPedro$GCM <- factor(OperCap_DonPedro$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_DonPedro
+
+```
+
+
+
+Stor_Tuo2 %>%
+  filter(variable == "CanESM2") %>%
+  
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Tuolumne River",
+       subtitle = "CanESM2",
+       x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+
+```{r}
+ggplot(Stor_Tuo2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Tuolumne River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Tuo_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Tuo3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Tuolumne River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Tuo_annual_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `Livneh (Historical)` = rowSums(.[c(2:11)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Stn
+
+CanES_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2:11)]))
+CanES_Stor_Stn
+
+CNRM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2:11)]))
+CNRM_Stor_Stn
+
+
+HadGEM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2:11)]))
+HadGEM_Stor_Stn
+
+
+MIROC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2:11)]))
+MIROC_Stor_Stn
+
+
+HadGEMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2:11)]))
+HadGEMCC_Stor_Stn
+
+
+CESM1_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2:11)]))
+CESM1_Stor_Stn
+
+
+CCSM4_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2:11)]))
+CCSM4_Stor_Stn
+
+
+GFDL_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2:11)]))
+GFDL_Stor_Stn
+
+
+ACCESS_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2:11)]))
+ACCESS_Stor_Stn
+
+
+CMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,6,10,14,18,22,26,30,34,38)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2:11)]))
+CMCC_Stor_Stn
+
+```
+
+```{r}
+#Livneh_Stor_Stn$GCM <- "Livneh (Historical)" 
+#CanES_Stor_Stn$GCM <- "CanESM2\u2020"
+#CNRM_Stor_Stn$GCM <- "CNRM-CM5\u2020"
+#MIROC_Stor_Stn$GCM <- "MIROC5\u2020"
+#HadGEM_Stor_Stn$GCM <- "HadGEM2-ES\u2020"
+#HadGEMCC_Stor_Stn$GCM <- "HadGEM2-CC"
+#CESM1_Stor_Stn$GCM <- "CESM1-BGC"
+#CCSM4_Stor_Stn$GCM <- "CCSM4"
+#GFDL_Stor_Stn$GCM <- "GFDL-CM3"
+#CMCC_Stor_Stn$GCM <- "CMCC-CMS"
+#ACCESS_Stor_Stn$GCM <- "ACCESS1-0"
+
+Livneh_Stn_Stor <- Livneh_Stor_Stn[-c(2:11)] 
+Livneh_Stn_Stor <- melt(Livneh_Stn_Stor, id = "node")
+Livneh_Stn_Stor
+
+Stor_Stn <- cbind(CanES_Stor_Stn[-c(2:11)], CNRM_Stor_Stn[-c(2:11)], 
+                  HadGEM_Stor_Stn[-c(2:11)], MIROC_Stor_Stn[-c(2:11)],
+                  HadGEMCC_Stor_Stn[-c(2:11)], CESM1_Stor_Stn[-c(2:11)], 
+                  CCSM4_Stor_Stn[-c(2:11)], GFDL_Stor_Stn[-c(2:11)], 
+                  CMCC_Stor_Stn[-c(2:11)], ACCESS_Stor_Stn[-c(2:11)])
+Stor_Stn
+
+
+Stor_Stn1 <- melt(Stor_Stn, id = "node")
+Stor_Stn1
+```
+
+```{r}
+Stor_Stn2 <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         value = as.numeric(value)) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+
+
+
+Stor_Stn2$variable <- factor(Stor_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+
+Stor_Stn3 <- Stor_Stn2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_Stn3
+```
+
+```{r}
+Stor_NewMelones <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"))
+Stor_NewMelones
+
+Stor_NewMelones1 <- melt(Stor_NewMelones, id = c("node", "variable"))
+Stor_NewMelones1[3] <- NULL
+Stor_NewMelones1
+
+```
+
+```{r}
+#Total capacity of New Melones is 2985 mcm, 98.6785 mcm is dead pool, so 1/3 of it is 962.1071667 
+
+
+
+OperCap_NewMelones <- Stor_NewMelones1 %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(98.6785),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 962.1072, 0,1))
+
+
+OperCap_NewMelones$variable <- factor(OperCap_NewMelones$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_NewMelones
+
+OperCap_NewMelones <- OperCap_NewMelones %>%
+  rename(GCM = variable) %>%
+  mutate(variable = as.factor("New Melones Lake"))
+OperCap_NewMelones
+
+
+Spill_Stn <- OperCap_NewMelones %>%
+         mutate(Count = ifelse(value >= 3486, 1,0),
+         variable = as.factor("New Melones Lake"))
+Spill_Stn  
+
+
+```
+
+{r}
+#Total capacity is 2985 mcm, 98.6785 mcm is dead pool, so 1/3 of it is 962.1072 mcm 
+OperCap_Stn <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(98.6785),
+         OperatingCapacity = (as.numeric(value) - DeadPool),
+         Count = ifelse(OperatingCapacity > 962.1072, 0,1))
+OperCap_Stn
+
+
+
+Stor_Stn2 %>%
+  filter(variable == "CanESM2") %>%
+  
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Stanislaus River",
+       subtitle = "CanESM2",
+       x = element_blank(),
+       y = "Total Storage (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+```{r}
+ggplot(Stor_Stn2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Stanislaus River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stn_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Stn3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Stanislaus River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stn_annual_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `Livneh (Historical)` = rowSums(.[c(2:10)])) %>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_USJ
+
+CanES_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = rowSums(.[c(2:10)]))
+CanES_Stor_USJ
+
+CNRM_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = rowSums(.[c(2:10)]))
+CNRM_Stor_USJ
+
+
+HadGEM_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = rowSums(.[c(2:10)]))
+HadGEM_Stor_USJ
+
+
+MIROC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = rowSums(.[c(2:10)]))
+MIROC_Stor_USJ
+
+
+HadGEMCC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = rowSums(.[c(2:10)]))
+HadGEMCC_Stor_USJ
+
+
+CESM1_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CESM1-BGC` = rowSums(.[c(2:10)]))
+CESM1_Stor_USJ
+
+
+CCSM4_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         CCSM4 = rowSums(.[c(2:10)]))
+CCSM4_Stor_USJ
+
+
+GFDL_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `GFDL-CM3` = rowSums(.[c(2:10)]))
+GFDL_Stor_USJ
+
+
+ACCESS_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `ACCESS1-0` = rowSums(.[c(2:10)]))
+ACCESS_Stor_USJ
+
+
+CMCC_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,3,7,11,15,19,23,27,31,35)] %>%
+  mutate(node = as.Date(node, format = "%Y-%m-%d"),
+         `CMCC-CMS` = rowSums(.[c(2:10)]))
+CMCC_Stor_USJ
+
+```
+
+
+```{r}
+Livneh_USJ_Stor <- Livneh_Stor_USJ[-c(2:10)] 
+Livneh_USJ_Stor <- melt(Livneh_USJ_Stor, id = "node")
+Livneh_USJ_Stor
+
+Stor_USJ <- cbind(CanES_Stor_USJ[-c(2:10)], CNRM_Stor_USJ[-c(2:10)], 
+                  HadGEM_Stor_USJ[-c(2:10)], MIROC_Stor_USJ[-c(2:10)],
+                  HadGEMCC_Stor_USJ[-c(2:10)], CCSM4_Stor_USJ[-c(2:10)],
+                  CESM1_Stor_USJ[-c(2:10)], ACCESS_Stor_USJ[-c(2:10)], 
+                  CMCC_Stor_USJ[-c(2:10)], GFDL_Stor_USJ[-c(2:10)])
+Stor_USJ
+
+
+Stor_USJ2 <- melt(Stor_USJ, id = "node")
+Stor_USJ2
+```
+
+```{r}
+Stor_USJ2 <- rbind(Stor_USJ2, Livneh_USJ_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(as.numeric(value)))
+
+
+
+Stor_USJ2$variable <- factor(Stor_USJ2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Stor_USJ3 <- Stor_USJ2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Stor_USJ3
+```
+
+```{r}
+#Storage capacity of Millerton
+Livneh_Stor_USJ$GCM <- "Livneh (Historical)" 
+CanES_Stor_USJ$GCM <- "CanESM2\u2020"
+CNRM_Stor_USJ$GCM <- "CNRM-CM5\u2020"
+MIROC_Stor_USJ$GCM <- "MIROC5\u2020"
+HadGEM_Stor_USJ$GCM <- "HadGEM2-ES\u2020"
+HadGEMCC_Stor_USJ$GCM <- "HadGEM2-CC"
+CESM1_Stor_USJ$GCM <- "CESM1-BGC"
+CCSM4_Stor_USJ$GCM <- "CCSM4"
+GFDL_Stor_USJ$GCM <- "GFDL-CM3"
+CMCC_Stor_USJ$GCM <- "CMCC-CMS"
+ACCESS_Stor_USJ$GCM <- "ACCESS1-0"
+
+Stor_Millerton <- rbind(Livneh_Stor_USJ[c(1,4,12)], CanES_Stor_USJ[c(1,4,12)],
+                        CNRM_Stor_USJ[c(1,4,12)], HadGEM_Stor_USJ[c(1,4,12)],
+                        MIROC_Stor_USJ[c(1,4,12)], HadGEMCC_Stor_USJ[c(1,4,12)],
+                        CESM1_Stor_USJ[c(1,4,12)], CCSM4_Stor_USJ[c(1,4,12)],
+                        GFDL_Stor_USJ[c(1,4,12)], CMCC_Stor_USJ[c(1,4,12)],
+                        ACCESS_Stor_USJ[c(1,4,12)]) #Select only New Melones
+Stor_Millerton
+
+
+Stor_Millerton1 <- melt(Stor_Millerton, id = c("node", "GCM"))
+Stor_Millerton1$variable <- as.factor("Millerton Lake")
+Stor_Millerton1
+
+```
+
+```{r}
+#Total capacity of Millerton is 641.42 mcm, 165.3532 mcm is dead pool, so 1/3 of it is 158.6889 
+
+
+
+OperCap_Millerton <- Stor_Millerton1 %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5"),
+         DeadPool = as.numeric(165.3532),
+         OperatingCapacity = (value - DeadPool),
+         Count = ifelse(OperatingCapacity > 158.6889, 0,1))
+
+Spill_USJ <- OperCap_Millerton %>%
+         mutate(Count = ifelse(value >= 641.42, 1,0),
+         variable = as.factor("Millerton Lake"),
+         Basin = "Upper San Joaquin River")
+Spill_USJ  
+
+
+OperCap_Millerton$GCM <- factor(OperCap_Millerton$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+OperCap_Millerton
+
+```
+
+```{r}
+Basins_Capacity <- rbind(OperCap_McClure, OperCap_Millerton, OperCap_DonPedro, OperCap_NewMelones)
+
+Basins_Capacity$variable <- factor(Basins_Capacity$variable, levels = c("New Melones Lake","Don Pedro Reservoir", "Lake McClure", "Millerton Lake"))
+#Basins_Capacity <- Basins_Capacity %>%
+ # filter(between(node, as.Date("1980-10-01"), as.Date("2060-09-30"))) %>%
+#  filter(!between(node, as.Date("2010-10-01"), as.Date("2013-09-30")))
+Basins_Capacity
+```
+
+```{r}
+#Storage Capacity for STN
+
+Storage <- function (Data, Reservoir, Title, Subtitle) {
+  Data %>%
+    #  filter() #GCM == "Livneh (Historical)") %>%# | GCM == "ACCESS1-0" | GCM == "CNRM-CM5") %>%
+    filter(variable == Reservoir) %>%
+    ggplot() +
+    theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_bar(aes(x= Year, y=Count), stat = "identity") +
+    ggthemes::scale_color_colorblind() +
+    scale_y_continuous(expand = c(0, NA),
+                       limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+    scale_x_discrete(breaks = c("1980", "1985", "1990", "1995", "2000", "2005", "2010", 
+                                "2030", "2035", "2040", "2009", "2050", "2055", "2060"),
+                     expand = c(0, NA))+
+    
+    facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+    
+    
+    labs(title = Title,
+         subtitle = Subtitle,
+         
+         #  subtitle = "CanESM2",
+         x = element_blank(),
+         y = "Days") +
+    theme(#legend.title = element_blank(),
+      #legend.position = "bottom",
+      #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+      plot.title = element_text(hjust = 0.5),
+      plot.subtitle = element_text(hjust = 0.5),
+      strip.placement = "outside",
+      strip.background = element_blank())
+  #        panel.spacing.y = unit(0, "lines")) +
+  
+}
+```
+
+
+```{r}
+
+Storage(Basins_Capacity, "New Melones Lake", "Stanislaus River\nNew Melones Lake", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+  png("Stn_BelowOneThird_Operating_Capacity_RCP85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r} 
+Storage(Basins_Capacity, "Millerton Lake", "Upper San Joaquin River\nMillerton Lake", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+  png("USJ_BelowOneThird_Operating_Capacity_RCP85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+Storage(Basins_Capacity, "Lake McClure", "Merced River\nLake McClure", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+  png("Mer_BelowOneThird_Operating_Capacity_RCP85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+Storage(Basins_Capacity, "Don Pedro Reservoir", "Tuolumne River\nDon Pedro Reservoir", "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)")+
+  png("Tuo_BelowOneThird_Operating_Capacity_RCP85_Baseline_2009prices_10GCMs_Report_March.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+ggplot(Basins_Capacity) +
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+  ggthemes::scale_color_colorblind() +
+  scale_y_continuous(expand = c(0, NA),
+                     limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                   expand = c(0, NA))+
+  
+  facet_wrap(GCM~variable, scales = "free_x", ncol = 4)+#,  strip.position = "left") +
+  
+  
+  labs(title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "No Intreamflow Requirement - 2009 prices (RCP 8.5 Scenario)",
+       
+       #  subtitle = "CanESM2",
+       x = element_blank(),
+       y = "Days") +
+  theme(#strip.text.x = element_blank(),
+    #legend.title = element_blank(),
+    #legend.position = "bottom",
+    #   legend.direction = "horizontal",
+    #  legend.box.margin = margin(t = -17),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    strip.placement = "outside",
+    strip.background = element_blank())+
+  # panel.spacing.y = unit(0, "lines")) +
+  png("AllBasins_BelowOneThird_Operating_Capacity_RCP85_Baseline_2009prices_Report_March.png", units ="in", width=8, height=16, res = 300)
+
+```
+
+
+```{r}
+ggplot(Basins_Capacity) +
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+  ggthemes::scale_color_colorblind() +
+  scale_y_continuous(expand = c(0, NA),
+                     limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", 
+                              "2031", "2041", "2051"),
+                   expand = c(0, NA))+
+  
+  facet_grid(variable~GCM, scales = "free_x") +
+  
+  
+  labs(title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "Baseline - 2009 prices (RCP 8.5 Scenario)",
+       
+       #  subtitle = "CanESM2",
+       x = element_blank(),
+       y = "Days") +
+  theme(strip.text.y.left = element_text(angle = 0),#strip.text.x = element_blank(),
+        #legend.title = element_blank(),
+        #legend.position = "bottom",
+        #   legend.direction = "horizontal",
+        #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+  # panel.spacing.y = unit(0, "lines")) +
+  png("AllBasins_BelowOneThird_Operating_Capacity_FacetGrid_RCP85_Baseline_2009prices_Report_March.png", units ="in", width=18, height=6, res = 300)
+```
+
+
+
+Basins_Capacity %>%
+  filter(GCM == "CanESM2") %>%
+  ggplot() +
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= Year, y=Count), stat = "identity") +
+  scale_color_colorblind() +
+  scale_y_continuous(expand = c(0, NA),
+                     limits = c(0,366), breaks = c(0, 100, 200, 300, 366)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                   expand = c(0, NA))+
+  
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = "New Melones Lake",
+       subtitle = "RCP 8.5 Scenario",
+       
+       #  subtitle = "CanESM2",
+       x = element_blank(),
+       y = "Days") +
+  theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+    #   legend.direction = "horizontal",
+    #  legend.box.margin = margin(t = -17),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    strip.placement = "outside",
+    strip.background = element_blank())
+
+
+
+```{r}
+ggplot(Stor_USJ2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Upper San Joaquin River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+library(extrafont)
+#annual aggreagate
+ggplot(Stor_USJ3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+  
+  labs(fill = "RCP 8.5", title = "Upper San Joaquin River",
+       subtitle = "Baseline (2009 prices)",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_annual_storage_10GCMs_Baseline_2009prices_RCP85_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+```{r}
+#Facet wraps of all basins
+
+Stor_Mer2$Basin <- "Merced River"
+Stor_Mer3$Basin <- "Merced River"
+Stor_Tuo2$Basin <- "Tuolumne River"
+Stor_Tuo3$Basin <- "Tuolumne River"
+Stor_Stn2$Basin <- "Stanislaus River"
+Stor_Stn3$Basin <- "Stanislaus River"
+Stor_USJ2$Basin <- "Upper San Joaquin River"
+Stor_USJ3$Basin <- "Upper San Joaquin River"
+
+
+
+all_storage_monthly <- rbind(Stor_Mer2, Stor_Tuo2, Stor_Stn2 ,Stor_USJ2)
+
+all_storage_monthly$Basin <- factor(all_storage_monthly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_monthly
+
+all_storage_year <- rbind(Stor_Mer3, Stor_Tuo3, Stor_Stn3 ,Stor_USJ3)
+
+all_storage_year$Basin <- factor(all_storage_year$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_storage_year
+
+```
+
+```{r}
+all_storage_monthly$Month <- factor(all_storage_monthly$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+all_storage_monthly
+
+
+All_Annual_Stats_Stor <- aggregate(AnnualTotal ~ variable+Basin, all_storage_year, summary)
+write.csv(All_Annual_Stats_Stor, "All_Annual_Stats_Storage_Baseline_2009prices_RCP8.5_Report.csv")
+```
+
+```{r}
+ggplot(all_storage_monthly) + 
+  theme_bw(base_size=18, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+  png("AllBasins_storage_10GCMs_RCP85_Baseline_2009prices_Report_March.png", units ="in", width=15, height=10, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(all_storage_year) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma) +
+  #    scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.text = element_text(size = 9),
+        legend.key.size = unit(0.75,"line"),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+  png("AllBasins_annual_storage_10GCMs_RCP85_Baseline_2009prices_Report_March.png", units ="in", width=8, height=5, res = 300)
+```
+

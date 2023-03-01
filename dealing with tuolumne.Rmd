@@ -1,0 +1,331 @@
+
+```{r}
+series <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19")
+
+for(i in series2) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Livneh - originalTuo/runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = (flw*.725))
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/corrected Tuolumne2/tot_runoff_sb",i,"_mcm.csv"))
+}
+
+
+
+```
+
+
+```{r}
+library(lfstat)
+tuo <- read_csv("C:/Users/gusta/Documents/Tuolumne_craziness.csv") %>%
+  mutate(Date = as.Date(Date, "%m/%d/%Y"),
+         Month = format(Date, "%m"),
+         Year = water_year(Date, "usgs"))
+tuo
+#tuo %>%
+#  mutate(Year = water_year(Date, origin = "usgs"))
+```
+
+
+
+```{r}
+#Read the gauge data for the same period of the data we have for Livneh
+Tuopath <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/"
+
+#Subbasins 21, 31 and 38 have Florence Lake, Thomas A. Edison Lake and Mammoth Pool Reservoir respectively
+Reservoir_stor <- read_csv(paste0(Tuopath, "gauges/storage_mcm.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+
+#The other subbasins only streamflow
+Reservoir_flow <- read_csv(paste0(Tuopath, "gauges/streamflow_cfs.csv", sep = ""), col_types = cols(Date = col_date(), .default = col_double()))#%>% #reading data column as data, others as numeric
+#filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #selecting period of available gauged data
+
+Reservoir_flow[2:23] <- (Reservoir_flow[2:23]/35.314666)*86400/1000000 #as reservoir data is in 
+```
+
+
+```{r}
+HH_outflow <- Reservoir_flow[c(1,2,22)] %>% #gauges 11229500 and USGS 11230000, outflow of Florence
+  filter(between(Date, as.Date("1975-01-01"), as.Date("2013-12-31")))
+HH_outflow
+
+
+Sub13_HH <- Reservoir_stor[c(1,2)] %>% #selecting gauge with storage data
+filter(between(Date, as.Date("1975-01-01"), as.Date("2013-12-31"))) %>%
+   mutate(ChangeStorage = `USGS 11275500 HETCH HETCHY RES A HETCH HETCHY CA` - lag(`USGS 11275500 HETCH HETCHY RES A HETCH HETCHY CA`, default = first(`USGS 11275500 HETCH HETCHY RES A HETCH HETCHY CA`)), #getting daily change in storage
+          Outflow = rowSums(HH_outflow[2:3], na.rm=T), #sum of USGS 11229500 and USGS 11230000, which correspond to flow below the reservoir and Ward Tunnel intake, respectively 
+          flow = ifelse((ChangeStorage + Outflow) < 0, 0, (ChangeStorage + Outflow))) %>% #getting inflow, in which inflow = change in storage (storage of the day minus the storage of the previous day + outflow of the day
+           dplyr::select(Date, flow)#remove the already used column 
+Sub13_HH
+
+#write_csv(Sub13_HH, "mass_balance_Hetch_Hetchy.csv")
+
+```
+
+
+```{r}
+HH <- HH_outflow %>%
+mutate(Outflow_HH = rowSums(HH_outflow[2:3], na.rm=T),
+       `USGS 11276500 TUOLUMNE R NR HETCH HETCHY CA` = NULL,
+       `Kirkwood PH` = NULL) 
+HH
+
+#write_csv(HH, "outflow_Hetch_Hetchy.csv")
+
+```
+
+```{r}
+hh <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/outflow_Hetch_Hetchy.csv") %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         wateryear = water_year(Date, "usgs"),
+         Month = format(Date, format = "%b")) %>%
+  drop_na(`observed (SFPUC)`) %>%
+  rename(`Outflow (USGS)` = Outflow_HH)
+#  group_by(Month) %>%
+#  summarize(`observed (SFPUC)` = sum(`observed (SFPUC)`),
+#            Outflow_HH = sum(Outflow_HH))
+hh
+
+
+#hh$Month <- factor(hh$Month, levels = c("October", "November", "December", "January", "February", "March", "April", "May", "June", "July", "August", "September"))
+hh$Month <- factor(hh$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+
+hh1 <- hh %>%
+  mutate(wateryear = NULL,
+         Date = NULL)
+
+hh2 <- reshape2::melt(hh1, id = "Month")
+hh2
+#write_csv(hh, "hh_stuff.csv")
+```
+
+
+```{r}
+ggplot(hh2) +
+geom_boxplot(aes(x=Month, y = value, color = variable)) +
+  scale_y_log10()
+  
+
+```
+
+````{r}
+hh2 <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/hh_stuff.csv")%>%
+  #mutate(Date = as.Date(Date, format = "%Y")) %>%
+  rename("KPH+blHH (USGS)" = Outflow_HH)
+
+hh2
+
+ggplot(hh2) +
+  geom_line(aes(x = Date, y = `observed (SFPUC)`, color="observed (SFPUC)")) +
+  geom_line(aes(x = Date, y = `KPH+blHH (USGS)`, color = "KPH+blHH (USGS)")) +
+  geom_line(aes(x = Date, y = `Mean SFPUC`, color="Mean SFPUC")) +
+  geom_line(aes(x = Date, y = `Mean USGS`, color = "Mean USGS")) 
+  
+````
+
+
+```{r}
+out <- read_csv("C:/Users/gusta/Documents/Stn_In_And_Out.csv") %>%
+   #select only date and inflows
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         Year = lfstat::water_year(Date, "usgs"),
+         Month = format(Date, format = "%b"))%>%
+  filter(between(Date, as.Date("1950-10-01"), as.Date("2013-09-30"))) %>%
+  group_by(Year) %>%
+  summarize(`outflow` = sum(`outflow`),
+            `inflow` = sum(inflow)) %>%
+  mutate(`Mean_Total_Inflow` = mean(inflow),
+         `Mean_Total_Outflow` = mean(outflow))
+out
+```
+
+
+```{r}
+reg_out <- read_csv("C:/Users/gusta/Documents/Reg_outflow_Tuolumne.csv") %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         Year = lfstat::water_year(Date, "usgs"),
+         Month = format(Date, format = "%b"))%>%
+  group_by(Year) %>%
+  summarize(`Regulated (usgs)` = sum(`Regulated (usgs)`),
+            `Regulated (livneh)` = sum(`Regulated (livneh)`)) %>%
+  mutate(`mean Regulated (usgs)` = mean(`Regulated (usgs)`),
+         `mean Regulated (livneh)` = mean(`Regulated (livneh)`))
+reg_out
+```
+
+```{r}
+out <- read.csv("C:/Users/gusta/Documents/tuo_outflows_livneh.csv") %>%
+  mutate(ï..Date = as.Date( ï..Date, format = "%m/%d/%Y"),
+         Year = lfstat::water_year( ï..Date, "usgs"),
+         Month = format( ï..Date, format = "%b"))%>%
+  group_by(Year) %>%
+  summarize(Regulated_sim = sum(Regulated_sim),
+            FNF = sum(FNF)) %>%
+  mutate(Mean_Regulated_sim = mean(Regulated_sim),
+         Mean_FNF = mean(FNF))
+out
+```
+
+```{r}
+ggplot(out) +
+  geom_line(aes(x = as.double(Year), y = outflow, color="Total_Outflow")) +
+  geom_line(aes(x = as.double(Year), y = Mean_Total_Outflow, color = "Mean_Total_Outflow")) +
+  geom_line(aes(x = as.double(Year), y = inflow, color="Total_Inflow")) +
+  geom_line(aes(x = as.double(Year), y = Mean_Total_Inflow, color = "Mean_Total_Inflow"))  
+```
+
+```{r}
+ggplot(out) +
+  geom_line(aes(x = as.double(Year), y = Regulated_sim, color="Regulated_sim")) +
+  geom_line(aes(x = as.double(Year), y = Mean_Regulated_sim, color = "Mean_Regulated_sim")) +
+  geom_line(aes(x = as.double(Year), y = FNF, color="FNF_Sim")) +
+  geom_line(aes(x = as.double(Year), y = Mean_FNF, color = "Mean_FNF_Sim"))  
+```
+
+```{r}
+out$reg_flow_obs <- reg_out$`Regulated (usgs)`
+out$mean_reg_flow_obs <- reg_out$`mean Regulated (usgs)`
+out$reg_flow_sim <- reg_out$`Regulated (livneh)` 
+out$mean_reg_flow_sim <- reg_out$`mean Regulated (livneh)`
+
+ggplot(out) +
+  geom_line(aes(x = as.double(Year), y = `fnf (cdec)`, color="fnf (cdec)")) +
+  geom_line(aes(x = as.double(Year), y = `flow (livneh)`, color = "flow (livneh)")) +
+  geom_line(aes(x = as.double(Year), y = `mean flow (livneh)`, color="mean flow (livneh)")) +
+  geom_line(aes(x = as.double(Year), y = `mean fnf (cdec)`, color = "mean fnf (cdec)")) +
+    geom_line(aes(x = as.double(Year), y = `reg_flow_obs`, color="reg_flow_obs")) +
+  geom_line(aes(x = as.double(Year), y = `mean_reg_flow_obs`, color = "mean_reg_flow_obs")) +
+  geom_line(aes(x = as.double(Year), y = `mean_reg_flow_sim`, color="mean_reg_flow_sim")) +
+  geom_line(aes(x = as.double(Year), y = `reg_flow_sim`, color = "reg_flow_sim")) +
+
+  ylab("Flows (mcm)") + ggtitle("Cherry + Eleanor - Inflows and Outflows")
+```
+
+```{r}
+
+out <- read_csv("C:/Users/gusta/Documents/Total_Outflows_Tuolumne.csv") %>%
+#  filter(between(ObsDate, as.Date("1980-10-01"), as.Date("2011-09-30"))) %>% #select only date and inflows
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         Year = format(Date,format = "%Y"),
+         Month = format(Date, format = "%b"))%>%
+  group_by(Year) %>%
+  summarize(Total_Sum_Obs = sum(Total_Sum_Obs),
+            Total_Sum_Sim = sum(Total_Sum_Sim)) %>%
+            mutate(Total_Mean_Obs = mean(Total_Sum_Obs, na.rm = TRUE),
+            Total_Mean_Sim = mean(Total_Sum_Sim, na.rm = TRUE))
+out
+```
+
+```{r}
+ggplot(out) +
+  geom_line(aes(x = as.double(Year), y = Total_Sum_Obs, color="Total_Sum_Obs")) +
+  geom_line(aes(x = as.double(Year), y = Total_Sum_Sim, color = "Total_Sum_Sim")) +
+  geom_line(aes(x = as.double(Year), y = Total_Mean_Obs, color="Total_Mean_Obs")) +
+  geom_line(aes(x = as.double(Year), y = Total_Mean_Sim, color = "Total_Mean_Sim"))
+
+
+```
+
+```{r}
+series <- c("04", "10", "12", "13", "14", "15")
+
+series2 <-c("01", "02", "03", "05", "06", "07", "08", "09", "16", "17", "18", "19")
+
+for(i in series) {
+tuo_total <-  read_csv(paste0("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) 
+  
+tuo_total$i <- tuo_total[[i]][2]
+}
+tuo_total
+```
+
+```{r}
+tuo_total <-  "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/runoff"
+
+df <- do.call(rbind, lapply(tuo_total, function(x) cbind(read.csv(x), name=strsplit(x,'.csv')[[1]][1])))
+
+tuo_total
+```
+
+```{r}
+tuo <- read_csv("C:/Users/gusta/Documents/Tuo_hydrology_comparison.csv") %>%
+  mutate(Date = as.Date(Date, "%m/%d/%Y"),
+         Month = format(Date, "%m"),
+         Year = (as.double(lfstat::water_year(Date, "usgs")))+1950)%>%
+  group_by(Year) %>%
+  summarize(Total_Livneh_basins = sum(Total_Livneh_basins),
+            Total_Inflows= sum(Total_Inflows),
+            Total_Outflows2= sum(Total_Outflows2),
+            `Total_Outflows-UpperSubBasins` = sum(`Total_Outflows-UpperSubBasins`)) %>%
+            mutate(`Total_Mean_Outflows-Mean_UpperSubBasins` = mean(`Total_Outflows-UpperSubBasins`, na.rm = TRUE),
+            Total_Mean_Livneh = mean(Total_Livneh_basins, na.rm = TRUE),
+            Total_Mean_Inflows = mean(Total_Inflows),
+            Total_Mean_Outflows = mean(Total_Outflows2))
+tuo#Total_Livneh_basins
+
+```
+
+
+```{r}
+tuo <- read_csv("C:/Users/gusta/Documents/Tuo_balance.csv") %>%
+  mutate(Date = as.Date(Date, "%m/%d/%Y"),
+         Month = format(Date, "%m-%Y"),
+         id = rownames(.),
+         Year = (as.double(lfstat::water_year(Date, "usgs")))+1950) %>%
+         group_by(Month) %>%
+  summarize(#Total_Sum_Obs = sum(Total_Sum_Obs),
+            Obs_minus_BC= sum(Obs_minus_BC),
+            Obs_minus_BC_0= sum(Obs_minus_BC_0),
+            Total_Livneh_basins = sum(Total_Livneh_basins)) %>%
+            mutate(#Total_Mean_Obs = mean(Total_Sum_Obs, na.rm = TRUE),
+            Mean_Obs_minus_BC = mean(Obs_minus_BC, na.rm = TRUE),
+            Total_Mean_Livneh_basins = mean(Obs_minus_BC_0, na.rm = TRUE),
+            Total_Mean_Livneh_basins = mean(Total_Livneh_basins))
+tuo
+
+write_csv(tuo, "Monthly_balance_Tuo.csv")
+```
+
+```{r}
+ggplot(tuo) + geom_point(aes(x = Obs_minus_BC, y = Total_Livneh_basins))
+```
+
+
+```{r}
+tuo$id <- seq.int(nrow(tuo))
+
+
+ggplot(tuo) + geom_line(aes(x = as.Date(Month), y = Obs_minus_BC), color = "darkgreen") + geom_line(aes(x = Month, y = Total_Livneh_basins), color = "blue")
+```
+
+ggplot(tuo) +
+  geom_line(aes(x = as.double(Year), y = `Total_Sum_Obs`*810.7/1000, color="Total_Sum_Obs")) +
+    #geom_line(aes(x = as.double(Year), y = Total_Inflows, color = "Total_Inflows"))+
+   # geom_line(aes(x = as.double(Year), y = Total_Outflows2, color = "Total_Outflows2"))+
+  geom_line(aes(x = as.double(Year), y = Total_BC_basins*810.7/1000, color = "Total_BC_basins"))+
+  geom_line(aes(x = as.double(Year), y = `Total_Livneh_basins`*810.7/1000, color="Total_Livneh_basins")) +
+#  geom_line(aes(x = as.double(Year), y = Total_Mean_Obs*810.7/1000, color = "Total_Mean_Livneh")) + scale_color_manual(values = c("Total_Mean_Outflows-Mean_UpperSubBasins" = "darkgreen", "Total_Livneh_basins" = "blue", "Total_Outflows-UpperSubBasins" = "darkgreen", "Total_Mean_Livneh" = "blue"))+ scale_y_log10() +
+  theme(legend.position="bottom")+guides(color=guide_legend(nrow=2,byrow=TRUE)) + xlab(label = element_blank()) + ylab(label = "Flow (TAF)")
+  #  geom_line(aes(x = as.double(Year), y = Total_Mean_Inflows, color = "Total_Mean_Inflows"))+
+   #  geom_line(aes(x = as.double(Year), y = Total_Mean_Outflows, color = "Total_Mean_Outflows"))
+
+```{r}
+ggplot(tuo) +
+  geom_point(aes(x = Total_Livneh_basins*810.7/1000, y = Obs_minus_BC*810.7/1000)) +
+   stat_smooth(aes(x = Total_Livneh_basins*810.7/1000, y = Obs_minus_BC*810.7/1000),
+                method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
+  geom_smooth(aes(x = Total_Livneh_basins*810.7/1000, y = Obs_minus_BC*810.7/1000),method="lm",formula=y~0+x)+
+    scale_y_continuous(#imits = c(0, 3600),
+                       expand = c(0.005, 0.005)) +
+     scale_x_continuous(#limits = c(0, 3600),
+                        expand = c(0.005, 0.005)) +
+   stat_poly_eq(formula = "y~x",
+             aes(x = Total_Livneh_basins*810.7/1000, y = Obs_minus_BC*810.7/1000,
+                 label = paste0("atop(", ..eq.label.., ",", ..rr.label.., ")")),
+             parse = TRUE, label.x.npc = 0.05, label.y.npc = 0.97, size = 3.5, family= "Times New Roman")+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") + theme(#title = element_text("Total inflows - Tuolumne River"),
+    aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) + xlab(label = "Total_Livneh_basins (TAF)") + ylab(label = "Total_Outflows-UpperSubBasins (TAF)")
+```

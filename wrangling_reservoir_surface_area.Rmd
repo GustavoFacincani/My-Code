@@ -1,0 +1,56 @@
+```{r}
+SA <- Sys.glob("C:/Users/gusta/Desktop/PhD/RS of reservoirs/Surface_area_sqm/*")
+
+Surf_A <- lapply(SA, read_csv)
+Surf_A
+
+#Surf_Area <- merge(Surf_A, by = "system:time_start", all=TRUE) #%>%
+#  ungroup() %>%
+# mutate(Date = as.Date(`system:time_start`, format = "%B %d, %Y"))
+#Surf_Area
+
+```
+
+```{r}
+for(i in 1:100){
+  colnames(Surf_A[[i]]) <- c("Date", colnames(Surf_A[[i]][2]))
+  Surf_A[[i]] <- reshape2::melt(Surf_A[[i]])
+
+#Surf_A[[i]][3] <- NULL
+}
+Surf_A
+```
+
+```{r}
+library(tidyverse)
+
+#merge(list(Surf_A), by = "system:time_start"))
+Surf_A2 <- do.call("rbind", Surf_A) %>%
+  mutate(Date = as.Date(Date, format="%B %d, %Y"),
+         value = as.numeric(value))
+Surf_A2
+Surf_A3 <- reshape2::dcast(Surf_A2, Date~variable, fill = NA_real_, value.var="value",fun.aggregate= mean)
+Surf_A3
+#melt(Surf_A, by = "system:time_start")
+
+Surf_A3[is.na(Surf_A3)] <- ""                     # Replace NA with blank
+Surf_A3 
+
+write.csv(Surf_A3, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/Surface_Area_100reservoirs3.csv", row.names = F)
+```
+
+```{r}
+Surf_A4 <- Surf_A3 %>%
+  mutate(Month = as.numeric(format(Date, "%m"))) %>%
+  filter(Month < 10) %>%
+  filter(Month > 3)
+Surf_A4
+write.csv(Surf_A4, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/Surface_Area_100reservoirs_ApriltoSeptember.csv", row.names = F)
+```
+
+```{r}
+precip <- read_csv("C:/Users/gusta/Desktop/PhD/RS of reservoirs/precip_CA_reservoirs_mm.csv") %>%
+  filter(! duplicated(Date))
+
+write.csv(precip, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/precip_CA_100reservoirs_mm.csv",row.names = F)
+```

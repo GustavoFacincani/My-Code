@@ -1,0 +1,463 @@
+---
+title: "Tuolumne bias correction"
+author: "Gustavo Facincani Dourado"
+date: "2/10/2021"
+output: html_document
+---
+
+```{r}
+
+library(ncdf4)
+library(lubridate)
+library(reshape2)
+library(dplyr)
+library(hyfo)
+library(ggplot2)
+library(readr)
+library(readxl)
+library(tidyr)
+#start with empty workspace
+rm(list=ls(all=TRUE))
+
+```
+
+
+```{r}
+#Reading in the observed data provided by SFPUC
+
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/References/Hetch Hetchy system/"
+
+Reservoir_flow <- read_excel(paste(path, "HH-CV-LE Inflows-storage-PP-WB-WY Type 1930-2020.xlsx", sep = ""),  "Inflows")[c(1,2,8,14)] %>%
+mutate(Date...1 = as.Date(Date...1), #the data has many negative number, that here are set to 0
+         `Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000),#transforming cfs to mcm/day
+       `Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000),#transforming cfs to mcm/day
+       `Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]` = ifelse(((as.numeric(`Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000 < 0, 0, ((as.numeric(`Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)/35.3146667)*86400)/1000000)) %>% #transforming cfs to mcm/day
+       filter(between(Date...1, as.Date("1950-01-01"), as.Date("2013-12-31"))) %>% #select only date and inflows
+  rename(Date = Date...1,  #renaming columns
+         `HH inflow (mcm)` =  `Hetch Hetchy AVERAGE_INFLOW_F11 [ft³/s]`,
+         `LE inflow (mcm)` = `Lake Eleanor AVERAGE_INFLOW_F11 [ft³/s]`,
+         `CL inflow (mcm)` =  `Cherry Lake AVERAGE_INFLOW_F11 [ft³/s]`)
+Reservoir_flow
+
+HH <- Reservoir_flow[c(1,2)]  #select only date and inflows for Hetch Hetchy
+HH
+
+LE <- Reservoir_flow[c(1,3)] %>%  #select only date and inflows Lake Eleanor
+  filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31")))#"1997-03-01"), as.Date("2013-12-31"))) #filtering the bad data out
+LE
+
+CL <- Reservoir_flow[c(1,4)] %>%  #select only date and inflows for Cherry Lake
+     filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31"))) #filtering the bad data out
+CL
+
+#Writing these as csv files
+write_csv(CL %>% rename(`Inflow (mcm` = `CL inflow (mcm)`), "observed_sb10_mcm.csv") #renaming column
+
+write_csv(LE %>% rename(`Inflow (mcm` = `LE inflow (mcm)`), "observed_sb11_2_mcm.csv") #renaming column
+
+write_csv(HH %>% rename(`Inflow (mcm` = `HH inflow (mcm)`), "observed_sb13_mcm.csv")
+```
+
+```{r}
+#Reading Livneh data, that is going to be used for bias correction and filtering them to have objects with the same length of the observed data, to be used as the simulated vs observed
+path2 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/runoff/"
+
+
+Sub10_PreBC <- read_csv(paste(path2,"tot_runoff_sb10_mcm.csv",sep="")) #Cherry Lake #data to be bias corrected
+Sub10_PreBC
+
+Sub10_Livneh <- Sub10_PreBC %>% #Cherry Lake
+   filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31"))) #data to be used as hindcast
+Sub10_Livneh
+
+Sub11_PreBC <- read_csv(paste(path2,"tot_runoff_sb11_mcm.csv",sep=""))  #Lake Eleanor #data to be used as hindcast
+Sub11_PreBC
+
+Sub11_Livneh <- Sub11_PreBC %>% #Lake Eleanor
+   filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31"))) #data to be used as hindcast
+Sub11_Livneh
+
+Sub13_PreBC <- read_csv(paste(path2,"tot_runoff_sb13_mcm.csv",sep=""))  #Hetch Hetchy data to be used as hindcast
+Sub13_PreBC
+
+Sub13_Livneh <- Sub13_PreBC  #Hetch Hetchy #data to be corrected
+Sub13_Livneh
+
+
+Sub14_PreBC <- read_csv(paste(path2,"tot_runoff_sb14_mcm.csv",sep=""))  #Hetch Hetchy data to be used as hindcast
+Sub14_PreBC
+
+Sub14_Livneh <- Sub14_PreBC %>% #Lake Eleanor
+   filter(between(Date, as.Date("1950-01-01"), as.Date("2002-09-30")))  #Hetch Hetchy #data to be corrected
+Sub14_Livneh
+
+Sub15_PreBC <- read_csv(paste(path2,"tot_runoff_sb15_mcm.csv",sep=""))  #Hetch Hetchy data to be used as hindcast
+Sub15_PreBC
+
+Sub15_Livneh <- Sub15_PreBC %>% #Lake Eleanor
+   filter(between(Date, as.Date("1950-01-01"), as.Date("2002-09-30")))  #Hetch Hetchy #data to be corrected
+Sub15_Livneh
+
+
+Sub04_PreBC <- read_csv(paste(path2,"tot_runoff_sb04_mcm.csv",sep=""))  #Hetch Hetchy data to be used as hindcast
+Sub04_PreBC
+
+Sub04_Livneh <- Sub04_PreBC %>%
+  filter(between(Date, as.Date("1962-09-01"), as.Date("1986-09-29"))) #Hetch Hetchy #data to be corrected
+Sub04_Livneh
+
+
+Sub12_PreBC <- read_csv(paste(path2,"tot_runoff_sb12_mcm.csv",sep=""))  #Hetch Hetchy data to be used as hindcast
+Sub12_PreBC
+
+Sub12_Livneh <- read_csv(paste(path2,"tot_runoff_sb12_mcm.csv",sep="")) %>%
+  filter(between(Date, as.Date("1970-10-01"), as.Date("2013-12-31"))) %>%
+    filter(!between(Date, as.Date("2004-10-01"), as.Date("2005-09-30")))
+Sub12_Livneh
+
+```
+
+
+```{r}
+#Reading in the files created for observed data, dropping all rows with NAs
+path2 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/SubCatchment_RO_BC/"
+
+Obs_sub10 <- read_csv(paste(path2,"observed_sb10_mcm.csv",sep="")) %>%
+  na.omit()
+Obs_sub10
+
+Obs_sub11 <- read_csv(paste(path2,"observed_sb11_2_mcm.csv",sep="")) %>%
+  na.omit()
+Obs_sub11
+
+Obs_sub13 <- read_csv(paste(path2,"observed_sb13_2_mcm.csv",sep="")) %>%
+  na.omit()
+Obs_sub13
+         
+
+Obs_sub14 <- read_csv(paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_mcm_Tuo.csv",sep=""))[c(1,3)] %>%
+  na.omit()
+Obs_sub14
+
+Obs_sub15 <- read_csv(paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_mcm_Tuo.csv",sep=""))[c(1,2)] %>%
+  na.omit()
+Obs_sub15
+
+Obs_sub04 <- read.csv(paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_mcm_Tuo.csv",sep=""))[c(1,4)] %>%
+    mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+  USGS_11284700 = as.double(USGS_11284700)) %>%
+  filter(between(Date, as.Date("1962-09-01"), as.Date("1986-09-29"))) %>%
+  na.omit()
+Obs_sub04
+
+Obs_sub12 <- read.csv(paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/streamflow_mcm_Tuo.csv",sep=""))[c(1,5,6)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d")) %>%
+  filter(between(Date, as.Date("1970-10-01"), as.Date("2013-12-31"))) %>%
+    filter(!between(Date, as.Date("2004-10-01"), as.Date("2005-09-30"))) %>%
+  mutate(Inflow = ifelse(USGS_11276600 - USGS_11276500 < 0, 0, USGS_11276600 - USGS_11276500),
+         USGS_11276500 = NULL,
+         USGS_11276600 = NULL) %>%
+  #mutate(USGS_11276600 = as.double(USGS_11276600))
+  na.omit()
+Obs_sub12
+```
+
+```{r}
+#Dropping the same rows in the Livneh, so that the datasets match
+
+Sub10_Livneh<- Sub10_Livneh[Sub10_Livneh$Date %in% Obs_sub10$Date,]
+Sub11_Livneh<- Sub11_Livneh[Sub11_Livneh$Date %in% Obs_sub11$Date,]
+Sub13_Livneh<- Sub13_Livneh[Sub13_Livneh$Date %in% Obs_sub13$Date,]
+Sub14_Livneh<- Sub14_Livneh[Sub14_Livneh$Date %in% Obs_sub14$Date,]
+Sub15_Livneh<- Sub15_Livneh[Sub15_Livneh$Date %in% Obs_sub15$Date,]
+Sub04_Livneh<- Sub04_Livneh[Sub04_Livneh$Date %in% Obs_sub04$Date,]
+Sub12_Livneh<- Sub12_Livneh[Sub12_Livneh$Date %in% Obs_sub12$Date,]
+Sub12_Livneh
+Obs_sub12
+```
+
+```{r}
+#This chunk is for wrangling the data into monthly means (to avoid the influence of missing data), in case the scaling method is used
+
+wrangling <- function(data){
+
+  monthly_mean <- data %>%
+  mutate(#Month = format(as.Date(Date, format = "%m"), "%m"),
+         #Year = format(as.Date(Date, format = "%Y"), "%Y"),
+         MonthYear =paste(format(as.Date(Date, format = "%Y"), "%Y"),"/",format(as.Date(Date, format = "%m"), "%m"), sep="")) %>%
+  group_by(MonthYear) %>% 
+  summarize(MonthlyMean = median(flw, na.rm=TRUE)) %>%
+    ungroup() %>%
+    mutate(MonthYear = as.Date(paste(MonthYear,"/15",sep=""))) %>%
+    rename(Date = MonthYear) %>%
+    select(Date, MonthlyMean)
+    
+  monthly_mean
+}
+#These are the objects to be used in case monthly means are to be used
+Obs2_sub10 <- wrangling(Obs_sub10)
+Obs2_sub10
+Obs2_sub11 <- wrangling(Obs_sub11)
+Obs2_sub11
+Obs2_sub13 <- wrangling(Obs_sub13)
+Obs2_sub13
+Sub10_Livneh2 <- wrangling(Sub10_Livneh)
+Sub10_Livneh2
+Sub11_Livneh2 <- wrangling(Sub11_Livneh)
+Sub11_Livneh2
+Sub13_Livneh2 <- wrangling(Sub13_Livneh)
+Sub13_Livneh2 #printing it to check it out
+```
+
+
+
+Sub10_Livneh3 <- Sub10_Livneh2 %>% mutate(Data = as.factor("Livneh"))
+
+Obs3_Sub10 <- Obs2_sub10 %>% mutate(Data = as.factor("SFPUC"))
+
+combined <- rbind(Sub10_Livneh3, Obs3_Sub10)
+  combined
+ggplot(combined) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = MonthYear, y = MonthlyMean, outlier.alpha = 0.3, fill = Data)) +
+  ggtitle("Cherry Lake")
+
+```{r}
+
+BiasCorrection <- function(Observed, Simulated, ToBeCorrected, Subbasin){
+  
+bc_df <- list()
+fin_df <- list()
+bF_list <- list()
+
+for (i in 1:12){
+
+  obs <-  filter(Observed, paste0(lubridate::month(Observed$Date)) == i) #reading the data per month
+  hind <-  filter(Simulated, paste0(lubridate::month(Simulated$Date)) == i) #reading the data per month
+  
+
+  bF <- getBiasFactor(as.data.frame(hind), as.data.frame(obs),method = "scaling",preci = FALSE, extrapolate = "no") #reading hindcast and observed data can be problematic, you need a date column and a flow column, if there are format errors with the date and flow columns, even when they are already read as dates and numeric/double, respectively, using as.data.frame() usually solves format issues
+  bF
+#print(paste(i," bias factor is ", bF@biasFactor, sep = "")) #this prints the bias factors, when using the scaling method
+
+    new_df <-  filter(ToBeCorrected, paste0(lubridate::month(ToBeCorrected$Date)) == i) #getting the bias factor for each month
+
+    bc_df <- applyBiasFactor(as.data.frame(new_df),bF) # obs= as.data.frame(obs)) #the "obs" argument is added here only for the eqm method
+    if (i==1){ #getting the data together
+      fin_df <- bc_df
+# bF_list <- data.frame(i, `Bias Factor` = bF@biasFactor[[1]]) #this gets the bias factors
+    }
+    else {
+    fin_df <- bind_rows(fin_df,bc_df)
+# bF_list <- bind_rows(bF_list, data.frame(i, `Bias Factor` = bF@biasFactor[[1]]))#get bias factors
+    }
+}
+
+#bF_list <- bF_list %>% #writing the bias factors
+#        mutate(`bF` = i)
+#write_csv(bF_list, paste(path,"/Bias Correction Factors_eqm_method_sb",Subbasin,".csv", sep=""))
+fin_df2 <-  arrange(fin_df, Date) 
+head(fin_df2)
+
+
+write_csv(fin_df2, paste(path2,"/tot_runoff_sb",Subbasin,"_mcm2.csv", sep=""))
+}
+
+```
+
+
+
+```{r}
+#Applying the bias correction function to the data
+BiasCorrection(Obs_sub10, Sub10_Livneh, Sub10_PreBC, "10")
+BiasCorrection(Obs_sub11, Sub11_Livneh, Sub11_PreBC, "11")
+BiasCorrection(Obs_sub13, Sub13_Livneh, Sub13_PreBC, "13")
+BiasCorrection(Obs_sub14, Sub14_Livneh, Sub14_PreBC, "14")
+BiasCorrection(Obs_sub15, Sub15_Livneh, Sub15_PreBC, "15")
+BiasCorrection(Obs_sub04, Sub04_Livneh, Sub04_PreBC, "04")
+BiasCorrection(Obs_sub12, Sub12_Livneh, Sub12_PreBC, "12")
+```
+
+```{r}
+library(hydroGOF)
+
+#function for producing the stats of Sim vs Obs data
+model.assessment <- function(sim, obs, basinname) {
+  pbias <- pbias(sim,obs, na.rm=TRUE)
+  rsr <- rsr(sim, obs, na.rm=TRUE)
+  nse <- NSE(sim, obs, na.rm=TRUE)
+  r <- rPearson(sim, obs, na.rm=TRUE)
+  r2 <- br2(sim, obs, na.rm = TRUE)
+  
+  print(paste("For ", basinname, ", BIAS = ",pbias,"% ",
+              "RSR = "," ",rsr," ",
+              "NSE = "," ",nse," ",
+              "r ="," ", r," ",
+              "R2 = ",r2,sep=""))
+  
+data.frame(Test = c("PBIAS (%)", "RSR", "NSE", "r", "R2"), Results = c(pbias, rsr, nse, r, r2))
+}
+
+```
+
+```{r}
+#reading the bias corrected data
+
+bc_10 <- read_csv(paste(path2,"tot_runoff_sb10_mcm.csv",sep="")) %>%
+  filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31")))
+bc_11 <- read_csv(paste(path2,"tot_runoff_sb11_mcm2.csv",sep="")) %>%
+  filter(between(Date, as.Date("1950-01-01"), as.Date("2013-12-31")))
+bc_13 <- read_csv(paste(path2,"tot_runoff_sb13_mcm2.csv",sep=""))%>%
+  filter(between(Date, as.Date("1975-10-01"), as.Date("2013-12-31")))
+bc_10<- bc_10[bc_10$Date %in% Obs_sub10$Date,]
+bc_11<- bc_11[bc_11$Date %in% Obs_sub11$Date,]
+bc_13<- bc_13[bc_13$Date %in% Obs_sub13$Date,]
+
+#Generating the statistics
+model.assessment(bc_10$flw , Obs_sub10$flw, "Cherry Lake")
+model.assessment(bc_11$flw, Obs_sub11$`Inflow (mcm`, "Lake Eleanor")
+model.assessment(bc_13$flw, Obs_sub13$flow, "Hetch Hetchy Reservoir")
+```
+
+
+```{r}
+sub10 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/Tuolumne River/EQM_V2/Cherry Lake/daily_data_daily_mcm.csv")
+sub10
+
+sub10_gus <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/SubCatchment_RO_BC/tot_runoff_sb10_mcm.csv") %>%
+  filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31"))) #data to be used as hindcast
+
+sub10_gus
+
+
+
+model.assessment(sub10$corrected, sub10$observed, "Cherry Lake")
+model.assessment(sub10$corrected, sub10$model, "Cherry Lake")
+model.assessment(sub10$corrected, sub10_gus$flw, "Cherry Lake")
+
+```
+
+```{r}
+
+Make_Figures <- function(Observed, Simulated, Subbasin, StartDate, EndDate, Area){
+#Area <- "Florence Lake" 
+#Observed <- Sub38 
+#Simulated<-  Sub38_PreBC
+#Subbasin <- "sb38"
+#StartDate <- "1950-01-01"
+#EndDate <- "1980-09-29"
+path <- "C:/Users/gusta/Desktop"
+
+Pre_BC <- Simulated %>% #getting the data pre-bias correction
+  mutate(Data = "Pre-Bias Correction (Livneh)", #getting the numbers back into cms to plot
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2) 
+Pre_BC
+
+Pre_BC2 <- Pre_BC %>% #getting the data pre-bias correction
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (cfs)`, Data) 
+Pre_BC2
+
+
+BC_daily <- read_csv(paste(path,"/tot_runoff_",Subbasin,"_bc_scaling_eqm_DropNAs3_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Data = "Post-Bias Correction (Livneh)", 
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2) %>%
+   filter(between(Date, as.Date(StartDate), as.Date(EndDate)))
+
+BC_daily
+
+BC_daily2 <- BC_daily %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (cfs)`, Data)
+
+BC_daily2
+
+Reference <- Observed %>% #getting the observed data from USGS
+    mutate(Data = "SFPUC (Observed)", 
+         Month = as.Date(cut(Date, breaks = "month"))) %>%
+  rename(`Inflow (cfs)` = 2)
+Reference
+
+Reference2 <- Reference %>%
+  group_by(yr = year(Date), mon = month(Date), Data) %>% 
+  summarise(`Inflow (cfs)` = sum(`Inflow (cfs)`)) %>% 
+  ungroup() %>%
+  mutate(Date = as.Date(ymd(paste(yr,'-', mon,'-01', sep="")))) %>%
+  select(Date, `Inflow (cfs)`, Data)
+Reference2
+
+Final <- rbind(Pre_BC, BC_daily, Reference)
+Final
+Final$Data <- factor(Final$Data, levels = c("SFPUC (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+Final2 <- rbind(Pre_BC2, BC_daily2, Reference2)
+Final2
+Final2$Data <- factor(Final2$Data, levels = c("SFPUC (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+
+
+##Line Curve
+#Final2 <- Final %>%
+#  mutate(Yearmon = zoo::as.yearmon(Date)) %>%
+#  group_by(Yearmon, Data) %>%
+#  summarise(Inflow = sum(Inflow)) %>%
+#  ungroup() %>%
+#  mutate(Date = as.Date(Yearmon))
+
+ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_continuous(breaks = scales::pretty_breaks())+scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ theme(legend.position="bottom")+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*810.71318210885, color=Data))+ ylab(expression("Inflow ("*ACF/month*")"))+ geom_line(size = 0.3, alpha = 0.9)+ scale_y_continuous(breaks = scales::pretty_breaks())+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) +scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  ggsave(filename=paste(path,"/",Subbasin,"_line_monthly.png",sep=""), units="in",width=7,height=5)
+
+ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 +1, color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_log10() +scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily_logscale.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*810.71318210885, color=Data))+ ylab(expression("Inflow ("*ACF/month*")"))+ geom_line(geom = "line", size = 0.3, alpha = 0.9)+ scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_log10() + theme(legend.position="bottom")+
+  ggsave(filename=paste(path,"/",Subbasin,"_line_monthly_logscale.png",sep=""), units="in",width=7,height=5)
+
+##FDC Curve
+data.nm <- unique(Final$Data)
+Final$FDC <- NA
+for (i in (1:length(data.nm))){
+  vls <- Final$`Inflow (cfs)`[Final$Data==data.nm[i]]+0.00001
+  Fn <- ecdf(vls)
+  Final$FDC[Final$Data==data.nm[i]] <- 1-Fn(vls) # exceedance probabilities
+}
+
+ggplot(Final, aes(x=FDC, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + geom_line(size = 0.6, alpha = 0.5) + #geom_point(shape=21, size=0.05, alpha=0.25) + #scale_y_log10(limits = c(min(Final$`Inflow (cfs)`+0.00001),NA))+
+        ylab(expression("Inflow ("*cfs*")")) + xlab("Exceedance probability") + ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom") +
+  ggsave(filename=paste(path,"/",Subbasin,"_fdc.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+## Box&whisker
+ggplot(Final, aes(x=Data, y=`Inflow (cfs)`*35314666.21266/86400 )) + geom_boxplot() +
+ #       scale_y_log10(limits=c(3e-1,3e3)) +
+        ylab(expression("Inflow ("*cfs*")")) + xlab("Data")  +ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="bottom")+
+  ggsave(filename=paste(path,"/",Subbasin,"_box.png",sep=""), units="in",width=7,height=5)#,res=360)
+
+
+## Q-Q plot
+ggplot(Final, aes(sample=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + stat_qq(shape=21, size=0.75)+ylab(expression("Sample Quantiles ("*cfs*")"))+ xlab("Theorical Quantiles (Normal Distribution)")+ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+ scale_colour_manual(values = c("SFPUC (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  png(filename=paste(path,"/",Subbasin,"_qq.png",sep=""), units="in",width=7,height=5,res=360)
+
+}
+```
+
+
+```{r}
+#Make_Figures(Sub21, Sub21_PreBC, "sb21", "1980-10-01", "2013-12-31")
+Make_Figures(Obs_sub10, Sub10_Livneh, "sb10", "1959-01-01" ,"2013-12-31", "Cherry Lake") 
+```
+
+```{r}
+Make_Figures(Sub23, Sub23_PreBC, "sb23", "1951-10-01", "1991-09-29", "San Joaquin River")
+```

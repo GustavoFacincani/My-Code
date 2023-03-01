@@ -1,0 +1,9 @@
+```{r}
+library(dplyr)
+library(readr)
+po <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff/tot_runoff_sb23_mcm.csv") %>%
+mutate(Date = as.Date(Date, "%m/%d/%Y")) %>%
+select(Date, tot_runoff_sb)
+po
+write_csv(po, "tot_runoff_sb23_mcm.csv")
+```

@@ -157,13 +157,16 @@ model.assessment(Sub13_Livneh$flw, HH$`HH inflow (mcm)`, "Hetch Hetchy Reservoir
 #After
 
 Cherry <- read_csv(paste(path3,"/tot_runoff_sb10_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
-   filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31")))
-
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>% 
+  filter(between(Date, as.Date("1959-01-01"), as.Date("2013-12-31")))
+Cherry
 Eleanor <- read_csv(paste(path3,"/tot_runoff_sb11_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
-   filter(between(Date, as.Date("1997-02-22"), as.Date("2013-12-31")))
-
-Hetch <- read_csv(paste(path3,"/tot_runoff_sb13_mcm.csv", sep="")) #Getting the Bias Corrected data we generated
-
+   mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>%
+  filter(between(Date, as.Date("1997-02-22"), as.Date("2013-12-31")))
+Eleanor
+Hetch <- read_csv(paste(path3,"/tot_runoff_sb13_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+Hetch
 
 model.assessment(Cherry$flw, CL$`CL inflow (mcm)`, "Cherry Lake")
 model.assessment(Eleanor$flw, LE$`LE inflow (mcm)`, "Lake Eleanor")
@@ -174,6 +177,14 @@ model.assessment(Hetch$flw, HH$`HH inflow (mcm)`, "Hetch Hetchy Reservoir")
 ```{r}
 Make_Figures <- function(Observed, Simulated, Subbasin, StartDate, EndDate, Area){
 
+#Observed = Sub36
+#Simulated = Sub36_PreBC
+#Subbasin = "sb36"
+#StartDate = "1975-10-01"
+#EndDate = "1986-09-29"
+#Area = "Bear Creek"
+  
+ # Make_Figures(Sub36, Sub36_PreBC, "sb36", "1975-10-01", "1986-09-29", "Bear Creek")
 
 Pre_BC <- Simulated %>% #getting the data pre-bias correction
   mutate(Data = "Pre-Bias Correction (Livneh)", #getting the numbers back into cms to plot
@@ -191,9 +202,11 @@ Pre_BC2
 
 
 BC_daily <- read_csv(paste(path3,"/tot_runoff_",Subbasin,"_mcm.csv", sep="")) %>% #Getting the Bias Corrected data we generated
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>%
   mutate(Data = "Post-Bias Correction (Livneh)", 
          Month = as.Date(cut(Date, breaks = "month"))) %>%
   rename(`Inflow (cfs)` = 2) %>%
+  select(Date, `Inflow (cfs)`, Data, Month) %>%
    filter(between(Date, as.Date(StartDate), as.Date(EndDate)))
 
 BC_daily
@@ -208,7 +221,7 @@ BC_daily2 <- BC_daily %>%
 BC_daily2
 
 Reference <- Observed %>% #getting the observed data from SFPUC
-    mutate(Data = "SFPUC Reference (Observed)", 
+    mutate(Data = "USGS Reference (Observed)", 
          Month = as.Date(cut(Date, breaks = "month"))) %>%
   rename(`Inflow (cfs)` = 2)
 Reference
@@ -223,110 +236,110 @@ Reference2
 
 Final <- rbind(Pre_BC, BC_daily, Reference)
 Final
-Final$Data <- factor(Final$Data, levels = c("SFPUC Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+Final$Data <- factor(Final$Data, levels = c("USGS Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
 
 Final2 <- rbind(Pre_BC2, BC_daily2, Reference2)
 Final2
-Final2$Data <- factor(Final2$Data, levels = c("SFPUC Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
+Final2$Data <- factor(Final2$Data, levels = c("USGS Reference (Observed)", "Pre-Bias Correction (Livneh)","Post-Bias Correction (Livneh)"))
 
 Comparison_daily <- data.frame(cbind(Reference[c(1,2)], Pre_BC[2], BC_daily[2])) %>%
-  rename(`SFPUC Reference (Observed)` = 2,
+  rename(`USGS Reference (Observed)` = 2,
          `Pre-Bias Correction (Livneh)` = 3,
          `Post-Bias Correction (Livneh)` = 4)
 
 Comparison_monthly <- data.frame(cbind(Reference2[c(1,2)], Pre_BC2[2], BC_daily2[2])) %>%
-  rename(`SFPUC Reference (Observed)` = 2,
+  rename(`USGS Reference (Observed)` = 2,
          `Pre-Bias Correction (Livneh)` = 3,
          `Post-Bias Correction (Livneh)` = 4)
 
-ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `SFPUC Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `SFPUC Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `USGS Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `USGS Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("USGS Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily_log.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily_log2.png",sep=""), units="in",width=7,height=5)
 
 
-ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `SFPUC Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `SFPUC Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, x = `USGS Reference (Observed)`*35314666.21266/86400 +1)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 +1, y = `USGS Reference (Observed)`*35314666.21266/86400 +1), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("USGS Reference - Observed (cfs)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily_log.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily_log2.png",sep=""), units="in",width=7,height=5)
 
-ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
+ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `USGS Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `USGS Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("USGS Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+scale_y_log10() + scale_x_log10() +
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly_log.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly_log2.png",sep=""), units="in",width=7,height=5)
 
-ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+ scale_y_log10() + scale_x_log10() +
+ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `USGS Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `USGS Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("USGS Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+ scale_y_log10() + scale_x_log10() +
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly_log.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly_log2.png",sep=""), units="in",width=7,height=5)
 
-ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , x = `SFPUC Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , y = `SFPUC Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+
+ggplot(Comparison_daily, aes(y = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , x = `USGS Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*35314666.21266/86400 , y = `USGS Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Pre-Bias Correction - Livneh (cfs)") + xlab("USGS Reference - Observed (cfs)")+ggtitle(paste0(Area))+
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_daily2.png",sep=""), units="in",width=7,height=5)
 
 
-ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , x = `SFPUC Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , y = `SFPUC Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("SFPUC Reference - Observed (cfs)")+ggtitle(paste0(Area))+
+ggplot(Comparison_daily, aes(y = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , x = `USGS Reference (Observed)`*35314666.21266/86400)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*35314666.21266/86400 , y = `USGS Reference (Observed)`*35314666.21266/86400), alpha = 0)+  geom_abline(intercept = 0, slope = 1, linetype = "dashed") +ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5))+  stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Post-Bias Correction - Livneh (cfs)") + xlab("USGS Reference - Observed (cfs)")+ggtitle(paste0(Area))+
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ 
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_daily2.png",sep=""), units="in",width=7,height=5)
 
-ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
+ggplot(Comparison_monthly, aes(y = `Pre-Bias Correction (Livneh)`*0.81071318210885, x = `USGS Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Pre-Bias Correction (Livneh)`*0.81071318210885, y = `USGS Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Pre-Bias Correction - Livneh (TAF/month)") + xlab("USGS Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PrevsSFPUC_monthly2.png",sep=""), units="in",width=7,height=5)
 
-ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `SFPUC Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `SFPUC Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("SFPUC Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
+ggplot(Comparison_monthly, aes(y = `Post-Bias Correction (Livneh)`*0.81071318210885, x = `USGS Reference (Observed)`*0.81071318210885)) + geom_point(alpha = 0.3) + geom_point(aes(x = `Post-Bias Correction (Livneh)`*0.81071318210885, y = `USGS Reference (Observed)`*0.81071318210885), alpha = 0)+ ggtitle(paste0(Area)) +theme_bw(base_size=12, base_family='Times New Roman') + theme(plot.title = element_text(hjust = 0.5)) + ylab("Post-Bias Correction - Livneh (TAF/month)") + xlab("USGS Reference - Observed (TAF/month)")+ggtitle(paste0(Area))+
 stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..eq.label..)), 
              parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4, family= "Times New Roman")+ geom_abline(intercept = 0, slope = 1, linetype = "dashed") + stat_smooth(method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) +
      stat_poly_eq(formula = "y~x", 
              aes(label = paste0(..rr.label..)), 
              parse = TRUE, label.x.npc = 0.95, label.y.npc = 0.05, size = 4, family= "Times New Roman") + theme(aspect.ratio = 1) +
-ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly.png",sep=""), units="in",width=7,height=5)
+ggsave(filename=paste(path3,"/",Subbasin,"_scatterplot_PostvsSFPUC_monthly2.png",sep=""), units="in",width=7,height=5)
 
 
 ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
-  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_continuous(breaks = scales::pretty_breaks())+scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ theme(legend.position="bottom")+
-ggsave(filename=paste(path,"/",Subbasin,"_line_daily.png",sep=""), units="in",width=7,height=5)#,res=360)
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_continuous(breaks = scales::pretty_breaks())+scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ theme(legend.position="bottom")+
+ggsave(filename=paste(path,"/",Subbasin,"_line_daily2.png",sep=""), units="in",width=7,height=5)#,res=360)
 
-ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(size = 0.3, alpha = 0.9)+ scale_y_continuous(breaks = scales::pretty_breaks())+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) +scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
-  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly.png",sep=""), units="in",width=7,height=5)
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(size = 0.3, alpha = 0.9)+ scale_y_continuous(breaks = scales::pretty_breaks())+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) +scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly2.png",sep=""), units="in",width=7,height=5)
 
 ggplot(Final,aes(x=Date, y=`Inflow (cfs)`*35314666.21266/86400 +1, color=Data))+ geom_line(size = 0.3, alpha = 0.9)+ xlab("Date")+ ylab(expression("Inflow ("*cfs*")"))+ scale_x_date(date_labels = "%Y-%m")+ 
-  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_log10() +scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
-ggsave(filename=paste(path3,"/",Subbasin,"_line_daily_logscale.png",sep=""), units="in",width=7,height=5)#,res=360)
+  ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5))+ scale_y_log10() +scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+ggsave(filename=paste(path3,"/",Subbasin,"_line_daily_logscale2.png",sep=""), units="in",width=7,height=5)#,res=360)
 
-ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(geom = "line", size = 0.3, alpha = 0.9)+ scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_log10() + theme(legend.position="bottom")+
-  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly_logscale.png",sep=""), units="in",width=7,height=5)
+ggplot(Final2,aes(x=Date, y=`Inflow (cfs)`*0.81071318210885, color=Data))+ ylab(expression("Inflow ("*TAF/month*")"))+ geom_line(geom = "line", size = 0.3, alpha = 0.9)+ scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2"))+ scale_x_date(date_labels = "%Y-%m") +ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5)) + scale_y_log10() + theme(legend.position="bottom")+
+  ggsave(filename=paste(path3,"/",Subbasin,"_line_monthly_logscale2.png",sep=""), units="in",width=7,height=5)
 
 ##FDC Curve
 data.nm <- unique(Final$Data)
@@ -338,21 +351,22 @@ for (i in (1:length(data.nm))){
 }
 
 ggplot(Final, aes(x=FDC, y=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + geom_line(size = 0.6, alpha = 0.5) + #geom_point(shape=21, size=0.05, alpha=0.25) + #scale_y_log10(limits = c(min(Final$`Inflow (cfs)`+0.00001),NA))+
-        ylab(expression("Inflow ("*cfs*")")) + xlab("Exceedance probability") + ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom") +
-  ggsave(filename=paste(path3,"/",Subbasin,"_fdc.png",sep=""), units="in",width=7,height=5)#,res=360)
+        ylab(expression("Inflow ("*cfs*")")) + xlab("Exceedance probability") + ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom") +
+  ggsave(filename=paste(path3,"/",Subbasin,"_fdc2.png",sep=""), units="in",width=7,height=5)#,res=360)
 
 ## Box&whisker
 ggplot(Final, aes(x=Data, y=`Inflow (cfs)`*35314666.21266/86400 )) + geom_boxplot() +
  #       scale_y_log10(limits=c(3e-1,3e3)) +
         ylab(expression("Inflow ("*cfs*")")) + xlab("Data")  +ggtitle(paste0(Area)) +theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="bottom")+
-  ggsave(filename=paste(path3,"/",Subbasin,"_box.png",sep=""), units="in",width=7,height=5)#,res=360)
+  ggsave(filename=paste(path3,"/",Subbasin,"_box2.png",sep=""), units="in",width=7,height=5)#,res=360)
 
 
 ## Q-Q plot
-ggplot(Final, aes(sample=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + stat_qq(shape=21, size=0.75)+ylab(expression("Sample Quantiles ("*cfs*")"))+ xlab("Theorical Quantiles (Normal Distribution)")+ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+ scale_colour_manual(values = c("SFPUC Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
-  png(filename=paste(path3,"/",Subbasin,"_qq.png",sep=""), units="in",width=7,height=5,res=360)
-
+ggplot(Final, aes(sample=`Inflow (cfs)`*35314666.21266/86400 , color=Data)) + stat_qq(shape=21, size=0.75)+ylab(expression("Sample Quantiles ("*cfs*")"))+ xlab("Theorical Quantiles (Normal Distribution)")+ggtitle(paste0(Area)) + theme(plot.title = element_text(hjust = 0.5))+ scale_colour_manual(values = c("USGS Reference (Observed)" = "springgreen4", "Pre-Bias Correction (Livneh)" = "tomato2", "Post-Bias Correction (Livneh)" = "dodgerblue2")) + theme(legend.position="bottom")+
+  png(filename=paste(path3,"/",Subbasin,"_qq2.png",sep=""), units="in",width=7,height=5,res=360)
 }
+
+
 
 ```
 

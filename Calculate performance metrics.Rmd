@@ -1,0 +1,93 @@
+```{r}
+library(hydroGOF)
+
+hydropower <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/results5blocks/Hydropower_Energy_MWh.csv")
+hydropower
+
+hydropower1 <- hydropower  %>%
+  #  mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+  #  filter(date > "2009-12-01")%>%
+  mutate(resource = factor(resource),
+         basin = factor(basin))  %>% 
+   group_by(basin, resource) %>%
+  summarise(NSE = hydroGOF::NSE(Simulated, Observed, na.rm=TRUE),
+            KGE = hydroGOF::KGE(Simulated, Observed, na.rm=TRUE),
+            RMSE = hydroGOF::rmse(Simulated, Observed, na.rm=TRUE),
+            PBIAS = hydroGOF::pbias(Simulated, Observed, na.rm=TRUE)*-1)#pbias = 100*(sum((.$Simulated - .$Observed, na.rm=TRUE)/sum(.$Observed, na.rm=TRUE), na.rm =TRUE)))#
+    
+hydropower1
+
+
+hydropowerflow <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/results5blocks/Hydropower_Flow_mcm.csv")
+hydropowerflow
+
+hydropowerflow1 <- hydropowerflow %>%
+    #mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+    #filter(date > "2009-12-01") %>%
+  mutate(resource = factor(resource),
+         basin = factor(basin))  %>% 
+   group_by(basin, resource) %>%
+  summarise(NSE = hydroGOF::NSE(Simulated, Observed, na.rm=TRUE),
+            KGE = hydroGOF::KGE(Simulated, Observed, na.rm=TRUE),
+            RMSE = hydroGOF::rmse(Simulated, Observed, na.rm=TRUE),
+            PBIAS = hydroGOF::pbias(Simulated, Observed, na.rm=TRUE)*-1)#pbias = 100*(sum((.$Simulated - .$Observed, na.rm=TRUE)/sum(.$Observed, na.rm=TRUE), na.rm =TRUE)))#
+    
+hydropowerflow1
+
+IFR <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/results5blocks/InstreamFlowRequirement_Flow_mcm.csv")
+IFR
+
+IFR1 <- IFR  %>%
+  mutate(resource = factor(resource),
+         basin = factor(basin)) %>%
+    #mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+    #filter(date > "2009-12-01") %>% 
+   group_by(basin, resource) %>%
+  summarise(NSE = hydroGOF::NSE(Simulated, Observed, na.rm=TRUE),
+            KGE = hydroGOF::KGE(Simulated, Observed, na.rm=TRUE),
+            RMSE = hydroGOF::rmse(Simulated, Observed, na.rm=TRUE),
+            PBIAS = hydroGOF::pbias(Simulated, Observed, na.rm=TRUE)*-1)#pbias = 100*(sum((.$Simulated - .$Observed, na.rm=TRUE)/sum(.$Observed, na.rm=TRUE), na.rm =TRUE)))#
+    
+IFR1
+
+outputflow <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/results5blocks/Output_Flow_mcm.csv")
+outputflow
+
+outputflow1 <- outputflow  %>%
+    #mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+    #filter(date > "2009-12-01")%>%
+  mutate(resource = factor(resource),
+         basin = factor(basin))  %>% 
+   group_by(basin, resource) %>%
+  summarise(NSE = hydroGOF::NSE(Simulated, Observed, na.rm=TRUE),
+            KGE = hydroGOF::KGE(Simulated, Observed, na.rm=TRUE),
+            RMSE = hydroGOF::rmse(Simulated, Observed, na.rm=TRUE),
+            PBIAS = hydroGOF::pbias(Simulated, Observed, na.rm=TRUE)*-1)#pbias = 100*(sum((.$Simulated - .$Observed, na.rm=TRUE)/sum(.$Observed, na.rm=TRUE), na.rm =TRUE)))#
+    
+outputflow1
+
+storage <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/results5blocks/Reservoir_Storage_mcm.csv")
+storage
+
+storage1 <- storage  %>%
+    #mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+    #filter(date > "2009-12-01")%>%
+  mutate(resource = factor(resource),
+         basin = factor(basin))  %>% 
+   group_by(basin, resource) %>%
+  summarise(NSE = hydroGOF::NSE(Simulated, Observed, na.rm=TRUE),
+            KGE = hydroGOF::KGE(Simulated, Observed, na.rm=TRUE),
+            RMSE = hydroGOF::rmse(Simulated, Observed, na.rm=TRUE),
+            PBIAS = hydroGOF::pbias(Simulated, Observed, na.rm=TRUE)*-1)#pbias = 100*(sum((.$Simulated - .$Observed, na.rm=TRUE)/sum(.$Observed, na.rm=TRUE), na.rm =TRUE)))#
+    
+storage1
+
+library(openxlsx)
+listofdatasets <- list("Hydropower" = hydropower1, "Hydropower Flow" = hydropowerflow1, "Instreamflow" = IFR1, "Outflow" = outputflow1, "Storage" = storage1)
+write.xlsx(listofdatasets, file="C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/metrics_posteverything_withoutplanning.xlsx", row.names=FALSE)
+
+```
+
+```{r}
+
+```

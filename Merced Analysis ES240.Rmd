@@ -1,0 +1,1149 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(extrafont)
+library(lfstat)
+```
+
+```{r}
+NM_hist_Gen <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 4.5",
+         node = as.Date(node),
+         `New Melones PH` = as.numeric(`New Melones PH`),
+         WaterYear = water_year(node, origin = "usgs"))
+
+NM_hist_Gen
+
+NM_Can_Gen <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp45/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 4.5")
+
+NM_Mir_Gen <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp45/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 4.5")
+NM_Mir_Gen
+
+NM_CNR_Gen <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp45/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 4.5")
+NM_CNR_Gen
+
+NM_Had_Gen <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp45/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 4.5")
+NM_Had_Gen
+
+
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         node = as.Date(node),
+         `New Melones PH` = as.numeric(`New Melones PH`),
+         WaterYear = water_year(node, origin = "usgs"))
+NM_hist_Gen2
+
+NM_Can_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_Gen2
+
+NM_Mir_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_Gen2
+
+NM_CNR_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_Gen2
+
+NM_Had_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_Gen2
+
+NM_CCSM4_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_Gen2
+
+NM_GFDL_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_Gen2
+
+NM_HadGEMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_Gen2
+
+NM_CMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_Gen2
+
+NM_ACCESS1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_Gen2
+
+NM_CESM1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_Gen2
+
+```
+
+
+```{r}
+library(lfstat)
+New_Mel1 <- rbind(NM_Can_Gen, NM_Can_Gen2, NM_Mir_Gen, 
+          NM_Mir_Gen2, NM_Had_Gen, NM_Had_Gen2, NM_CNR_Gen, NM_CNR_Gen2, 
+          NM_HadGEMCC_Gen2, NM_CMCC_Gen2, NM_ACCESS1_Gen2, NM_CESM1_Gen2, NM_GFDL_Gen2, NM_CCSM4_Gen2) %>%
+    mutate(`New Melones PH` = as.numeric(`New Melones PH`),
+           node = as.Date(node),
+           WaterYear = water_year(node, origin = "usgs")) %>%
+  filter(WaterYear %in% (2040:2059))
+  
+New_Mel1
+
+New_Mel <- rbind(NM_hist_Gen2, New_Mel1)
+
+New_Mel2 <- New_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs")) %>%
+      mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  #  filter(WaterYear %in% (2040:2059)) %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(Generation = sum(`New Melones PH`)) %>%
+  ungroup() %>%
+    group_by(Scenario, Model) %>%
+    summarize(Generation = mean(Generation))
+New_Mel2
+
+New_Mel_GenWY <- New_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs"),
+         Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario, Month) %>%
+  summarize(Generation = sum(`New Melones PH`))
+New_Mel_GenWY
+
+New_Mel_Gen_Ensem <- New_Mel1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(Generation = sum(`New Melones PH`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(Generation = mean(Generation)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_Gen_Ensem
+
+New_Mel_GenWY2 <- rbind(New_Mel_Gen_Ensem, New_Mel_GenWY)%>%
+  filter(!Scenario == "RCP 4.5")
+  
+New_Mel_GenWY2
+New_Mel_GenWY2$Model <- factor(New_Mel_GenWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New_Mel_Genannual <- New_Mel_GenWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(Generation = sum(Generation))
+New_Mel_Genannual
+
+New_Mel_Genannual_Livneh <- New_Mel_Genannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(Generation = mean(Generation))
+New_Mel_Genannual_Livneh
+
+New_Mel_Genannual2 <- New_Mel_Genannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (Generation-as.numeric(paste(New_Mel_Genannual_Livneh[2]))),
+         RelativeDiff = (Generation-as.numeric(paste(New_Mel_Genannual_Livneh[2])))/as.numeric(paste(New_Mel_Genannual_Livneh[2]))*100)
+New_Mel_Genannual2
+```
+
+
+```{r}
+Figure_Annual(New_Mel_Genannual2, New_Mel_Genannual2$RelativeDiff, Delta~"Hydropower Generation (%)", "Hydropower_Percent", "Figure 3. Relative change in annual hydropower generation compared to historical (1951-2013)")
+
+Figure_Annual_abs(New_Mel_Genannual2, New_Mel_Genannual2$AbsoluteDiff, Delta~"Hydropower Generation (GWh/year)", "Hydropower_abs", "Figure 2. Absolute change in annual hydropower generation compared to historical (1951-2013)")
+
+Figure_Monthly(New_Mel_GenWY2, New_Mel_GenWY2$Generation, "", "Hydropower Generation (GWh/month)", "Hydropower", "Figure 1. Monthly hydropower generation by the New Melones Powerhouse")
+
+```
+
+
+
+```{r}
+NM_hist_IFR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 4.5",
+         `IFR at Shaffer Bridge` = as.numeric(`IFR at Shaffer Bridge`),
+         node = as.Date(node))
+
+NM_hist_IFR
+
+NM_Can_IFR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp45/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 4.5")
+
+NM_Mir_IFR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp45/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 4.5")
+NM_Mir_IFR
+
+NM_CNR_IFR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp45/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 4.5")
+NM_CNR_IFR
+
+NM_Had_IFR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp45/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 4.5")
+NM_Had_IFR
+
+
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         `IFR at Shaffer Bridge` = as.numeric(`IFR at Shaffer Bridge`),
+         node = as.Date(node),
+         WaterYear = water_year(node, origin = "usgs"))
+NM_hist_IFR2
+
+NM_Can_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_IFR2
+
+NM_Mir_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_IFR2
+
+NM_CNR_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_IFR2
+
+NM_Had_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_IFR2
+
+NM_CCSM4_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CCSM4_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_IFR2
+
+NM_GFDL_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/GFDL-CM3_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_IFR2
+
+NM_HadGEMCC_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-CC_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_IFR2
+
+NM_CMCC_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CMCC-CMS_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_IFR2
+
+NM_ACCESS1_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/ACCESS1-0_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_IFR2
+
+NM_CESM1_IFR2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CESM1-BGC_rcp85/InstreamFlowRequirement_Flow_mcm.csv")[-c(1:3), c(1,2)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_IFR2
+
+```
+
+
+```{r}
+library(lfstat)
+New_Mel_IFR1 <- rbind(NM_Can_IFR, NM_Can_IFR2, NM_Mir_IFR, 
+                  NM_Mir_IFR2, NM_Had_IFR, NM_Had_IFR2, NM_CNR_IFR, NM_CNR_IFR2, 
+                  NM_HadGEMCC_IFR2, NM_CMCC_IFR2, NM_ACCESS1_IFR2, NM_CESM1_IFR2, NM_GFDL_IFR2, NM_CCSM4_IFR2) %>%
+  mutate(`IFR at Shaffer Bridge` = as.numeric(`IFR at Shaffer Bridge`),
+         node = as.Date(node),
+         WaterYear = water_year(node, origin = "usgs")) %>%
+      filter(WaterYear %in% (2031:2090)) 
+New_Mel_IFR1
+
+New_Mel_IFR <- rbind(New_Mel_IFR1, NM_hist_IFR2)
+
+New_Mel_IFR2 <- New_Mel_IFR %>%
+    mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario)%>%
+  summarize(IFR = sum(`IFR at Shaffer Bridge`)) %>%
+  ungroup() %>%
+  group_by(Scenario, Model) %>%
+  summarize(IFR = mean(IFR))
+New_Mel_IFR2
+
+New_Mel_IFRWY <- New_Mel_IFR %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario, Month) %>%
+  summarize(IFR = sum(`IFR at Shaffer Bridge`))
+New_Mel_IFRWY
+
+
+New_Mel_IFR_Ensem <- New_Mel_IFR1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(IFR = sum(`IFR at Shaffer Bridge`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(IFR = mean(IFR)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_IFR_Ensem
+
+New_Mel_IFRWY2 <- rbind(New_Mel_IFR_Ensem, New_Mel_IFRWY)%>%
+  filter(!Scenario == "RCP 4.5")
+  
+New_Mel_IFRWY2
+New_Mel_IFRWY2$Model <- factor(New_Mel_IFRWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New_Mel_IFRannual <- New_Mel_IFRWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(IFR = sum(IFR))
+New_Mel_IFRannual
+
+New_Mel_IFRannual_Livneh <- New_Mel_IFRannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(IFR = mean(IFR))
+New_Mel_IFRannual_Livneh
+
+New_Mel_IFRannual2 <- New_Mel_IFRannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (IFR-as.numeric(paste(New_Mel_IFRannual_Livneh[2]))),
+         RelativeDiff = (IFR-as.numeric(paste(New_Mel_IFRannual_Livneh[2])))/as.numeric(paste(New_Mel_IFRannual_Livneh[2]))*100)
+New_Mel_IFRannual2
+```
+
+
+```{r}
+Figure_Annual(New_Mel_IFRannual2, New_Mel_IFRannual2$RelativeDiff, Delta~"Minimum Flow Requirement (%)", "IFR_Perc", "Figure 6. Relative change in annual minimum instream flow requirement compared to historical (1951-2013)")
+
+Figure_Annual_abs(New_Mel_IFRannual2, New_Mel_IFRannual2$AbsoluteDiff, Delta~"Minimum Flow Requirement (acre-feet/year)", Delta~"Minimum Flow Requirement (mcm/year)", "IFR_abs", "Figure 5. Absolute change in annual minimum instream flow requirement compared to historical (1951-2013)")
+
+Figure_Monthly(New_Mel_IFRWY2 %>%  filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2060) %>% filter(!Model == "Ensemble"), New_Mel_IFRWY2$IFR, "Minimum Flow Requirement (acre-feet/month)", "Minimum Flow Requirement (mcm/month)", "IFR", "Figure 4. Monthly minimum instream flow requirement below Goodwin Dam")
+
+```
+
+```{r}
+NM_hist_Out <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 4.5")
+
+NM_hist_Out
+
+NM_Can_Out <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp45/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 4.5")
+
+NM_Mir_Out <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp45/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 4.5")
+NM_Mir_Out
+
+NM_CNR_Out <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp45/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 4.5")
+NM_CNR_Out
+
+NM_Had_Out <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp45/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 4.5")
+NM_Had_Out
+
+
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         WaterYear = water_year(node, origin = "usgs"))
+NM_hist_Out2
+
+NM_Can_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_Out2
+
+NM_Mir_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_Out2
+
+NM_CNR_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_Out2
+
+NM_Had_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_Out2
+
+NM_CCSM4_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CCSM4_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_Out2
+
+NM_GFDL_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/GFDL-CM3_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_Out2
+
+NM_HadGEMCC_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-CC_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_Out2
+
+NM_CMCC_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CMCC-CMS_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_Out2
+
+NM_ACCESS1_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/ACCESS1-0_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_Out2
+
+NM_CESM1_Out2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CESM1-BGC_rcp85/Output_Flow_mcm.csv")[-c(1:3), c(1,2,6)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_Out2
+
+```
+
+
+```{r}
+library(lfstat)
+New_Mel_Out1 <- rbind(NM_Can_Out, NM_Can_Out2, NM_Mir_Out, 
+                  NM_Mir_Out2, NM_Had_Out, NM_Had_Out2, NM_CNR_Out, NM_CNR_Out2, 
+                  NM_HadGEMCC_Out2, NM_CMCC_Out2, NM_ACCESS1_Out2, NM_CESM1_Out2, NM_GFDL_Out2, NM_CCSM4_Out2) %>%
+  mutate(#Outflow = as.numeric(`merced River Outflow`),#+as.numeric(`Phoenix Canal Outflow`),
+         Irrigation = as.numeric(`MID Northside`)+as.numeric(`MID Main`),
+         node = as.Date(node),
+         WaterYear = water_year(node, origin = "usgs")) %>%
+        filter(WaterYear %in% (2031:2090))
+New_Mel_Out1
+
+NM_hist_Out3 <- NM_hist_Out2 %>%
+   mutate(#Outflow = as.numeric(`merced River Outflow`),#+as.numeric(`Phoenix Canal Outflow`),
+         Irrigation = as.numeric(`MID Northside`)+as.numeric(`MID Main`),
+         node = as.Date(node))
+NM_hist_Out2
+
+New_Mel_Out <- rbind(NM_hist_Out3, New_Mel_Out1)
+
+New_Mel_Out2 <- New_Mel_Out %>%
+  #mutate(WaterYear = water_year(node, origin = "usgs")) %>%
+      #  filter(WaterYear %in% (2040:2059)) %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(Irrigation = sum(Irrigation)) %>%
+            #Outflow = sum(Outflow)) %>%
+  ungroup() %>%
+  group_by(Scenario, Model) %>%
+  summarize(Irrigation = mean(Irrigation))
+           # Outflow = mean(Outflow))
+New_Mel_Out2
+
+New_Mel_OutWY <- New_Mel_Out %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Month, Model, Scenario) %>%
+  summarize(Irrigation = sum(Irrigation))
+#            Outflow = sum(Outflow))
+New_Mel_OutWY
+
+
+New_Mel_Out_Ensem <- New_Mel_Out1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(Irrigation = sum(Irrigation)) %>%
+#            Outflow = sum(Outflow)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(Irrigation = mean(Irrigation)) %>%
+#            Outflow = mean(Outflow)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_Out_Ensem
+
+New_Mel_OutWY2 <- rbind(New_Mel_Out_Ensem, New_Mel_OutWY)%>%
+  filter(!Scenario == "RCP 4.5")
+  
+New_Mel_OutWY2
+New_Mel_OutWY2$Model <- factor(New_Mel_OutWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New_Mel_Outannual <- New_Mel_OutWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(Irrigation = sum(Irrigation))
+#            Outflow = sum(Outflow))
+New_Mel_Outannual
+
+New_Mel_Outannual_Livneh <- New_Mel_Outannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(Irrigation = mean(Irrigation))
+#            Outflow = mean(Outflow))
+New_Mel_Outannual_Livneh
+
+New_Mel_Irrigannual2 <- New_Mel_Outannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (Irrigation-as.numeric(paste(New_Mel_Outannual_Livneh[2]))),
+         RelativeDiff = (Irrigation-as.numeric(paste(New_Mel_Outannual_Livneh[2])))/as.numeric(paste(New_Mel_Outannual_Livneh[2]))*100)
+New_Mel_Irrigannual2
+
+#New_Mel_Outannual2 <- New_Mel_Outannual %>%
+#  filter(!Model == "Livneh (Historical)") %>%
+#  mutate(AbsoluteDiff = (Outflow-as.numeric(paste(New_Mel_Outannual_Livneh[3]))),
+#         RelativeDiff = (Outflow-as.numeric(paste(New_Mel_Outannual_Livneh[3])))/as.numeric(paste(New_Mel_Outannual_Livneh[3]))*100)
+#New_Mel_Outannual2
+
+```
+
+```{r}
+
+New_Mel_OutWY$Model[New_Mel_OutWY$Model == "CanESM2"] <- "CanESM2\u2020"
+New_Mel_OutWY$Model[New_Mel_OutWY$Model == "MIROC5"] <- "MIROC5\u2020"
+New_Mel_OutWY$Model[New_Mel_OutWY$Model == "HadGEM2-ES"] <- "HadGEM2-ES\u2020"
+New_Mel_OutWY$Model[New_Mel_OutWY$Model == "CNRM-CM5"] <- "CNRM-CM5\u2020"
+
+New_Mel_OutWY$Model <- factor(New_Mel_OutWY$Model, levels = c("Livneh (Historical)","MIROC5\u2020", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES\u2020", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2\u2020",  "CNRM-CM5\u2020"))
+
+
+ggplot(New_Mel_OutWY %>% filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2030 & as.numeric(as.character(WaterYear)) < 2061) %>% filter(!Model == "Ensemble"))+
+         #filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2060)) +
+      #   filter(Basin == "Merced River")) %>% filter(!Model == "Ensemble")+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = Irrigation, fill = Model), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_log10(limits = c(0.1, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 8.5",
+       title = "Baseline (2009 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Agricultural deliveries (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  guides(fill=guide_legend(nrow=2,
+                          hjust=0.5))+
+png("Mer_rcp85_ag_2009prices_Report_ES240_2031_2060.png", units ="in", width=10, height=5, res = 300)
+```
+
+
+```{r}
+Figure_Annual(New_Mel_Irrigannual2, New_Mel_Irrigannual2$RelativeDiff, Delta~"Irrigation Deliveries (%)", "Irrigation_Percent", "Figure 12. Relative change in annual irrigation deliveries compared to historical (1951-2013)")
+
+Figure_Annual_abs(New_Mel_Irrigannual2, New_Mel_Irrigannual2$AbsoluteDiff, Delta~"Irrigation deliveries (acre-feet/year)", Delta~"Irrigation deliveries (mcm/year)", "Irrigation_abs", "Figure 11. Absolute change in annual irrigation deliveries compared to historical (1951-2013)")
+
+Figure_Monthly(New_Mel_OutWY2 %>%  #filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2060) %>% filter(!Model == "Ensemble") %>%
+  filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2030 & as.numeric(as.character(WaterYear)) < 2061) %>% filter(!Model == "Ensemble") %>%, New_Mel_OutWY2$Irrigation, Delta~"Irrigation deliveries (acre-feet/month)", Delta~"Irrigation deliveries (mcm/month)",  "Irrigation", "Figure 10. Monthly deliveries to Oakdale and South San Joaquin Irrigation Districts")
+
+Figure_Annual(New_Mel_Outannual2, New_Mel_Outannual2$RelativeDiff, Delta~"River Outflow (%)", "outflow_Percent", "Figure 9. Relative change in annual river outflow compared to historical (1951-2013)")
+
+Figure_Annual_abs(New_Mel_Outannual2, New_Mel_Outannual2$AbsoluteDiff, Delta~"River Outflow (acre-feet/year)", Delta~"River Outflow (mcm/year)", "outflow_abs", "Figure 8. Absolute change in annual river outflow compared to historical (1951-2013)")
+
+Figure_Monthly(New_Mel_OutWY2, New_Mel_OutWY2$Outflow, "River Outflow (acre-feet/month)", "River Outflow (mcm/month)", "outflow", "Figure 7. Monthly merced river outflow") 
+```
+
+
+```{r}
+NM_hist_PH <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 4.5",
+         `New Melones PH` = as.numeric(`New Melones PH`),
+         node = as.Date(node))
+
+NM_hist_PH
+
+NM_Can_PH <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp45/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 4.5")
+
+NM_Mir_PH <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp45/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 4.5")
+NM_Mir_PH
+
+NM_CNR_PH <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp45/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 4.5")
+NM_CNR_PH
+
+NM_Had_PH <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp45/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 4.5")
+NM_Had_PH
+
+
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         `New Melones PH` = as.numeric(`New Melones PH`),
+         node = as.Date(node),
+         WaterYear = water_year(node, origin = "usgs"))
+NM_hist_PH2
+
+NM_Can_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_PH2
+
+NM_Mir_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_PH2
+
+NM_CNR_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_PH2
+
+NM_Had_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_PH2
+
+NM_CCSM4_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CCSM4_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_PH2
+
+NM_GFDL_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/GFDL-CM3_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_PH2
+
+NM_HadGEMCC_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-CC_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_PH2
+
+NM_CMCC_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CMCC-CMS_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_PH2
+
+NM_ACCESS1_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/ACCESS1-0_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_PH2
+
+NM_CESM1_PH2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CESM1-BGC_rcp85/Hydropower_Flow_mcm.csv")[-c(1:3), c(1,18)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_PH2
+
+```
+
+
+```{r}
+library(lfstat)
+New_Mel_PH1 <- rbind(NM_Can_PH, NM_Can_PH2, NM_Mir_PH, 
+                  NM_Mir_PH2, NM_Had_PH, NM_Had_PH2, NM_CNR_PH, NM_CNR_PH2, 
+                  NM_HadGEMCC_PH2, NM_CMCC_PH2, NM_ACCESS1_PH2, NM_CESM1_PH2, NM_GFDL_PH2, NM_CCSM4_PH2) %>%
+  mutate(PH = as.numeric(`New Melones PH`),#+as.numeric(`Phoenix Canal PH`),
+         #Irrigation = as.numeric(`New Melones PH`),
+         node = as.Date(node),
+         WaterYear = water_year(node, origin = "usgs")) %>%
+  filter(WaterYear %in% (2040:2059))
+New_Mel_PH1
+
+NM_hist_PH3 <- NM_hist_PH2 %>%
+  mutate(PH = as.numeric(`New Melones PH`),#+as.numeric(`Phoenix Canal PH`),
+         #Irrigation = as.numeric(`New Melones PH`),
+         node = as.Date(node))
+NM_hist_PH2
+
+New_Mel_PH <- rbind(NM_hist_PH3, New_Mel_PH1)
+
+New_Mel_PH2 <- New_Mel_PH %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(PH = sum(PH)) %>%
+  ungroup() %>%
+  group_by(Scenario, Model) %>%
+  summarize(PH = mean(PH))
+New_Mel_PH2
+
+
+New_Mel_PHWY <- New_Mel_PH %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Month, Model, Scenario) %>%
+  summarize(PH = sum(PH)) 
+New_Mel_PHWY
+
+New_Mel_PH_Ensem <- New_Mel_PH1 %>% 
+    mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(PH = sum(PH)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Month, Scenario) %>%
+    summarize(PH = mean(PH)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_PH_Ensem
+
+New_Mel_PHWY <- rbind(New_Mel_PH_Ensem, New_Mel_PHWY)%>%
+  filter(!Scenario == "RCP 4.5")
+  
+New_Mel_PHWY
+New_Mel_PHWY$Model <- factor(New_Mel_PHWY$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New_Mel_PHannual <- New_Mel_PHWY %>%
+  group_by(Model, WaterYear) %>%
+  summarize(PH = sum(PH))
+New_Mel_PHannual
+
+New_Mel_PHannual_Livneh <- New_Mel_PHannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(PH = mean(PH))
+New_Mel_PHannual_Livneh
+
+New_Mel_PHannual2 <- New_Mel_PHannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (PH-as.numeric(paste(New_Mel_PHannual_Livneh[2]))),
+         RelativeDiff = (PH-as.numeric(paste(New_Mel_PHannual_Livneh[2])))/as.numeric(paste(New_Mel_PHannual_Livneh[2]))*100)
+New_Mel_PHannual2
+```
+
+```{r}
+Figure_Annual_abs <- function(data, yaxis, yaxis2, ylabel, figurename, heading){
+
+data %>%
+ggplot(.) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+         geom_hline(yintercept=0)+
+  geom_violin(aes( x = Model, y = yaxis, fill = Model),draw_quantiles = c(0.25, 0.5, 0.75)) + #plot monthly observed data in greenish blue
+    scale_y_continuous(#limits = c(0, NA),
+                      #expand = c(0, NA),
+                      labels=scales::comma,
+                      sec.axis = sec_axis( trans=~./1233.48185, name= yaxis2)
+                      ) +
+  #  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#A50026", "#d1190f", "#db4821", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695", "white")) +
+
+  labs(fill = "RCP 8.5",
+       title = heading,
+      # subtitle = title,
+    x = element_blank(), 
+       y = ylabel)+ #Delta~"Hydropower Flow (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -14.5),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 11),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+                  legend.key.size = unit(0.75,"line"),
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  guides(fill=guide_legend(nrow=2)) +
+   ggsave(paste("Changes_merced_annual_",figurename,".png", sep=""), units ="in", width=7.5, height=4, dpi = 300) }
+```
+
+```{r}
+Figure_Annual <- function(data, yaxis, ylabel, figurename, heading){
+
+data %>%
+ggplot(.) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+         geom_hline(yintercept=0)+
+  geom_violin(aes( x = Model, y = yaxis, fill = Model),draw_quantiles = c(0.25, 0.5, 0.75)) + #plot monthly observed data in greenish blue
+    scale_y_continuous(#limits = c(0, NA),
+                      #expand = c(0, NA),
+                      labels=scales::comma) +
+  #  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#A50026", "#d1190f", "#db4821", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695", "white")) +
+
+  labs(fill = "RCP 8.5",
+       title = heading,
+     #  subtitle = "New Melones Reservoir",
+    x = element_blank(), 
+       y = ylabel)+ #Delta~"Hydropower Flow (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -14.5),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 11),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+                  legend.key.size = unit(0.75,"line"),
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  guides(fill=guide_legend(nrow=2)) +
+   ggsave(paste("Changes_merced_annual_",figurename,".png", sep=""), units ="in", width=7.5, height=4, dpi = 300) }
+```
+
+```{r}
+#Figure_Monthly <- function(data, yaxis, yaxis2, ylabel, figurename, heading){
+#New_Mel_IFRWY2 %>%  #filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2060) %>% filter(!Model == "Ensemble") %>%
+
+New_Mel_OutWY2 %>%  filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2060) %>% filter(!Model == "Ensemble") %>%
+#  filter(as.numeric(as.character(WaterYear)) < 2011 | as.numeric(as.character(WaterYear)) > 2030 & as.numeric(as.character(WaterYear)) < 2061) %>% filter(!Model == "Ensemble") %>%
+ggplot(.) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = Irrigation, fill = Model), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_log10(#limits = c(0, NA),
+                   #   expand = c(0, NA),
+                      labels=scales::comma
+                      ) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5",
+      title = "heading",
+    #   subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Minimum Flow Requirement (mcm/month)")+# "Hydropower Flow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+           plot.title = element_text(hjust = 0.5, size = 11),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  guides(fill=guide_legend(nrow=2))+
+    #scale_y_log10()+
+   png(paste("Changes_merced_monthly_","ag","_2061_2090.png",sep=""), units ="in", width=10, height=5, res = 300)
+
+#"Minimum Flow Requirement (acre-feet/month)", "Minimum Flow Requirement (mcm/month)", "IFR", "Figure 4. Monthly minimum instream flow requirement below Goodwin Dam")
+
+```
+
+```{r}
+
+Allocation <- readxl::read_xlsx("C:/Users/gusta/Desktop/PhD/CERCWET/New Melones Analysis - AGU (version 1).xlsx", sheet =  "Water2") %>%
+  mutate(Model = as.factor(Model),
+         Scenario = as.factor(Scenario),
+         Allocation = as.factor(Allocation))
+Allocation
+```
+
+```{r}
+#library(relayer)
+
+Allocation$Model <-factor(Allocation$Model, levels=c("ACCESS1-0", "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", "CNRM-CM5")) #unique(interaction(Allocation$Scenario, Allocation$Model))
+
+#Allocation$Scenarios <-factor(interaction(Allocation$Scenario, Allocation$Model), levels=c("Title 1","RCP 4.5.CanESM2","RCP 4.5.HadGEM2-ES","RCP 4.5.CNRM-CM5", "RCP 4.5.MIROC5", " ", "Title 2", "RCP 8.5.CanESM2","RCP 8.5.HadGEM2-ES","RCP 8.5.CNRM-CM5", "RCP 8.5.MIROC5")) #unique(interaction(Allocation$Scenario, Allocation$Model))
+dat_text <- data.frame(x = c(1.1, 2, 2.8, 4, 5, 6, 6.9, 8),
+  y     = c(6, 6, 6, 6, 6, 6, 6, 6),
+  label = c("MIROC5", "","HadGEM2-ES","", "CanESM2","", "CNRM-CM5", ""),
+  Allocation   = c("merced River Outflow", "merced River Outflow", "merced River Outflow", "merced River Outflow", "merced River Outflow", "merced River Outflow", "merced River Outflow", "merced River Outflow")
+)
+
+Allocation %>%
+    filter(!Model == "Livneh (Historical)") %>%
+    ggplot(., aes(x= Model, y=`Difference %`)) + 
+  geom_bar(stat = "identity", aes(fill=Model), colour="black", legend = FALSE) +
+  scale_fill_manual(#values = c("red","yellow2","cyan3", "dodgerblue2", "red3", "gold2", "cyan4", "dodgerblue4"))+
+    labels = c(" ", " ", " ", " ", " ", " "," "," "," "), 
+    values = c("#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695"))+#"red","red4","yellow2","gold2", "cyan3", "cyan4", "dodgerblue2", "dodgerblue4"))+
+  theme_bw(base_size=13, base_family='Times New Roman') + 
+  geom_hline(yintercept = 0) + labs(y="Relative change (%)")+
+ # geom_text(x=1.5, y=-30, label="MIROC5") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(),
+        axis.ticks.x=element_blank(),
+        legend.position = "none",#"bottom",
+    #    legend.key.size = unit(0.9, 'lines'),
+       #   axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(1, "lines"))+
+      # legend.title=element_text(size=11))+
+#  guides(fill=guide_legend(nrow=2))+#"RCP 4.5\nRCP 8.5")) +
+    facet_wrap(~Allocation, 
+             ncol = 1, 
+            # labeller = as_labeller(c(`Hydropower Flow` = expression(Delta)~"Hydropower Flow", `Irrigation Districts` = expression(Delta)~"Irrigation Districts", `merced River Outflow` = expression(Delta)~"merced River Outflow")),
+              strip.position = "top")+
+ # coord_cartesian(clip = "off")+
+#  geom_text(
+ # data    = dat_text,
+#  mapping = aes(x = x, y = y, label = label, family = "Times New Roman"), size = 3.8,
+ # hjust   = -0.1,
+  #vjust   = +4.5) 
+ ggsave("Changes_merced2.png", units ="in", width=10, height=5.8, dpi = 300)
+
+```
+
+```{r}
+
+Allocation2 <- readxl::read_xlsx("C:/Users/gusta/Desktop/PhD/CERCWET/New Melones Analysis - AGU (version 1).xlsx", sheet =  "Others") %>%
+  mutate(Model = as.factor(Model),
+         Scenario = as.factor(Scenario),
+         Allocation = as.factor(Allocation))
+Allocation2
+```
+
+```{r}
+Allocation2 %>%
+#  filter(!Allocation == "Hydropower Flow") %>%
+ggplot(., aes(fill=Allocation, y = Proportion, x=forcats::fct_rev(factor(interaction(Scenario,Model))))) + #fct_rev reverts the order
+#theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_bar(stat="identity", position = position_fill(reverse = TRUE))+
+# geom_bar(color = "black", position = "stack", stat = "count") +
+      #geom_bar(color = "black", position = "dodge", stat = "count") +
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels=scales::percent, #reverts the colors
+                     expand = c(0,NA)) +
+           
+  scale_fill_manual(values = c("cyan3", "dodgerblue2", "blue"))+
+    #"Critical", "Dry", "Below Normal", "Above Normal", "Wet")) +
+  labs(title = "Water Allocation in the merced",
+       x = element_blank(), 
+       y = element_blank()) + #name of x axis
+  #scale_x_discrete(limits=c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"),
+   #                labels =c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))+
+                             #"C", "D", "BN", "AN", "W")) +
+#  scale_y_continuous(expand = c(0, 0), limits = c(0,25)) +
+   theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  
+  #facet_wrap(~ Scenario, ncol=2, labeller = labeller(Scenario = c(`RCP4.5` = "RCP 4.5 Scenario", `RCP8.5` = "RCP 8.5 Scenario"))) +
+  
+  
+    theme(plot.title = element_text(hjust = 0.5),
+          axis.text.x = element_text(hjust = +0.5),
+          strip.placement = "outside",
+          legend.key.size = unit(0.75,"line"),
+          legend.position = "bottom",
+        strip.background = element_blank(),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm"),
+        panel.margin = unit(1.5, "lines"),
+    legend.title = "element_blank"(),
+        legend.box.margin = margin(t = -17))+
+ coord_flip(clip = 'off')
+```
+
+```{r}
+#library(relayer)
+
+Allocation2$Model <-factor(Allocation$Model, levels=c("ACCESS1-0", "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", "CNRM-CM5")) #unique(interaction(Allocation$Scenario, Allocation$Model))
+
+
+Allocation2 %>%
+       ggplot(., aes(x= Model, y=`Difference %`)) + 
+  geom_bar(stat = "identity", aes(fill=Model), colour="black", legend = FALSE) +
+  scale_fill_manual(#values = c("red","yellow2","cyan3", "dodgerblue2", "red3", "gold2", "cyan4", "dodgerblue4"))+
+    labels = c(" ", " ", " ", " ", " ", " "," "," "," "), 
+    values = c("#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695"))+#"red","red4","yellow2","gold2", "cyan3", "cyan4", "dodgerblue2", "dodgerblue4"))+
+  theme_bw(base_size=13, base_family='Times New Roman') + 
+  geom_hline(yintercept = 0) + labs(y="Relative change (%)")+
+ # geom_text(x=1.5, y=-30, label="MIROC5") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title.x=element_blank(),
+        axis.text.x=element_text(),
+        axis.ticks.x=element_blank(),
+        legend.position = "none",#"bottom",
+    #    legend.key.size = unit(0.9, 'lines'),
+       #   axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(1, "lines"))+
+      # legend.title=element_text(size=11))+
+#  guides(fill=guide_legend(nrow=2))+#"RCP 4.5\nRCP 8.5")) +
+    facet_wrap(~Allocation, 
+             ncol = 1, 
+            # labeller = as_labeller(c(`Hydropower Flow` = expression(Delta)~"Hydropower Flow", `Irrigation Districts` = expression(Delta)~"Irrigation Districts", `merced River Outflow` = expression(Delta)~"merced River Outflow")),
+              strip.position = "top")+
+ # coord_cartesian(clip = "off")+
+#  geom_text(
+ # data    = dat_text,
+#  mapping = aes(x = x, y = y, label = label, family = "Times New Roman"), size = 3.8,
+ # hjust   = -0.1,
+  #vjust   = +4.5) 
+ ggsave("Changes_merced.png", units ="in", width=10, height=5.8, dpi = 300)
+
+```
+
+
+```{r}
+FNF <- readxl::read_xlsx("C:/Users/gusta/Desktop/PhD/CERCWET/New Melones Analysis - AGU (version 1).xlsx", sheet =  "FNF2") %>%
+  mutate(Model = as.factor(Model))
+#         Scenario = as.factor(Scenario))
+#         Allocation = as.factor(Allocation))
+FNF
+```
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+        # node = as.Date(date),
+         #`New Melones PH` = as.numeric(`New Melones PH`),
+         WaterYear = water_year(date, origin = "usgs"))
+NM_hist_FNF2
+
+NM_Can_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_FNF2
+
+NM_Mir_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_FNF2
+
+NM_CNR_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_FNF2
+
+NM_Had_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_FNF2
+
+NM_CCSM4_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/CCSM4_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_FNF2
+
+NM_GFDL_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/GFDL-CM3_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_FNF2
+
+NM_HadGEMCC_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/HadGEM2-CC_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_FNF2
+
+NM_CMCC_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/CMCC-CMS_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_FNF2
+
+NM_ACCESS1_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_FNF2
+
+NM_CESM1_FNF2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/merced River/hydrology/gcms/CESM1-BGC_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv")  %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_FNF2
+
+```
+
+```{r}
+New_Mel_FNF1 <- rbind(NM_Can_FNF2, NM_Mir_FNF2, NM_Had_FNF2, NM_CNR_FNF2, 
+                      NM_HadGEMCC_FNF2, NM_CMCC_FNF2, NM_ACCESS1_FNF2, NM_CESM1_FNF2, NM_GFDL_FNF2, NM_CCSM4_FNF2) %>%
+  mutate(WaterYear = water_year(date, origin = "usgs")) %>%
+  filter(WaterYear %in% (2040:2059))
+New_Mel_FNF1
+
+NM_hist_FNF3 <- NM_hist_FNF2 %>%
+  mutate(#Outflow = as.numeric(`merced River Outflow`),#+as.numeric(`Phoenix Canal Outflow`),
+         #Irrigation = as.numeric(`Oakdale Irrigation District`)+as.numeric(`South San Joaquin Irrigation District`),
+         date = as.Date(date))
+NM_hist_FNF3
+
+New_Mel_FNF <- rbind(NM_hist_FNF3, New_Mel_FNF1)%>% 
+        mutate(Month = as.factor(format(as.Date(date, format = "%B"), "%b")),
+               WaterYear = water_year(date, origin = "usgs"))  %>%
+  mutate(WaterYear = as.factor(WaterYear),
+         Month = as.factor(Month),
+         flow = as.numeric(flow),
+         Model = as.factor(Model))
+New_Mel_FNF
+
+New_Mel_IFR_Ensem <- New_Mel_IFR1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(IFR = sum(`IFR at Shaffer Bridge`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(IFR = mean(IFR)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_FNF_Ensem <- New_Mel_FNF %>% 
+        mutate(Month = as.factor(format(as.Date(date, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Month, Scenario, Model) %>% 
+  summarize(flow = sum(flow)) %>%
+  ungroup() %>%
+  group_by(WaterYear, Scenario, Month) %>%
+  summarize(flow = mean(flow)) %>%
+  mutate(Model = "Ensemble")  %>%
+  ungroup() %>%
+  mutate(WaterYear = as.factor(WaterYear),
+         Month = as.factor(Month),
+         flow = as.numeric(flow),
+         Model = as.factor(Model))
+
+New_Mel_FNF_Ensem
+New_Mel_FNF$date <- NULL
+New_Mel_FNFWY2 <- rbind(New_Mel_FNF_Ensem, New_Mel_FNF)
+New_Mel_FNFWY2
+New_Mel_FNFWY2$Model <- factor(New_Mel_FNFWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+
+```
+
+```{r}
+Figure_Annual(FNF, FNF$`Difference (%)`, Delta~"Full Natural Flow (%)", "FNF_Percent", "Figure 15. Relative change in annual full natural flow compared to historical (1951-2013)")
+Figure_Annual_abs(FNF, FNF$Difference, Delta~"Full Natural Flow (acre-feet/year)",Delta~"Full Natural Flow (mcm/year)", "FNF_Abs", "Figure 14. Absolute change in annual full natural flow  compared to historical (1951-2013)")
+Figure_Monthly(New_Mel_FNFWY2, New_Mel_FNFWY2$flow, Delta~"Full Natural Flow (acre-feet/month)", "Full Natural Flow (mcm/month)", "FNF", "Figure 13. Monthly merced River full natural flow")
+
+```

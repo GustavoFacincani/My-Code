@@ -1,0 +1,63 @@
+
+```{r}
+Mer_RCP_85 <- CT_Flow(Livneh_Mer, CanESM2_Mer, CNRM_CM5_Mer, HadGEM2_ES_Mer, MIROC5_Mer, ACCESS1_Mer, CCSM4_Mer, CMCC_Mer, CESM1_Mer, HadGEM2_CC_Mer, GFDL_Mer, "Merced River")
+Mer_RCP_85
+
+
+
+FNF_RCP_85 <- Mer_RCP_85 %>%
+  mutate(Dateof50 = as.Date(paste("1952-", month(Date_50pct_TotalQ),"-", day(Date_50pct_TotalQ), sep="")))
+FNF_RCP_85
+
+FNF_date <- FNF_RCP_85 %>%
+  group_by(GCM) %>%
+  summarize(FNF = mean.Date(Dateof50))
+FNF_date
+
+FNF_date$GCM <- factor(FNF_date$GCM, levels = c("Livneh (Historical)","ACCESS1-0", "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4",  "HadGEM2-ES","HadGEM2-CC", "CanESM2", "CESM1-BGC", "CNRM-CM5")) 
+FNF_date
+```
+
+```{r}
+
+
+Elec_RCP_85 <- CT_Gen_8.5_Mer %>%
+  mutate(Dateof50 = as.Date(paste("1952-", month(Date_50pct_TotalQ),"-", day(Date_50pct_TotalQ), sep="")))
+Elec_RCP_85
+
+Elec_date <- Elec_RCP_85 %>%
+  group_by(GCM) %>%
+  summarize(Elec = mean.Date(Dateof50))
+Elec_date
+
+scatter <-merge(Elec_date, FNF_date, by = "GCM")
+
+scatter$GCM <- factor(scatter$GCM, levels = c("Livneh (Historical)","ACCESS1-0", "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4",  "HadGEM2-ES","HadGEM2-CC", "CanESM2", "CESM1-BGC", "CNRM-CM5")) 
+scatter
+```
+
+```{r}
+ggplot(scatter, aes(x = Elec, y = FNF, color = GCM)) + geom_point(size = 4, alpha = 1) +
+   theme_bw(base_size=11, base_family='Times New Roman') + 
+   scale_color_manual(values = c("black","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695"))+
+  scale_x_date(limits = c(as.Date("1952-05-01"), as.Date("1952-05-23"))) +
+    scale_y_date(limits = c(as.Date("1952-04-05"), as.Date("1952-05-03")))+
+  labs(color = "RCP 8.5",
+       title = "Merced River",
+         subtitle = "Centroid Time (Baseline)",
+    y = "Full Natural Flow (Day)", 
+       x = "Electricity Generation (Day)") +
+  theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+  # legend.title = element_blank(),
+   legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+       plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       legend.text = element_text(size = 8),
+       legend.key.size = unit(0.75,"line")) +
+  guides(color=guide_legend(nrow=3))+
+  png("CT_FlowvsEnergy_RCP85_baseline_10GCMs.png", units ="in", width=5.5, height=4.5, res = 300)
+```

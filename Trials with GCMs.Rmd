@@ -1,0 +1,304 @@
+---
+title: "NetCDF_to_CSV"
+author: "Gustavo Facincani Dourado"
+date: "8/7/2020"
+output: html_document
+---
+
+```{r}
+library(ncdf4)
+library(raster)
+library(rgdal)
+library(maptools)
+
+loca_nc <- nc_open("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/baseflow.2006.v0.CA_NV.nc")
+loca_globals <- ncatt_get(loca_nc, varid = 0)
+names(loca_globals) # Available global attributes
+names(loca_nc) # top level names of the ncdf4 object
+names(loca_nc$dim) # Dimensions of the ncdf4 object
+loca_nc$nvars # How many variables are available from the ncdf4 object
+
+```
+
+```{r}
+
+
+for (i in 2006:2100){
+  #read flow data in the netCDF data 
+    dpath <- paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.",as.character(j),".v0.CA_NV.nc", sep="")
+  data=brick(dpath)}
+data  
+
+extent(data)
+```
+
+```{r}
+setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/")
+Mer_shp <- shapefile("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/Mer.shp")
+
+#Check if projections of the shapefile and NetCDF files are the same
+
+crs(Mer_shp)
+crs(data) 
+plot(Mer_shp)
+```
+
+```{r}
+library(RNetCDF)
+nc.file <- open.nc(paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc") ) # Monthly mean absolute temperature
+file.inq.nc(nc.file) 
+#to = insol::JDymd(year = 1950, month = 1, day = 1)
+dat <- read.nc(nc.file)
+str(dat)  
+
+lon <- var.get.nc(ncfile = nc.file, variable = 'Lon')
+lat <- rev(var.get.nc(ncfile = nc.file, variable = 'Lat')) # Plotting requires incremented values
+tmp <- var.get.nc(nc.file, variable = 'runoff_plus_baseflow')
+```
+
+```{r}
+library(sf)
+file<- nc_open("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+
+variable <-ncvar_get(file,"runoff_plus_baseflow")
+lat <-ncvar_get(file,"Lat")
+long <-ncvar_get(file,"Lon")
+
+fillvalue<-ncatt_get(file, "runoff_plus_baseflow", "_FillValue")
+variable[variable==fillvalue$value]<-NA
+
+extract <- raster::extract
+{r}
+library(tidyverse)
+library(ncdf4)
+library(raster)
+library(sf)
+#library(tmap)
+library(stringr)
+library(tidyverse)
+```
+
+```{r}
+file<- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+#extent(file)
+
+# number of layers
+names(file)
+nl <- nlayers(file)
+
+# begin of loop
+for (i in 1:nl){
+
+# Extract the raster file of layers
+r <- raster(file, layer = i)
+
+# Extract relevant information from shapefile
+Mer <-Mer_shp["SUBWAT"]
+
+# Ensure command extract is from raster package
+extract <- raster::extract
+# Extract the mean value of cells within AMC polygon
+# Alternative: look to "mask" function ?mask
+masked_file<-extract(r, 
+                    Mer, 
+                    fun = mean,
+                    na.rm=TRUE, 
+                    df=F, 
+                    small=T, 
+                    sp=T,  
+                    weights=TRUE, 
+                    normalizedweights=TRUE)
+
+# Generate variable depicting the date
+# Extract the information about the time
+date <- r@z[[1]]
+date
+date <- as.Date(date, origin = "1800-01-01")
+
+# Compile the codes for AMC and time variable in one dataframe
+df <- data.frame(date, masked_file)
+
+# rename last variable that represents the extracted values
+colnames(df)[4] <- "Total Runoff"
+
+# save data as .csv
+setwd("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/")
+
+write.csv(df, 
+         paste0("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/", date , "_amc_rainfall.csv"), 
+         row.names = TRUE,
+         ) # overwrites
+
+# print
+print(i)
+print(date)
+# end of loop
+}
+```
+nc_close(file) 
+
+variable.slice <- variable[, , 1] 
+
+raster_file <- raster(t(variable.slice), xmn=min(lon), xmx=max(lon), ymn=min(lat), ymx=max(lat), crs=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs+ towgs84=0,0,0"))
+
+```
+
+```
+
+```{r}
+nc = nc_open("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/new.nc")       #open ncdf and read variables
+
+#to = insol::JDymd(year = 1950, month = 1, day = 1)
+dat <- read.nc(nc)
+str(dat)  
+
+```
+
+```{r}
+lon = ncvar_get(nc,"Lon")              # Lon lat and time
+lat = ncvar_get(nc,"Lat")
+time = ncvar_get(nc, "Time")
+dname = "runoff_plus_baseflow"  #variable
+variabel = ncvar_get(nc,dname)
+lonlat = as.matrix(expand.grid(lon,lat))
+var_vektor = as.vector(variabel)
+datanya = data.frame(cbind(lonlat,var_vektor))
+names(datanya) = c("lon","lat",paste(dname,as.character(), sep="_"))
+head(na.omit(datanya))
+csvpath = "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/"  #directory to save file
+csvname = "hasil_1v2.csv" #file_output
+csvfile = paste(csvpath, csvname, sep="")
+write.table(na.omit(datanya),csvfile, row.names=FALSE, sep=",")
+```
+
+```{r}
+writeRaster(output, "new.nc", overwrite=TRUE, format="CDF", varname="tmx", varunit="degrees celcius", longname="maximum temperature", xname="lon", yname="lat", zunit="numeric") # save output in netcdf format (nw.nc)
+```
+
+```{r}
+Mer1 <- brick("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc") 
+
+Mer_mask1 <- mask(Mer1, Mer_shp)
+
+writeRaster(Mer_mask1, "new.nc", overwrite=TRUE, format="CDF")
+```
+
+```{r}
+library(survival)
+library(RNetCDF)
+library(ncdf)
+library(date)
+
+#setwd("c:/users/mmiller21/Netcdf")
+
+my.data <- open.nc("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/rcp45/tot_runoff.2007.v0.CA_NV.nc")
+
+my.time <- var.get.nc(my.data, "Time")
+
+n.latitudes  <- length(var.get.nc(my.data, "Lat"))
+n.longitudes <- length(var.get.nc(my.data, "Lon"))
+
+n.dates <- trunc(length(my.time))
+n.dates
+
+my.object <- var.get.nc(my.data, "runoff_plus_baseflow")
+
+my.array  <- array(my.object, dim = c(n.latitudes, n.longitudes, n.dates))
+my.array[,,1:5]
+my.vector <- my.array[1, 2, 1:n.dates]  # first latitude, second longitude
+head(my.vector)
+
+baseDate <- att.get.nc(my.data, "NC_GLOBAL", "base_date")
+bdInt    <- as.integer(baseDate[1])
+
+year     <- date.mdy(seq(mdy.date(1, 1, bdInt), by = 1,
+                     length.out = length(my.vector)))$year 
+
+head(year)
+```
+
+```{r}
+#Mer_data1 <- as.data.frame(Mer_mask1, xy=FALSE)
+#Mer_data1 = Mer_data1[complete.cases(Mer_data1),]
+#Mer_data1
+
+lon = ncvar_get(Mer_mask1,"Lon")              # Lon lat and time
+lat = ncvar_get(Mer_mask1,"Lat")
+time = ncvar_get(Mer_mask1, "Time")
+dname = "runoff_plus_baseflow"  #variable
+variabel = ncvar_get(Mer_mask1,dname)
+lonlat = as.matrix(expand.grid(lon,lat))
+var_vektor = as.vector(variabel)
+datanya = data.frame(cbind(lonlat,var_vektor))
+names(datanya) = c("lon","lat",paste(dname,as.character(), sep="_"))
+head(na.omit(datanya))
+csvpath = "C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/ACCESS1-0/"  #directory to save file
+csvname = "hasil_1v22.csv" #file_output
+csvfile = paste(csvpath, csvname, sep="")
+write.table(na.omit(datanya),csvfile, row.names=FALSE, sep=",")
+```
+
+```{r}
+class(Mer_mask1)
+```
+
+  n<-nbands(data) #give me the number of bands in netCDF data 
+  
+  date.start<- paste(as.character(j),"-01-01",sep="")
+  date.end<- paste(as.character(j),"-12-31",sep="")
+  d<- seq(as.Date(date.start), as.Date(date.end),1)
+  #convert netCDF data from mm to m
+  #raster_m3<-calc(data, fun=function(x){x*0.001}) #per cell size mm to m 
+  raster_m3 <- data*0.001
+  i <- 1
+  while (i < 39) {
+    
+    if (i < 10) {
+      filenum <- paste("0", as.character(i), sep="")
+    } else {
+      filenum <- as.character(i)
+    }
+    # read file 1
+    fpath <- paste("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Shapefiles/", filenum, ".shp", sep="")
+    print (fpath)
+    SJN_shape <- readOGR(fpath)
+    
+    plot(SJN_shape) #check the shapefile by viewing 
+    #mask netCDF with shapefile 
+    SJN_mask_data<-mask(raster_m3,SJN_shape)}} #for entire historical period this takes ~4 minutes 
+```
+
+    # read file 2
+    fpath2 <- paste("C:\\Users\\Aditya\\Desktop\\Work\\UC\\OA_USJR\\CatchmentROs\\VIC_Runoffs_R\\SJN_SB\\TIFF\\SJN", filenum, "_NetConR.tif", sep="")
+    SJN_area=raster(fpath2)
+    
+    #create a raster stack replication of area with n layers
+    SJN_stack <- stack(replicate(n, SJN_area)) #replicate band 1 into n bands
+    
+    #mutiply netcdf by SJN_stack (SJNstack has area of each cell so we are getting volume m3/day)
+    runoff_vol<-SJN_mask_data*SJN_stack/86400 #Divided by 86400 to convert to m3/s; for the entire historical period this takes ~ minutes
+    #s4=as.matrix(subset(runoff_vol,200))
+    
+    x.stats<-data.frame(x.sum=cellStats(runoff_vol,"sum",na.rm=TRUE))
+    
+    SB<-gsub(" ", "",
+             tools::file_path_sans_ext(
+               basename((fpath))))
+    SJN<-substr(SB, start = 1, stop = 5)
+    x.stats$Subbasin<-SJN
+    
+    ##ADD COLUMN of Julian Date, Month, Year, and WY 
+    x.stats$dates<-d
+    x.stats$month<-month(d)
+    x.stats$year<-year(d)
+    x.stats$day<-day(d)
+    x.stats$WY <- x.stats$year + (x.stats$month %in% 10:12) #this method is called vectorization 
+    
+    outpath <- paste("C:\\Users\\Aditya\\Desktop\\Work\\UC\\OA_USJR\\CatchmentROs\\VIC_Runoffs_R\\Outputs\\livneh_hist\\SJN", filenum, "livneh_historic_", as.character(j),".csv", sep="")
+    write.csv(x.stats, outpath)
+    
+    i = i+1
+  }
+  j = j+1
+}
+```

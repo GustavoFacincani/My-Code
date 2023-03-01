@@ -8,7 +8,7 @@ output: html_document
 ```{r}
 library(tidyverse, quietly = TRUE)
 library(readr, quietly = TRUE)
-library(extrafont)
+#library(extract)
 library(ggplot2, quietly = TRUE)
 library(ggthemes, quietly = TRUE)
 library(stringr, quietly = TRUE)
@@ -29,7 +29,7 @@ library(dplyr)
 Livneh <- function(location) {
   
 Livneh <- read_csv(location) %>%
- filter(date >= as.Date("1950-10-01") & date <= as.Date("2013-09-30"))  %>%
+ filter(date >= as.Date("1950-10-01") & date <= as.Date("2010-09-30"))  %>%
   mutate(GCM = as.factor("Livneh (Historical)"))
 Livneh  
 }
@@ -38,7 +38,7 @@ Livneh
 GCM <- function(location, GCMs) {
   
 GCM <- read_csv(location) %>%
- filter(date >= as.Date("2030-10-01") & date <= as.Date("2060-09-30"))%>%
+ filter(date >= as.Date("2030-10-01") & date <= as.Date("2090-09-30"))%>%
   mutate(GCM = as.factor(GCMs))
 GCM  
 
@@ -47,8 +47,8 @@ GCM
 GCM2 <- function(location, GCMs) {
   
 GCM <- read_csv(location) %>%
- filter(date >= as.Date("2030-10-01") & date <= as.Date("2060-09-30"))%>%
-  rename(date = date) %>%
+ filter(date >= as.Date("2030-10-01") & date <= as.Date("2090-09-30"))%>%
+ # rename(date = date) %>%
   mutate(GCM = as.factor(GCMs))
 GCM
 }
@@ -63,16 +63,16 @@ GCM
 Livneh_Mer <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Mer
 
-CanESM2_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Mer
 
-CNRM_CM5_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Mer
 
-HadGEM2_ES_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Mer
 
-MIROC5_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Mer <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Mer
 
 ACCESS1_Mer <- GCM2("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -110,16 +110,16 @@ Mer_RCP85
 Livneh_Mer2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Mer2
 
-CanESM2_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Mer2
 
-CNRM_CM5_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Mer2
 
-HadGEM2_ES_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Mer2
 
-MIROC5_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Mer2
 
 ACCESS1_Mer2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/ACCESS1-0_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -150,19 +150,19 @@ Mer_RCP45
 ```{r}
 #Mid-century
 #Tuolumne RCP 8.5
-Livneh_Tuo <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh - Original/preprocessed/full_natural_flow_daily_mcm.csv")
+Livneh_Tuo <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Tuo
 
-CanESM2_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Tuo
 
-CNRM_CM5_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Tuo
 
-HadGEM2_ES_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Tuo
 
-MIROC5_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Tuo <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Tuo
 
 ACCESS1_Tuo <- GCM2("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -193,19 +193,19 @@ Tuo_RCP85
 ```{r}
 #Mid-century
 #Tuolumne - RCP 4.5
-Livneh_Tuo2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh - Original/preprocessed/full_natural_flow_daily_mcm.csv")
+Livneh_Tuo2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Tuo2
 
-CanESM2_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Tuo2
 
-CNRM_CM5_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Tuo2
 
-HadGEM2_ES_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Tuo2
 
-MIROC5_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Tuo2
 
 ACCESS1_Tuo2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/gcms/ACCESS1-0_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -239,16 +239,16 @@ Tuo_RCP45
 Livneh_Stn <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Stn
 
-CanESM2_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Stn
 
-CNRM_CM5_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Stn
 
-HadGEM2_ES_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Stn
 
-MIROC5_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Stn <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Stn
 
 ACCESS1_Stn <- GCM2("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -282,16 +282,16 @@ Stn_RCP85
 Livneh_Stn2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_Stn2
 
-CanESM2_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_Stn2
 
-CNRM_CM5_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_Stn2
 
-HadGEM2_ES_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_Stn2
 
-MIROC5_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_Stn2
 
 ACCESS1_Stn2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/ACCESS1-0_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -321,19 +321,19 @@ Stn_RCP45
 ```{r}
 #Mid-century
 #Upper San Joaquin RCP 8.5
-Livneh_USJ <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh - Original/preprocessed/full_natural_flow_daily_mcm.csv")
+Livneh_USJ <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_USJ
 
-CanESM2_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_USJ
 
-CNRM_CM5_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_USJ
 
-HadGEM2_ES_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_USJ
 
-MIROC5_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_USJ <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_USJ
 
 ACCESS1_USJ <- GCM2("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -364,19 +364,19 @@ USJ_RCP85
 ```{r}
 #Mid-century
 #Upper San Joaquin - RCP 4.5
-Livneh_USJ2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh - Original/preprocessed/full_natural_flow_daily_mcm.csv")
+Livneh_USJ2 <- Livneh("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
 Livneh_USJ2
 
-CanESM2_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2")
+CanESM2_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CanESM2_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CanESM2\u2020")
 CanESM2_USJ2
 
-CNRM_CM5_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5")
+CNRM_CM5_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/CNRM-CM5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "CNRM-CM5\u2020")
 CNRM_CM5_USJ2
 
-HadGEM2_ES_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES")
+HadGEM2_ES_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/HadGEM2-ES_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "HadGEM2-ES\u2020")
 HadGEM2_ES_USJ2
 
-MIROC5_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5")
+MIROC5_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/MIROC5_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "MIROC5\u2020")
 MIROC5_USJ2
 
 ACCESS1_USJ2 <- GCM("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/gcms/ACCESS1-0_rcp45/preprocessed/full_natural_flow_daily_mcm.csv", "ACCESS1-0")
@@ -405,11 +405,85 @@ USJ_RCP45
 ```
 
 ```{r}
-RCP45 <- rbind(Mer_RCP45, Tuo_RCP45, Stn_RCP45, USJ_RCP45)
+library(lfstat)
+RCP45 <- rbind(Mer_RCP45, Tuo_RCP45, Stn_RCP45, USJ_RCP45) %>%
+  mutate(Month = as.factor(format(as.Date(date, format = "%B"), "%b")),
+         Year = water_year(date, origin ="usgs")) %>%
+  group_by(Year, Month, GCM, Basin) %>%
+     dplyr::summarize(MonthlyTotal = sum(flow))
 RCP45
-RCP85 <- rbind(Mer_RCP85, Tuo_RCP85, Stn_RCP85, USJ_RCP85)
+
+RCP45$GCM <- factor(RCP45$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-ES\u2020", "HadGEM2-CC", "CanESM2\u2020", "CESM1-BGC", "CNRM-CM5\u2020"))
+
+RCP45annual <- RCP45 %>%
+  group_by(Year, GCM, Basin) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal))
+RCP45annual
+
+
+RCP85 <- rbind(Mer_RCP85, Tuo_RCP85, Stn_RCP85, USJ_RCP85)%>%
+  mutate(Month = as.factor(format(as.Date(date, format = "%B"), "%b")),
+         Year = water_year(date, origin ="usgs")) %>%
+  group_by(Year, Month, GCM, Basin) %>%
+     dplyr::summarize(MonthlyTotal = sum(flow))
 RCP85
+
+RCP85$GCM <- factor(RCP85$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4",  "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+RCP85annual <- RCP85 %>%
+  group_by(Year, GCM, Basin) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) %>%
+  group_by(Year, GCM, Basin) %>%
+  mutate(Mean = median(AnnualTotal),
+         variable = GCM) %>%
+  filter(!as.numeric(as.character(Year)) > 2010 | !as.numeric(as.character(Year)) < 2031 & !as.numeric(as.character(Year)) > 2090)
+RCP85annual
 ```
+
+```{r}
+#extra
+RCP85_2 <- RCP85annual %>% 
+  group_by(variable, Basin, GCM)%>%
+  summarize(`Minimum FNF (mcm)` = min(AnnualTotal, na.rm=TRUE),
+            `1st Quintile FNF` = quantile(AnnualTotal, 0.2, na.rm = TRUE),
+            #`1st Quartile FNF` = quantile(AnnualTotal, 0.25, na.rm=TRUE),
+            `2nd Quintile FNF (mcm)` = quantile(AnnualTotal, 0.4, na.rm = TRUE),
+            #`Mean FNF (mcm)` = mean(AnnualTotal, na.rm=TRUE),
+            #`Median FNF (mcm)` = median(AnnualTotal, na.rm=TRUE),
+            `3th Quintile FNF (mcm)` = quantile(AnnualTotal, 0.6, na.rm = TRUE),
+            #`3rd Quartile FNF (mcm)` = quantile(AnnualTotal, 0.75, na.rm=TRUE),
+            `4th Quintile FNF (mcm)` = quantile(AnnualTotal, 0.8, na.rm = TRUE))#,
+#            AnnualTotal = AnnualTotal)# %>%
+#              mutate(Classification = ifelse(AnnualTotal < `1st Quintile FNF`, "1st Quintile FNF",0))
+RCP85_2
+```
+
+
+```{r}
+ggplot(RCP85annual) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = GCM, y = AnnualTotal, fill = GCM)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695", "white")) +
+
+  labs(title = "Annual Full Natural Flow (2030-2060)",
+       subtitle = "RCP 8.5",
+    x = element_blank(), 
+       y = "Total Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Annual_FNF_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
 
 ```{r}
 #function to calculate centroid timing
@@ -419,19 +493,19 @@ Liv <- calc_annual_flow_timing(Liv, dates = date, values =flow, water_year_start
 Liv
 
 Can <- calc_annual_flow_timing(Can, dates = date, values = flow, water_year_start = 10) %>%
-    mutate(GCM = as.factor("CanESM2")) 
+    mutate(GCM = as.factor("CanESM2\u2020")) 
 Can
 
 CNR <- calc_annual_flow_timing(CNR, dates = date, values =flow, water_year_start = 10) %>%
-    mutate(GCM = as.factor("CNRM-CM5"))
+    mutate(GCM = as.factor("CNRM-CM5\u2020"))
 CNR
 
 Had <- calc_annual_flow_timing(Had, dates = date, values = flow, water_year_start = 10) %>%
-    mutate(GCM = as.factor("HadGEM2-ES"))
+    mutate(GCM = as.factor("HadGEM2-ES\u2020"))
 Had
 
 Mir <- calc_annual_flow_timing(Mir, dates = date, values = flow, water_year_start = 10) %>%
-    mutate(GCM = as.factor("MIROC5"))
+    mutate(GCM = as.factor("MIROC5\u2020"))
 Mir
 
 ACC <- calc_annual_flow_timing(ACC, dates = date, values = flow, water_year_start = 10) %>%
@@ -496,40 +570,68 @@ USJ_RCP_45
 
 ```{r}
 #Bind RCPs separately for the colored figure
-RCP45 <- rbind(Mer_RCP_45, Tuo_RCP_45, Stn_RCP_45, USJ_RCP_45)
+RCP45 <- rbind(Mer_RCP_45, Tuo_RCP_45, Stn_RCP_45, USJ_RCP_45) %>%
+  mutate(RCP = "RCP 4.5")
 RCP45
 
 RCP45$Basin <- factor(RCP45$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
 
-RCP85 <- rbind(Mer_RCP_85, Tuo_RCP_85, Stn_RCP_85, USJ_RCP_85)
+RCP85 <- rbind(Mer_RCP_85, Tuo_RCP_85, Stn_RCP_85, USJ_RCP_85) %>%
+  mutate(RCP = "RCP 8.5")
 RCP85
 
 RCP85$Basin <- factor(RCP85$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
 
+
+RCP45 <- RCP45 %>%
+  mutate(Dateof50 = as.Date(paste("1952-", month(Date_50pct_TotalQ),"-", day(Date_50pct_TotalQ), sep="")))
+RCP45
+
+RCP85 <- RCP85 %>%
+  mutate(Dateof50 = as.Date(paste("1952-", month(Date_50pct_TotalQ),"-", day(Date_50pct_TotalQ), sep="")))
+RCP85
 #Create RCP column and set order of GCMs
 #RCP85$Scenario <- as.factor("RCP 8.5")
-#RCP85$GCM <- factor(RCP85$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+#RCP85$GCM <- factor(RCP85$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))
 
 #RCP45$Scenario <- as.factor("RCP 4.5")
-#RCP45$GCM <- factor(RCP45$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))
+#RCP45$GCM <- factor(RCP45$GCM, levels = c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))
 
 #Bind RCPs for the B&W figures
 All_Scenarios <- rbind(RCP45, RCP85)
 All_Scenarios
 
 
-All_Scenarios$GCM <- factor(All_Scenarios$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4",  "HadGEM2-ES","HadGEM2-CC", "CanESM2", "CESM1-BGC", "CNRM-CM5"))
+All_Scenarios$GCM <- factor(All_Scenarios$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+#All_Scenarios <- All_Scenarios %>%
+#  mutate(Dateof50 = as.Date(paste("1950-",format(as.Date(Date_50pct_TotalQ), "%m"),"-", format(as.Date(Date_50pct_TotalQ), "%d"), sep="")))
+#All_Scenarios
 ```
+
 
 ```{r}
 #Check ranges of the Centroid timing at 50% ub days and date
 #range(RCP45$DoY_50pct_TotalQ) #days 114-261 
+Merced <- All_Scenarios %>%
+  filter(Basin == "Merced River")
 
-range(RCP85$DoY_50pct_TotalQ) #days 108-271
+range(Merced$DoY_50pct_TotalQ) #Merced 111-240 (Jan 19 - May 28), Tuo 77-257 (Dec 16 - Jun 13), Stn 68-237 (Dec 07 - May 25), USJ 92-273 (Dec 31 - Jun 30)
+
+All_Scenarios %>%
+  filter(Basin == "Merced River",
+         DoY_50pct_TotalQ == "50" | DoY_50pct_TotalQ == "278")
+
 ```
 
 ```{r}
-Density_plot <- function(data, title, Legend) {
+All_Scenarios2 <- All_Scenarios%>%
+  mutate(Period = ifelse(Year <2011, "1981-2010", ifelse(Year > 2060, "2061-2090", "2031-2060")))
+All_Scenarios2
+```
+
+```{r}
+Density_plot <- function(data, title, basin, Legend) {
   
 ggplot(data, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fill=GCM)) +
       theme_bw(base_size=11, base_family='Times New Roman') + #change font to Times New Roman, 12pt
@@ -541,20 +643,23 @@ ggplot(data, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fil
    # scale_color_brewer(palette = "RdYlBu")+
     scale_color_manual(values = c("black","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695"))+
       scale_y_continuous(expand = c(0, NA),
-                         limits = c(0, 1.05),
+                         limits = c(0, 1.02),
                          breaks = c(0, 0.25, 0.50, 0.75, 1))+
     scale_x_continuous(expand = c(0, NA),
-                       limits = c(108,271), #From Jan 1 to Jul 15
-                       breaks = c(61, 92, 121, 151, 
-                                  182, 212, 244, 273, 304),
-                       labels = c("Dec 1","Jan 1","Feb 1", "Mar 1",
-                                  "Apr 1", "May 1", "Jun 1", "Jul 1", "Aug 1")) +
+                # limits = c(as.Date("1952-01-15"), as.Date("1952-05-30")))+
+                 
+                       limits = c(15,288), #From Jan 1 to Jul 15
+                       breaks = c(31, 62, 93, 122, 152, 
+                                  183, 213, 245, 274),#, 305),
+                       labels = c("Nov 1","Dec 1","Jan 1","Feb 1", "Mar 1",
+                                  "Apr 1", "May 1", "Jun 1", "Jul 1"))+#, "Aug 1")) +
   labs(color = Legend,
        linetype = FALSE,
-       title = "Full Natural Flow (mcm)",
+       title = basin,
+         subtitle = "Full Natural Flow",
     y = "Density", 
-       x = "Centroid Timing (Day)") + 
- theme(plot.margin = margin(c(1,8,1,1, "cm")), #add a margin to not cut the graph
+       x = "Centroid Time (Day)") + 
+ theme(plot.margin = margin(c(6,12,6,6, "cm")), #add a margin to not cut the graph
   # legend.title = element_blank(),
    legend.position = "bottom",
         legend.direction = "horizontal",
@@ -564,24 +669,53 @@ ggplot(data, aes(x=DoY_50pct_TotalQ, y=..scaled.., group=GCM, color=GCM))+ # fil
         strip.placement = "outside",
         strip.background = element_blank(),
        legend.text = element_text(size = 8),
-       legend.key.size = unit(0.75,"line"))+
-  facet_wrap(~Basin, ncol=1, scales = "fixed")
+       legend.key.size = unit(0.75,"line"))#+
+#  facet_wrap(~Period, ncol=1, scales = "fixed",  strip.position = "left")
   
 }  
 ```
 
 ```{r}
-Density_plot(RCP45, element_blank(), "RCP 4.5") +
-  png("AllBasins_CT_Flow_RCP45_Scalesfixed_10GCMs2.png", units ="in", width=5.5, height=6, res = 300)
+Density_plot(All_Scenarios  %>% filter(RCP == "RCP 8.5")
+             , element_blank(),  element_blank(), "RCP 8.5") +
+  png("Allbasins_CT_FNF_RCP85_10GCMs_Report_March.png", units ="in", width=5.2, height=7, res = 300)
+```
+```{r}
+Density_plot(All_Scenarios  %>% filter(RCP == "RCP 4.5")
+             , element_blank(),  element_blank(), "RCP 4.5") +
+  png("Allbasins_CT_FNF_RCP45_Report_March.png", units ="in", width=5.2, height=7, res = 300)
+```
+
+
+```{r}
+Stn_RCP_85$GCM <- factor(Stn_RCP_85$GCM, levels = c("Livneh (Historical)","MIROC5\u2020", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES\u2020", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2\u2020", "CNRM-CM5\u2020", "Ensemble"))
+
+Density_plot(All_Scenarios %>%
+  filter(Basin == "Tuolumne River"), element_blank(), "Tuolumne River", "RCP 8.5") +
+  png("Tuo_CT_FNF_RCP85_Report_March.png", units ="in", width=6, height=3.5, res = 300)
 ```
 
 ```{r}
-Density_plot(RCP85, element_blank(), "RCP 8.5") +
-  png("AllBasins_CT_Flow_RCP85_Scalesfixed_10GCMs2.png", units ="in", width=5.5, height=6, res = 300)
+Density_plot(All_Scenarios %>% #
+  filter(Basin == "Merced River" & RCP == "RCP 8.5") %>%
+  filter(Year < 2030 | Year > 2061), element_blank(), "Merced River", "RCP 8.5") +
+  png("Merced_CT_FNF_RCP85_ES240_2061-2090.png", units ="in", width=6, height=3.5, res = 300)
+
+#filter(Basin == "Merced River" & Year < 2061 & RCP == "RCP 8.5")
+
+
+#All_Scenarios %>% #
+#  filter(Basin == "Merced River" & RCP == "RCP 8.5") %>%
+#  filter(Year < 2030 | Year > 2061)
 ```
 
-
 ```{r}
+All_Scenarios %>% #
+  filter(Basin == "Merced River" & RCP == "RCP 8.5") %>%
+  filter(Year < 2030 | Year > 2061)
+
+```
+
 #Function for Black and White time series of CT
 CentrTiming <- function(Data, Basins, Title)  {
 Data %>%
@@ -626,7 +760,6 @@ stat_smooth(aes(x = Year, y = DoY_50pct_TotalQ, method = "loess",
   
 }
 
-```
 
 ```{r}
 CentrTiming(All_Scenarios, "Tuolumne River", "Tuolumne River") +
@@ -658,12 +791,13 @@ All_RCP45 <- rbind(Mer_RCP45, Tuo_RCP45, Stn_RCP45, USJ_RCP45) %>%
   mutate(Scenario = as.factor("RCP 4.5"))
 All_RCP45
 
-#All_RCP85 <- rbind(Mer_RCP85, Tuo_RCP85, Stn_RCP85, USJ_RCP85) %>%
-#  mutate(Scenario = as.factor("RCP 8.5"))
-#All_RCP85
+All_RCP85 <- rbind(Mer_RCP85, Tuo_RCP85, Stn_RCP85, USJ_RCP85) %>%
+  mutate(Scenario = as.factor("RCP 8.5"))
+All_RCP85
 
-#All_basins <- rbind(All_RCP45, All_RCP85)
-#All_basins
+All_basins <- rbind(All_RCP45, All_RCP85)
+All_basins$GCM <- factor(All_basins$GCM, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+All_basins
 ```
 
 ```{r}
@@ -686,7 +820,7 @@ all_FNF
 ```
 
 ```{r}
-all_FNF2 <- All_RCP45 %>%
+all_FNF2 <- All_RCP85 %>%
   group_by(Scenario, Basin, GCM) %>% #grouping by scenario, GCM and basin to summarize
   summarise(#min, mean, median, max and quantile for PH and total FNF
             `Minimum FNF (mcm)` = min(flow, na.rm=TRUE),
@@ -706,5 +840,5 @@ all_FNF2
 
 ```{r}
 
-readr::write_csv(all_FNF2, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Stats_FNF_AllScenarios3.csv")
+readr::write_csv(all_FNF2, "C:/Users/gusta/Desktop/PhD/Classes/ES207/Allbasins_Stats_FNF_10GCMs_RCP85_Report_March.csv")
 ```

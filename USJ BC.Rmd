@@ -17,7 +17,7 @@ library(lubridate)
 
 ```{r}
 #Reading Livneh data, that is going to be used for bias correction and filtering them to have objects with the same length of the observed data, to be used as the simulated vs observed
-path1 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh - Original/runoff/"
+path1 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff/"
 
 Sub20_Livneh <- read_csv(paste(path1,"tot_runoff_sb20_mcm.csv",sep="")) %>% #below Mammoth Pool
    filter(between(Date, as.Date("1980-10-01"), as.Date("2013-12-31")))
@@ -164,6 +164,14 @@ Sub37
 ```
 
 
+```{r}
+write.csv(Sub22, "sub22.csv")
+write.csv(Sub23, "sub23.csv")
+write.csv(Sub31, "sub31.csv")
+write.csv(Sub36, "sub36.csv")
+write.csv(Sub38, "sub38.csv")
+```
+
 #Here I tried montlhy bias correction, but daily bias correction seem to produce better results
 Florence_USGS <- Florence %>% 
   group_by(year = year(Date), month = month(Date)) %>% 
@@ -222,7 +230,7 @@ for (i in (1:12)){
 ```{r}
 #Bias Correction with daily data
 
-  path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/USJR/SubCatchment_RO_BC"
+  path3 <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/USJR/SubCatchment_RO_BC"
 BiasCorrection <- function(Observed, Simulated, ToBeCorrected, Subbasin){
 
 dates <- unique(paste0(lubridate::month(Sub31_Livneh$Date), "/", lubridate::day(Sub31_Livneh$Date)))

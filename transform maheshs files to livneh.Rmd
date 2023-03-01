@@ -1,0 +1,58 @@
+```{r}
+library(readr)
+library(dplyr)
+tuo11 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/Upper San Joaquin River/EQM_V2/Miller Crossing/daily_model_daily_mcm.csv") %>%
+  rename(flow = corrected) %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+    model = NULL,
+         corrected2 = NULL,
+         observed = NULL)
+tuo11
+
+write_csv(tuo11, "C:/Users/gusta/tot_runoff_sb23_mcm.csv")
+
+
+tuo10 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/Tuolumne River/eqm_V2/Cherry Lake/daily_model_daily_mcm.csv") %>%
+  rename(flow = corrected) %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         model = NULL,
+        corrected2 = NULL,
+         observed = NULL)
+tuo10
+
+write_csv(tuo10, "C:/Users/gusta/tot_runoff_sb10_mcm.csv")
+
+tuo13 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/Tuolumne River/eqm_V2/Hetch Hetchy/daily_model_daily_mcm.csv") %>%
+  rename(flow = corrected) %>%
+  mutate(model = NULL,
+        #corrected2 = NULL,
+         observed = NULL)
+tuo13
+
+write_csv(tuo13, "C:/Users/gusta/tot_runoff_sb13_mcm.csv")
+
+
+tuo11 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/Tuolumne River/eqm_V2/Lake Eleanor/daily_model_daily_mcm.csv") %>%
+  rename(flow = corrected) %>%
+  mutate(model = NULL,
+        corrected2 = NULL,
+         observed = NULL)
+tuo11
+
+write_csv(tuo11, "C:/Users/gusta/tot_runoff_sb11_mcm.csv")
+```
+
+
+```{r}
+tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/fromMahesh/eqm_V2/Hetch Hetchy/daily_data_daily_mcm2.csv")
+tuo
+
+tuo2 <- tuo[complete.cases(tuo), ] %>%
+  mutate(sum_obs = sum(observed*810.7),
+         sum_sim = sum(corrected*810.7),
+         diff = (sum_sim - sum_obs),
+         perdiff = (sum_sim - sum_obs)/sum_sim*100)
+  
+tuo2
+
+```

@@ -1,0 +1,102 @@
+
+```{r}
+
+# This script provides some information to get you started for assignment
+# 4. Note however, that you will need to change pieces of this as the code
+path <- "C:/Users/gusta/Downloads/"
+# you may need to add the ncdf4 package
+library(ncdf4)
+library(sp)
+library(raster)
+library(maps)
+library(mapdata)
+library(RStoolbox)# rasterPCA function
+
+ff <- "ETo_amjjas.nc"
+nc <- nc_open(paste(path, ff, sep=""))
+nc
+```
+
+```{r}
+ETo <- stack(paste(path, ff,sep=""))
+ETo
+
+plot(mean(ETo), main = "Average April-October Evapotranspiration in the Western USA", ylab="Latitude", xlab="Longitude") 
+#legend(-90, 47,legend = "Evapotranspiration (mm)", cex=0.8,box.lty=0)
+```
+
+```{r}
+#=========================================================
+#             GET DATA HANDLES
+#=========================================================
+lat <- ncvar_get(nc,"lat");
+lon <- ncvar_get(nc,"lon");
+eto <- ncvar_get(nc,"eto");
+dunits <- ncatt_get(nc, "eto", "units")
+
+# reorder dimensions of data so time is first
+eto1 <- aperm(eto,c(3, 1, 2))
+eto <- array(eto1,dim=c(71,length(lon)*length(lat)))
+fgood <- which(!is.na(eto[1,]))
+eto <-eto[,fgood]
+
+# center and standardize data
+eto <- scale(eto)
+#
+p <- prcomp(eto)
+p
+# print to screen the percent variance explained in the modes, just look at top 3 here
+summary(p)
+```
+
+```{r}
+p
+
+rowMeans(p)
+
+```
+
+```{r}
+# the scores for the first three modes
+score1 <- p$x[,1]
+score2 <- p$x[,2]
+score3 <- p$x[,3]
+
+# COEFF contains the loadings, but you need to convert them back to the
+# grid for proper mapping
+
+coeff1 <- array(NA,c(length(lon),length(lat)))
+#coeff2 <- array(NA,c(length(lon),length(lat)))
+#coeff3 <- array(NA,c(length(lon),length(lat)))
+#coeff4 <- array(NA,c(length(lon),length(lat)))
+
+for(i in 1:71) {
+data$i <-  p$rotation[,i]
+}
+
+coeff1[fgood] <-p$rotation[,1]
+coeff2[fgood] <-p$rotation[,2]
+coeff3[fgood] <-p$rotation[,3]
+coeff4[fgood] <-p$rotation
+
+lat <-rev(lat)
+coeff1 <-t(apply(coeff1,1,rev))
+coeff2 <-t(apply(coeff2,1,rev))
+coeff3 <-t(apply(coeff3,1,rev))
+
+# Now plot these out
+png("myfile3.png",width=8,height=6,units="in",res=300)
+par(mfrow=c(2,3), mar=c(4,4,4,4))
+plot(1950:2020,score1,ylab="Score 1")
+plot(1950:2020,score2,ylab="Score 2")
+plot(1950:2020,score3,ylab="Score 3")
+image(lon,lat,coeff1)
+map("state", add=TRUE)
+image(lon,lat,coeff2)
+map("state", add=TRUE)
+image(lon,lat,coeff3)
+map("state", add=TRUE)
+dev.off()
+
+
+```

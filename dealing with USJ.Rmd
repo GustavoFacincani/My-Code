@@ -1,0 +1,197 @@
+
+
+```{r}
+
+#for(i in sub){
+  
+usj <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/runoff/"
+
+usj_files <- list.files(usj,full.names = TRUE)
+usj_files
+
+listDf <- lapply(usj_files, function(fileName){
+    dfFile <- read.csv(fileName)
+ # names(dfFile)[2] <- fileName
+  return(dfFile)
+})
+
+dfMerged <- Reduce(function(...) merge(..., by = "Date"), listDf)
+dfMerged
+```
+
+
+```{r}
+dfMerged$tot_runoff_sb09.x <- NULL
+dfMerged$tot_runoff_sb09.y <- NULL
+
+Non_BC <- dfMerged %>%
+  mutate( tot_runoff_sb11 = NULL,
+         tot_runoff_sb12 = NULL,
+         tot_runoff_sb21 = NULL,
+         tot_runoff_sb22 = NULL,
+         tot_runoff_sb23 = NULL,
+         tot_runoff_sb27 = NULL,
+         tot_runoff_sb29 = NULL,
+         tot_runoff_sb30 = NULL,
+         tot_runoff_sb31 = NULL,
+         tot_runoff_sb32 = NULL,
+         tot_runoff_sb33 = NULL,
+         tot_runoff_sb34 = NULL,
+         tot_runoff_sb35 = NULL,
+         tot_runoff_sb36 = NULL,
+         tot_runoff_sb37 = NULL,
+         tot_runoff_sb38 = NULL
+         )
+Non_BC
+
+
+BC <- dfMerged %>%
+  select(tot_runoff_sb11,
+         tot_runoff_sb12,
+         tot_runoff_sb21,
+         tot_runoff_sb22,
+         tot_runoff_sb23,
+         tot_runoff_sb27,
+         tot_runoff_sb29,
+         tot_runoff_sb30,
+         tot_runoff_sb31,
+         tot_runoff_sb32,
+         tot_runoff_sb33,
+         tot_runoff_sb34,
+         tot_runoff_sb35,
+         tot_runoff_sb36,
+         tot_runoff_sb37,
+         tot_runoff_sb38
+         )%>%
+  mutate(Total_BC = as.numeric(apply(.[1:16], 1, sum)))
+BC
+
+
+obs <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/gauges/streamflow_cfs.csv")[c(1,48,49,50)]%>%
+  filter(Date >= as.Date("1950-01-01") & Date <= as.Date("2013-12-31"))%>%
+  mutate(Outflows = as.numeric(apply(.[2:4], 1, sum)*((1/35.3146667*86400)/1000000)))
+obs
+
+total <- Non_BC %>%
+  mutate(Total_NonBC = as.numeric(apply(.[2:23], 1, sum)),
+         Total_BC = BC$Total_BC,
+         Outflow = obs$Outflows) %>%
+  select(Date, Total_BC, Total_NonBC, Outflow) %>%
+  mutate(Year = format(as.Date(Date), "%Y")) %>%
+  group_by(Year) %>%
+  summarize(Obs_minus_BC = sum(Outflow - Total_BC),
+            Total_NonBC = sum(Total_NonBC))
+total
+write_csv(total, "Totals_USJ.csv")
+```
+
+```{r}
+final <- read_csv("C:/Users/gusta/Documents/USJ_Inflows_Outflows.csv") %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         Year = format(Date, "%Y"),
+         Month = format(Date, "%m")) %>%
+  group_by(Year) %>%
+  summarize(Outflow_Minus_BC = sum(Outflow_Minus_BC),
+            Total_NonBC = sum(Total_NonBC))
+final
+
+write_csv(final, "final_USJ_balance.csv")
+```
+
+```{r}
+#sub <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16", "17", "18", "19", "20", "24", "25", "26", "28")
+
+sub <- c("tot_runoff_sb22", "tot_runoff_sb23", "tot_runoff_sb31", "tot_runoff_sb31")
+
+#for(X in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/mahesh usj/tot_runoff_sb31_mcm.csv", sep=""))
+
+  usj <- usj %>%
+  mutate(tot_runoff_sb31 = ifelse(tot_runoff_sb31 < quantile(.$tot_runoff_sb31, probs = 0.99), tot_runoff_sb31*1.10, tot_runoff_sb31))
+    
+#usj[3] <- NULL
+
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb31_mcm.csv"))
+#}
+```
+
+```{r}
+#sub <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "13", "14", "15", "16", "17", "18", "19", "20", "24", "25", "26", "28")
+
+sub <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10","13", "14", "15", "16", "17", "18", "19", "20")
+
+for(i in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/Livneh - originalUSJ/runoff/tot_runoff_sb",i,"_mcm.csv", sep=""))
+
+  usj[2] <- usj[2]*0.50
+    
+usj
+
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb",i,"_mcm.csv"))
+}
+```
+
+```{r}
+sub <- c("16", "17")
+
+
+
+for(i in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/Livneh - originalUSJ/runoff/tot_runoff_sb",i,"_mcm.csv", sep=""))
+
+  usj[2] <- usj[2]*1.61
+    
+usj
+
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb",i,"_mcm.csv"))
+}
+```
+
+```{r}
+sub <- c("29", "30")
+
+
+
+for(i in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/Livneh - originalUSJ/runoff/tot_runoff_sb",i,"_mcm.csv", sep=""))
+
+  usj[2] <- usj[2]*1.1
+    
+usj
+
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb",i,"_mcm.csv"))
+}
+```
+
+```{r}
+sub <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "27", "26", "28", "29", "30", "31", "32", "33", "34", "35", "36", "37", "38")
+
+
+
+for(i in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/usj rn runoff/tot_runoff_sb",i,"_mcm.csv", sep=""))
+
+  usj[2] <- usj[2]*0.975
+    
+usj
+
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb",i,"_mcm.csv"))
+}
+```
+
+```{r}
+sub <- c("29", "30")
+
+
+
+#for(i in sub) {
+usj <-  read_csv(paste0("C:/Users/gusta/Desktop/Livneh - originalUSJ/runoff/tot_runoff_sb30_mcm.csv", sep=""))
+
+  #usj[2] <- usj[2]*1.25
+    
+usj <- usj %>%
+  mutate(tot_runoff_sb30 = ifelse(tot_runoff_sb30 < quantile(.$tot_runoff_sb30, probs = 0.99), tot_runoff_sb30*1.5, tot_runoff_sb30))
+usj
+write_csv(usj, paste0("C:/Users/gusta/Desktop/corrected usj/tot_runoff_sb30_mcm.csv"))
+#}
+```

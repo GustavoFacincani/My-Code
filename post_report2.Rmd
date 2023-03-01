@@ -1,0 +1,1627 @@
+---
+title: "Generation"
+author: "Gustavo Facincani Dourado"
+date: "6/12/2020"
+output: html_document
+---
+
+```{r}
+library(lfstat)
+library(extrafont)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+library(readr)
+```
+
+```{r}
+#This is linked to code Hydropower_flow and FNF_10GCMs
+#Merced
+#Baseline 2045 -      1,2,6,10
+#No IFR 2045 -   1,3,7,11
+#Baseline 2045 - 1,4,8,12
+#No IFR 2045 -   1,5,9,13
+
+#Tuolumne
+#Baseline 2045 -      1,2,6,10,14
+#No IFR 2045 -   1,3,7,11,15
+#Baseline 2045 - 1,4,8,12,16
+#No IFR 2045 -   1,5,9,13,17
+
+#Stanislaus
+#Baseline -      1,2,6,10,14,18,22,26,30,34,38,42
+#No IFR 2045 -   1,3,7,11,15,19,23,27,31,35,39,43
+#Baseline 2045 - 1,4,8,12,16,20,24,28,32,36,40,44
+#No IFR 2045 -   1,5,9,13,17,21,25,29,33,37,41,45
+
+#USJ
+#Baseline 2045 -      1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62
+#No IFR 2045 -                      1,3,7,11,15,19,23,27,31,35,39,43,47,51,55,59,63
+#Baseline 2045 - 1,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64
+#No IFR 2045 -                      1,5,9,13,17,21,25,29,33,37,41,45,49,53,57,61,65
+```
+
+```{r}
+scenario <- c(1,2,6,10)
+Livneh_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Mer <- Livneh_Gen_Mer %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Mer[c(2:4)]))
+Livneh_Gen_Mer
+
+CanES_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)]
+
+CanES_Gen_Mer<- CanES_Gen_Mer %>%
+  mutate("CanESM2\u2020" = rowSums(CanES_Gen_Mer[c(2:4)]))
+CanES_Gen_Mer
+
+CNRM_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)]
+
+CNRM_Gen_Mer<- CNRM_Gen_Mer  %>%
+  mutate("CNRM-CM5\u2020" = rowSums(CNRM_Gen_Mer[c(2:4)]))
+CNRM_Gen_Mer
+
+
+HadGEM_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)]
+
+HadGEM_Gen_Mer<- HadGEM_Gen_Mer %>%
+  mutate("HadGEM2-ES\u2020" = rowSums(HadGEM_Gen_Mer[c(2:4)]))
+HadGEM_Gen_Mer
+
+
+MIROC_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+MIROC_Gen_Mer<- MIROC_Gen_Mer  %>%
+  mutate("MIROC5\u2020" = rowSums(MIROC_Gen_Mer[c(2:4)]))
+MIROC_Gen_Mer
+
+HadGEMCC_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+HadGEMCC_Gen_Mer<- HadGEMCC_Gen_Mer  %>%
+  mutate(`HadGEM2-CC` = rowSums(HadGEMCC_Gen_Mer[c(2:4)]))
+HadGEMCC_Gen_Mer
+
+CCSM4_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+CCSM4_Gen_Mer<- CCSM4_Gen_Mer  %>%
+  mutate(CCSM4 = rowSums(CCSM4_Gen_Mer[c(2:4)]))
+CCSM4_Gen_Mer
+
+CMCC_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+CMCC_Gen_Mer<- CMCC_Gen_Mer  %>%
+  mutate(`CMCC-CMS` = rowSums(CMCC_Gen_Mer[c(2:4)]))
+CMCC_Gen_Mer
+
+CESM_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+CESM_Gen_Mer<- CESM_Gen_Mer  %>%
+  mutate(`CESM1-BGC` = rowSums(CESM_Gen_Mer[c(2:4)]))
+CESM_Gen_Mer
+
+ACCESS1_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+ACCESS1_Gen_Mer<- ACCESS1_Gen_Mer  %>%
+  mutate(`ACCESS1-0` = rowSums(ACCESS1_Gen_Mer[c(2:4)]))
+ACCESS1_Gen_Mer
+
+GFDL_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/merced/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(scenario)] 
+GFDL_Gen_Mer<- GFDL_Gen_Mer  %>%
+  mutate(`GFDL-CM3` = rowSums(GFDL_Gen_Mer[c(2:4)]))
+GFDL_Gen_Mer
+
+```
+
+```{r}
+library(reshape2)
+library(lfstat)
+#Can't cbind livneh as it has one day less (Feb 29) in its count
+#Deal with Livneh separately
+
+Livneh_Mer <- Livneh_Gen_Mer[-c(2,3,4)] 
+Livneh_Mer <- melt(Livneh_Mer, id = "node")
+Livneh_Mer
+
+
+Gen_Mer <- cbind(CanES_Gen_Mer[-c(2,3,4)], CNRM_Gen_Mer[-c(1,2,3,4)], 
+                HadGEM_Gen_Mer[-c(1,2,3,4)], MIROC_Gen_Mer[-c(1,2,3,4)], 
+                CMCC_Gen_Mer[-c(1,2,3,4)], ACCESS1_Gen_Mer[-c(1,2,3,4)],
+                HadGEMCC_Gen_Mer[-c(1,2,3,4)], CESM_Gen_Mer[-c(1,2,3,4)],
+                CCSM4_Gen_Mer[-c(1,2,3,4)], GFDL_Gen_Mer[-c(1,2,3,4)])
+
+#Gen_Mer <- Gen_Mer %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_Mer
+#Gen_Mer
+
+Gen_Mer1 <- melt(Gen_Mer, id = "node") #, "Basin", "Year", "Month")) #"Annual_Can",                                   "Annual_CNRM", "Annual_Had", "Annual_MIR")
+  #           Month = as.Date(cut(node, breaks = "month")),
+
+#             mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+ #          Year = as.Date(cut(node, breaks = "year")))
+Gen_Mer1
+
+
+
+Gen_Mer2 <- rbind(Gen_Mer1, Livneh_Mer) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         #Year = as.Date(cut(node, breaks = "year")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 4.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+Gen_Mer2
+
+Gen_Mer2$variable <- factor(Gen_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_Mer3 <- Gen_Mer2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Gen_Mer3
+
+
+Gen_Mer4 <- Gen_Mer3 
+#df[3:ncol(df)] <- df[3:ncol(df)]-df[,2]
+
+```
+
+
+#Merced annual generation
+Gen_Mer2 %>%
+  filter(variable == "MIROC5") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Merced River",
+    subtitle = "MIROC5",
+    x = element_blank(),
+       y = "Total Electricity Generation (MWh)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_generation_MIROC5_March.png", units ="in", width=8, height=5, res = 300)
+
+
+library(readxl)
+
+NoIFRs_perc <- read_xlsx("C:/Users/gusta/Desktop/PhD/Classes/ES207/Merced_TotalAnnual_Generation_RCP4.5_Baseline.xlsx", sheet = 2)
+NoIFRs_perc$Month <- factor(NoIFRs_perc$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+Baseline2 <- melt(NoIFRs_perc, id = c("Year", "Month"))
+Baseline2
+
+
+
+ggplot(Baseline2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value*100, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(-100, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       title = "Baseline",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Δ Total Electricity Generation (%)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Mer_generation_10GCMs_NoIFRs_percdiff_March.png", units ="in", width=10, height=5, res = 300)
+
+
+```{r}
+
+Generation <- merge(Gen_Mer3, WYT_SJVI, by = c("variable", "Year")) %>%
+  filter(!RCP == "rcp45")
+Generation
+```
+
+
+
+```{r}
+library(scales)
+#Merced annual generation
+#Gen_Mer2 %>%
+#  filter(variable == "CanESM2") %>%
+
+ggplot(Gen_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       title = "No Instream2045 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Mer_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+#Gen_Mer3 %>%
+#  filter(variable == "Livneh (Historical)" | variable == "ACCESS1-0" | variable == "CNRM-CM5") %>%
+ggplot(Gen_Mer3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma,
+                      breaks= c(0,200,400, 600, 800)) +
+ #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5", title = "Merced River",
+       subtitle = "No Instreamflow Requirement (2045 prices)",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Mer_annual_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+ggplot(Gen_Mer1) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(width = 0.4, aes( x = variable, y = value, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+   # scale_x_discrete(limits=c("Livneh", "HadGEM2-ES", "CanESM2/u2020", "MIROC5", "CNRM-CM5"))+
+ # scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+
+  labs(fill = "RCP 4.5",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (MWh)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+  #png("Mer_generation_GCMs3_March.png", units ="in", width=10, height=4, res = 300)
+
+
+
+
+ggplot(Gen_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = WaterYear, y = value, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+    scale_x_discrete(breaks = c("1981", "1991", "2001", "2010", "2031", "2041", "2051", "2060"))+
+#  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+
+  labs(fill = "RCP 4.5",
+       title = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (MWh)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  
+  facet_wrap(~variable, ncol=1, scales= "free")
+ # png("Mer_generation_GCMs4_March.png", units ="in", width=8, height=5, res = 300)
+
+
+
+```{r}
+Livneh_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)]
+Livneh_Gen_Tuo
+
+Livneh_Gen_Tuo <- Livneh_Gen_Tuo %>%
+ mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Tuo[c(2:5)])) %>%
+      filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+Livneh_Gen_Tuo
+
+CanES_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)]
+
+CanES_Gen_Tuo <- CanES_Gen_Tuo %>%
+ mutate("CanESM2\u2020" = rowSums(CanES_Gen_Tuo[c(2:5)]))
+CanES_Gen_Tuo
+
+CNRM_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+
+CNRM_Gen_Tuo <- CNRM_Gen_Tuo %>%
+ mutate("CNRM-CM5\u2020" = rowSums(CNRM_Gen_Tuo[c(2:5)]))
+CNRM_Gen_Tuo
+
+HadGEM_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)]
+
+HadGEM_Gen_Tuo <- HadGEM_Gen_Tuo %>%
+ mutate("HadGEM2-ES\u2020" = rowSums(HadGEM_Gen_Tuo[c(2:5)]))
+HadGEM_Gen_Tuo
+
+MIROC_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)]
+
+MIROC_Gen_Tuo <- MIROC_Gen_Tuo %>%
+ mutate("MIROC5\u2020" = rowSums(MIROC_Gen_Tuo[c(2:5)]))
+MIROC_Gen_Tuo
+
+
+HadGEMCC_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+HadGEMCC_Gen_Tuo<- HadGEMCC_Gen_Tuo  %>%
+  mutate(`HadGEM2-CC` = rowSums(HadGEMCC_Gen_Tuo[c(2:5)]))
+HadGEMCC_Gen_Tuo
+
+CCSM4_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+CCSM4_Gen_Tuo<- CCSM4_Gen_Tuo  %>%
+  mutate(CCSM4 = rowSums(CCSM4_Gen_Tuo[c(2:5)]))
+CCSM4_Gen_Tuo
+
+CMCC_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+CMCC_Gen_Tuo<- CMCC_Gen_Tuo  %>%
+  mutate(`CMCC-CMS` = rowSums(CMCC_Gen_Tuo[c(2:5)]))
+CMCC_Gen_Tuo
+
+CESM_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+CESM_Gen_Tuo<- CESM_Gen_Tuo  %>%
+  mutate(`CESM1-BGC` = rowSums(CESM_Gen_Tuo[c(2:5)]))
+CESM_Gen_Tuo
+
+ACCESS1_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+ACCESS1_Gen_Tuo<- ACCESS1_Gen_Tuo  %>%
+  mutate(`ACCESS1-0` = rowSums(ACCESS1_Gen_Tuo[c(2:5)]))
+ACCESS1_Gen_Tuo
+
+GFDL_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results//Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14)] 
+GFDL_Gen_Tuo<- GFDL_Gen_Tuo  %>%
+  mutate(`GFDL-CM3` = rowSums(GFDL_Gen_Tuo[c(2:5)]))
+GFDL_Gen_Tuo
+
+```
+
+```{r}
+
+Livneh_Tuo <- Livneh_Gen_Tuo[-c(2:5)] 
+Livneh_Tuo <- melt(Livneh_Tuo, id = "node")
+Livneh_Tuo
+
+
+Gen_Tuo <- cbind(CanES_Gen_Tuo[-c(2:5)], CNRM_Gen_Tuo[-c(1:5)], 
+                HadGEM_Gen_Tuo[-c(1:5)], MIROC_Gen_Tuo[-c(1:5)],
+                CMCC_Gen_Tuo[-c(1:5)], ACCESS1_Gen_Tuo[-c(1:5)],
+                HadGEMCC_Gen_Tuo[-c(1:5)], CESM_Gen_Tuo[-c(1:5)],
+                CCSM4_Gen_Tuo[-c(1:5)], GFDL_Gen_Tuo[-c(1:5)])
+ 
+
+#Gen_Mer
+
+#Gen_Tuo <- Gen_Tuo %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_Tuo
+
+Gen_Tuo1 <- melt(Gen_Tuo, id = "node")
+Gen_Tuo1
+
+
+Gen_Tuo2 <- rbind(Gen_Tuo1, Livneh_Tuo) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = as.factor(format(as.Date(node, format = "%Y"), "%Y")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 4.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+
+Gen_Tuo2
+
+Gen_Tuo2$variable <- factor(Gen_Tuo2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_Tuo3 <- Gen_Tuo2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+Gen_Tuo3
+
+```
+
+
+#Merced annual generation
+Gen_Tuo2 %>%
+  filter(variable == "CanESM2") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Stanislaus River",
+    subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Electricity Generation (MWh)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+#Merced annual generation
+#Gen_Mer2 %>%
+#  filter(variable == "CanESM2") %>%
+
+```{r}
+ggplot(Gen_Tuo2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       title = "No Instreamflow Requirement (2045 prices)",
+       subtitle = "Tuolumne River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Tuo_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+#annual aggreagate
+ggplot(Gen_Tuo3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma,
+                      breaks= c(0,1000,2000, 3000)) +
+ #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5", title = "Tuolumne River",
+       subtitle = "Baseline - RCP 4.5 (2045 prices)",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Tuo_annual_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] %>%
+  filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+
+Livneh_Gen_Stn <- Livneh_Gen_Stn %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Stn[c(2:12)]))
+Livneh_Gen_Stn
+
+CanES_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)]
+
+CanES_Gen_Stn<- CanES_Gen_Stn %>%
+  mutate("CanESM2\u2020" = rowSums(CanES_Gen_Stn[c(2:12)]))
+CanES_Gen_Stn
+
+CNRM_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)]
+
+CNRM_Gen_Stn<- CNRM_Gen_Stn  %>%
+  mutate("CNRM-CM5\u2020" = rowSums(CNRM_Gen_Stn[c(2:12)]))
+CNRM_Gen_Stn
+
+
+HadGEM_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)]
+
+HadGEM_Gen_Stn<- HadGEM_Gen_Stn %>%
+  mutate("HadGEM2-ES\u2020" = rowSums(HadGEM_Gen_Stn[c(2:12)]))
+HadGEM_Gen_Stn
+
+
+MIROC_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] 
+MIROC_Gen_Stn<- MIROC_Gen_Stn  %>%
+  mutate("MIROC5\u2020" = rowSums(MIROC_Gen_Stn[c(2:12)]))
+MIROC_Gen_Stn
+
+HadGEMCC_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)]  
+HadGEMCC_Gen_Stn<- HadGEMCC_Gen_Stn  %>%
+  mutate(`HadGEM2-CC` = rowSums(HadGEMCC_Gen_Stn[c(2:12)]))
+HadGEMCC_Gen_Stn
+
+CCSM4_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] 
+CCSM4_Gen_Stn<- CCSM4_Gen_Stn  %>%
+  mutate(CCSM4 = rowSums(CCSM4_Gen_Stn[c(2:12)]))
+CCSM4_Gen_Stn
+
+CMCC_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] 
+CMCC_Gen_Stn<- CMCC_Gen_Stn  %>%
+  mutate(`CMCC-CMS` = rowSums(CMCC_Gen_Stn[c(2:12)]))
+CMCC_Gen_Stn
+
+CESM_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] 
+CESM_Gen_Stn<- CESM_Gen_Stn  %>%
+  mutate(`CESM1-BGC` = rowSums(CESM_Gen_Stn[c(2:12)]))
+CESM_Gen_Stn
+
+ACCESS1_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)]  
+ACCESS1_Gen_Stn<- ACCESS1_Gen_Stn  %>%
+  mutate(`ACCESS1-0` = rowSums(ACCESS1_Gen_Stn[c(2:12)]))
+ACCESS1_Gen_Stn
+
+GFDL_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/stanislaus/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(  1,2,6,10,14,18,22,26,30,34,38,42)] 
+GFDL_Gen_Stn<- GFDL_Gen_Stn  %>%
+  mutate(`GFDL-CM3` = rowSums(GFDL_Gen_Stn[c(2:12)]))
+GFDL_Gen_Stn
+
+```
+
+```{r}
+Livneh_Stn_Gen <- Livneh_Gen_Stn[-c(2:12)] 
+Livneh_Stn_Gen <- melt(Livneh_Stn_Gen, id = "node")
+Livneh_Stn_Gen
+
+```
+
+```{r}
+Gen_Stn <- cbind(CanES_Gen_Stn[-c(2:12)], CNRM_Gen_Stn[-c(1:12)], 
+                HadGEM_Gen_Stn[-c(1:12)], MIROC_Gen_Stn[-c(1:12)],
+                CMCC_Gen_Stn[-c(1:12)], ACCESS1_Gen_Stn[-c(1:12)],
+                HadGEMCC_Gen_Stn[-c(1:12)], CESM_Gen_Stn[-c(1:12)],
+                CCSM4_Gen_Stn[-c(1:12)], GFDL_Gen_Stn[-c(1:12)])
+Gen_Stn
+ 
+
+#Gen_Stn <- Gen_Stn %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_Stn
+
+Gen_Stn2 <- melt(Gen_Stn, id = "node")
+Gen_Stn2
+
+Gen_Stn2 <- rbind(Gen_Stn2, Livneh_Stn_Gen) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 4.5")) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = sum(value))
+  
+
+Gen_Stn2$variable <- factor(Gen_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_Stn3 <- Gen_Stn2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Gen_Stn2
+```
+
+Gen_Stn2 %>%
+  filter(variable == "CanESM2") %>%
+
+ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = value), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Stanislaus River",
+    subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Electricity Generation (MWh)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+```{r}
+ggplot(Gen_Stn2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       title = "No Instreamflow Requirement (2045 prices)",
+       subtitle = "Stanislaus River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Stn_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+#annual aggreagate
+ggplot(Gen_Stn3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA))+
+     #                 labels = comma,
+      #                breaks= c(0,200,400, 600, 800)) +
+ #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5", title = "Stanislaus River",
+       subtitle = "No Instreamflow Requirement (2045 prices)",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("Stn_annual_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] 
+Livneh_Gen_USJ
+
+Livneh_Gen_USJ <-Livneh_Gen_USJ %>%
+ mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_USJ[c(2:17)])) %>%
+      filter(between(node, as.Date("1980-10-01"), as.Date("2010-09-30")))
+Livneh_Gen_USJ
+
+
+CanES_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]
+CanES_Gen_USJ
+
+CanES_Gen_USJ <- CanES_Gen_USJ %>%
+   mutate("CanESM2\u2020" = rowSums(CanES_Gen_USJ[c(2:17)]))
+CanES_Gen_USJ
+  
+
+CNRM_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]
+CNRM_Gen_USJ
+
+CNRM_Gen_USJ <- CNRM_Gen_USJ %>%
+   mutate("CNRM-CM5\u2020" = rowSums(CNRM_Gen_USJ[c(2:17)]))
+
+CNRM_Gen_USJ
+
+
+HadGEM_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]
+HadGEM_Gen_USJ
+
+HadGEM_Gen_USJ <- HadGEM_Gen_USJ %>%
+   mutate("HadGEM2-ES\u2020" = rowSums(HadGEM_Gen_USJ[c(2:17)]))
+HadGEM_Gen_USJ
+
+
+MIROC_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]
+MIROC_Gen_USJ
+MIROC_Gen_USJ <- MIROC_Gen_USJ %>%
+   mutate("MIROC5\u2020"= rowSums(MIROC_Gen_USJ[c(2:17)]))
+
+MIROC_Gen_USJ
+
+HadGEMCC_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]  
+HadGEMCC_Gen_USJ<- HadGEMCC_Gen_USJ  %>%
+  mutate(`HadGEM2-CC` = rowSums(HadGEMCC_Gen_USJ[c(2:17)]))
+HadGEMCC_Gen_USJ
+
+CCSM4_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] 
+CCSM4_Gen_USJ<- CCSM4_Gen_USJ  %>%
+  mutate(CCSM4 = rowSums(CCSM4_Gen_USJ[c(2:17)]))
+CCSM4_Gen_USJ
+
+CMCC_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] 
+CMCC_Gen_USJ<- CMCC_Gen_USJ  %>%
+  mutate(`CMCC-CMS` = rowSums(CMCC_Gen_USJ[c(2:17)]))
+CMCC_Gen_USJ
+
+CESM_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] 
+CESM_Gen_USJ<- CESM_Gen_USJ  %>%
+  mutate(`CESM1-BGC` = rowSums(CESM_Gen_USJ[c(2:17)]))
+CESM_Gen_USJ
+
+ACCESS1_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)]  
+ACCESS1_Gen_USJ<- ACCESS1_Gen_USJ  %>%
+  mutate(`ACCESS1-0` = rowSums(ACCESS1_Gen_USJ[c(2:17)]))
+ACCESS1_Gen_USJ
+
+GFDL_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/upper_san_joaquin/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] 
+GFDL_Gen_USJ<- GFDL_Gen_USJ  %>%
+  mutate(`GFDL-CM3` = rowSums(GFDL_Gen_USJ[c(2:17)]))
+GFDL_Gen_USJ
+```
+
+```{r}
+Livneh_USJ_Gen <- Livneh_Gen_USJ[-c(2:17)] 
+Livneh_USJ_Gen <- melt(Livneh_USJ_Gen, id = "node")
+Livneh_USJ_Gen
+
+```
+
+```{r}
+
+Gen_USJ <- cbind(CanES_Gen_USJ[-c(2:17)], CNRM_Gen_USJ[-c(1:17)], 
+                 HadGEM_Gen_USJ[-c(1:17)], MIROC_Gen_USJ[-c(1:17)],
+                 CMCC_Gen_USJ[-c(1:17)], ACCESS1_Gen_USJ[-c(1:17)],
+                 HadGEMCC_Gen_USJ[-c(1:17)], CESM_Gen_USJ[-c(1:17)],
+                 CCSM4_Gen_USJ[-c(1:17)], GFDL_Gen_USJ[-c(1:17)])
+Gen_USJ
+
+
+#Gen_USJ <- Gen_USJ %>%
+#  mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_USJ
+
+Gen_USJ2 <- melt(Gen_USJ, id = "node")
+Gen_USJ2
+
+Gen_USJ2 <- rbind(Gen_USJ2, Livneh_USJ_Gen) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 4.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+
+
+Gen_USJ2$variable <- factor(Gen_USJ2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_USJ3 <- Gen_USJ2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Gen_USJ2
+```
+
+
+```{r}
+ggplot(Gen_USJ2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       title = "No Instreamflow Requirement (2045 prices)",
+       subtitle = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("USJ_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+#annual aggreagate
+ggplot(Gen_USJ3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA))+
+     #                 labels = comma,
+      #                breaks= c(0,200,400, 600, 800)) +
+ #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5", title = "Upper San Joaquin River",
+       subtitle = "No Instreamflow Requirement (2045 prices)",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("USJ_annual_generation_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+
+```{r}
+#Facet wraps of all basins
+
+Gen_Mer2$Basin <- factor("Merced River")
+Gen_Mer3$Basin <- factor("Merced River")
+Gen_Tuo2$Basin <- factor("Tuolumne River")
+Gen_Tuo3$Basin <- factor("Tuolumne River")
+Gen_Stn2$Basin <- factor("Stanislaus River")
+Gen_Stn3$Basin <- factor("Stanislaus River")
+Gen_USJ2$Basin <- factor("Upper San Joaquin River")
+Gen_USJ3$Basin <- factor("Upper San Joaquin River")
+
+all_generation_monthly <- rbind(Gen_Mer2, Gen_Tuo2, Gen_Stn2 ,Gen_USJ2)
+all_generation_monthly$Basin <- factor(all_generation_monthly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+#all_storage_year
+all_generation_monthly$HP_flow <- all_HPFlow_monthly$MonthlyTotal
+all_generation_monthly <- all_generation_monthly %>%
+  mutate(KWh_per_mcm = MonthlyTotal/HP_flow)
+all_generation_monthly
+
+all_generation_yearly <- rbind(Gen_Mer3, Gen_Tuo3, Gen_Stn3, Gen_USJ3)
+all_generation_yearly$Basin <- factor(all_generation_yearly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+#all_storage_year
+all_generation_yearly$HP_flow <- all_HPFlow_yearly$AnnualTotal
+all_generation_yearly
+all_generation_yearly <- all_generation_yearly %>%
+  mutate(KWh_per_mcm = AnnualTotal/HP_flow)
+all_generation_yearly
+```
+
+```{r}
+all_generation_monthly$Month <- factor(all_generation_monthly$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+all_generation_monthly
+
+All_Montlhy_Stats_Gen <- aggregate(MonthlyTotal ~ Month+variable+Basin, all_generation_monthly, summary)
+write.csv(All_Montlhy_Stats_Gen, "All_Monthly_Stats_Generation_NoIFRs_2045prices_rcp85_Report_March.csv")
+
+All_Annual_Stats_Gen <- aggregate(AnnualTotal ~ variable+Basin, all_generation_yearly, summary)
+write.csv(All_Annual_Stats_Gen, "All_Annual_Stats_Generation_NoIFRs_2045prices_rcp85_Report_March.csv")
+```
+
+```{r}
+Generation_Annual <- merge(all_generation_yearly, WYT_SJVI, by = c("variable", "Year")) %>%
+  filter(!RCP == "rcp45")
+Generation_Annual
+
+Generation_Annual_FNF <- merge(Generation_Annual, RCP85annual, by = c("variable", "Year", "Basin")) %>%
+  mutate(KWh_per_mcm_fnf = AnnualTotal.x/AnnualTotal.y)
+ # filter(!RCP == "rcp45")
+Generation_Annual_FNF
+
+Generation <- merge(all_generation_monthly, WYT_SJVI, by = c("variable", "Year")) %>%
+  filter(!RCP == "rcp45") %>%
+  mutate(MonthYear = as.Date(as.yearmon(paste(Month,"/",2000,sep=""),format = "%b/%Y"))) %>%
+  group_by(Basin, variable, Year) %>%
+  summarize(Mean = mean(KWh_per_mcm),
+            Median = median(KWh_per_mcm),
+            Min = min(KWh_per_mcm),
+            Max = max(KWh_per_mcm))# %>%
+#  mutate(Months = format(KWh_per_mcm, "%m"))
+Generation
+
+#Generation$Months <- factor(Generation$Months, levels = c("2000-10-01", "2000-11-01", "2000-12-01", "2000-01-01", "2000-02-01", "2000-03-01", "2000-04-01", "2000-05-01", "2000-06-01", "2000-07-01", "2000-08-01", "2000-09-01"))
+```
+
+Generation2 <- merge(all_generation_monthly, WYT_SJVI, by = c("variable", "Year")) %>%
+  filter(!RCP == "rcp45") %>%
+  mutate(MonthYear = as.Date(as.yearmon(paste(Month,"/",2000,sep=""),format = "%b/%Y"))) %>%
+  group_by(Basin, variable, Year) %>%
+  summarize(Mean = mean(KWh_per_mcm),
+            Stdev = sd(KWh_per_mcm),
+            n = 12,
+            error = qnorm(0.975)*Stdev/sqrt(n),
+            lower_bound = Mean - error,
+            upper_bound = Mean + error) #%>%
+#  mutate(Months = format(MonthYear, "%m"))
+Generation2
+
+```{r}
+#Generation_stats1 <- merge(all_generation_monthly, WYT_SJVI, by = c("variable", "Year")) %>%
+#  filter(!RCP == "rcp45") 
+#Generation_stats1
+
+hist_quintiles <- Generation_Annual_FNF %>%
+#  filter(variable == "Livneh (Historical)") %>%
+  group_by(Basin, variable) %>%
+ # group_by(Basin, variable,Year, WYT) %>%
+  mutate_at(vars(KWh_per_mcm , AnnualTotal.y), list(Qs = ~ 
+     list(as_tibble(as.list(quantile(., prob = c(0.2, 0.4, 0.6, 0.8),
+         na.rm = TRUE )))))) %>%
+  unnest
+hist_quintiles    
+
+hist_quintiles2 <- merge(hist_quintiles %>% mutate(Scenario = NULL) %>% select("Basin", "Year", "GCM", "20%1", "40%1", "60%1", "80%1"), Generation_Annual_FNF %>% mutate(variable = NULL, Scenario = NULL), by = c("Basin", "Year", "GCM"), all.x = TRUE) %>%
+  #rename(Scenario = GCM) %>%
+  filter(!is.na(GCM))
+hist_quintiles2
+
+hist_quintiles3 <- merge(all_generation_monthly %>% rename(GCM = variable), hist_quintiles2[-c(4,9)], by = c("Basin", "Year", "GCM"), all.x = TRUE) %>% 
+  filter(!is.na(GCM))
+#  rename(AnnualAverage_KWh_per_mcm= KWh_per_mcm.y)
+hist_quintiles3
+
+#write_csv(hist_quintiles3, "hist_quintiles3.csv")
+```
+
+```{r}
+
+
+Generation_stats <- hist_quintiles3 %>%
+  mutate(`Water Year` = ifelse(AnnualTotal.y <= `20%1`, "1st Quintile", ifelse(AnnualTotal.y > `20%1` & AnnualTotal.y <= `40%1`, "2nd Quintile", ifelse(AnnualTotal.y > `40%1` & AnnualTotal.y <= `60%1`, "3rd Quintile", ifelse(AnnualTotal.y > `60%1` & AnnualTotal.y <= `80%1`, "4th Quintile", "5th Quintile"))))) %>%
+   filter(!is.na(`Water Year`)) %>%
+  group_by(Basin, `Water Year`, GCM) %>%
+# group_by(tidyverse::across(-Year)) %>%
+ #   group_by(Basin, `Water Year`, GCM) %>%
+             summarize(`20th Percentile` = quantile(KWh_per_mcm.x, 0.2, na.rm = TRUE),
+            #`1st Quartile Generation` = quantile(MonthlyTotal, 0.25, na.rm=TRUE),
+            `40th Percentile` = quantile(KWh_per_mcm.x, 0.4, na.rm = TRUE),
+            #`Mean Generation` = mean(MonthlyTotal, na.rm=TRUE),
+            #`Median Generation` = median(MonthlyTotal, na.rm=TRUE),
+            `60th Percentile` = quantile(KWh_per_mcm.x, 0.6, na.rm = TRUE),
+           # `3rd Quartile Generation` = quantile(MonthlyTotal, 0.75, na.rm=TRUE),
+            `80th Percentile` = quantile(KWh_per_mcm.x, 0.8, na.rm = TRUE))# %>%
+  #ungroup() %>%
+  # select(Year) %>%
+  #mutate(`20%1` = NULL,
+   #      `40%1` = NULL,
+    #     `60%1` = NULL,
+     #    `80%1` = NULL)
+Generation_stats
+
+```
+
+
+Generation_stats <- hist_quintiles3 %>%
+  mutate(variable.x = NULL,
+         variable.y = NULL)%>%
+           mutate(`Water Year` = ifelse(AnnualTotal.y < `20%1`, "1st Quintile", ifelse(AnnualTotal.y > `20%1` & AnnualTotal.y <= `40%1`, "2nd Quintile", ifelse(AnnualTotal.y > `40%1` & AnnualTotal.y <= `60%1`, "3rd Quintile", ifelse(AnnualTotal.y > `60%1` & AnnualTotal.y <= `80%1`, "4th Quintile", "5th Quintile"))))) %>%
+  group_by(Basin, `Water Year`, GCM) %>%
+# group_by(tidyverse::across(-Year)) %>%
+    group_by(Basin, `Water Year`, GCM) %>%
+             summarize(`20th Percentile` = quantile(KWh_per_mcm.x, 0.2, na.rm = TRUE),
+            #`1st Quartile Generation` = quantile(MonthlyTotal, 0.25, na.rm=TRUE),
+            `40th Percentile` = quantile(KWh_per_mcm.x, 0.4, na.rm = TRUE),
+            #`Mean Generation` = mean(MonthlyTotal, na.rm=TRUE),
+            #`Median Generation` = median(MonthlyTotal, na.rm=TRUE),
+            `60th Percentile` = quantile(KWh_per_mcm.x, 0.6, na.rm = TRUE),
+           # `3rd Quartile Generation` = quantile(MonthlyTotal, 0.75, na.rm=TRUE),
+            `80th Percentile` = quantile(KWh_per_mcm.x, 0.8, na.rm = TRUE)) %>%
+  ungroup() %>%
+   select(Year) %>%
+  mutate(`20%1` = NULL,
+         `40%1` = NULL,
+         `60%1` = NULL,
+         `80%1` = NULL)
+Generation_stats
+
+
+```{r}
+#Generation_stats <- Generation_stats[c(2,3,4,5)])
+
+Generation_stats2 <- melt(Generation_stats, id = c("Basin", "Water Year", "GCM")) %>% 
+  rename(`Energy Percentiles` = variable,
+         `Generation` = value)%>% 
+  filter(!is.na(GCM))
+                            #c("Basin", "Year", "Month", "KWh_per_mcm.x", "20%1", "40%1", "60%1", "80%1", "AnnualTotal.x", "HP_flow", "KWh_per_mcm.y", "SJVI (maf)", "WYT", "Scenario", "RCP", "GCM", "AnnualTotal.y", "Mean", "KWh_per_mcm_fnf", "Water Year"))# %>% rename(Generation = variable)
+Generation_stats2
+```
+
+```{r}
+Total_data <- inner_join(Generation_stats2 %>% filter(!is.na(GCM)), hist_quintiles3 %>% filter(!is.na(GCM)) %>% mutate(variable.y = NULL, variable.x = NULL, `20%1` = NULL, `40%1` = NULL, `60%1` = NULL, `80%1` = NULL), by = c("Basin", "GCM")) %>%
+  mutate(Year = as.double(as.character(Year)))%>%
+  filter(Year < 2060)%>%
+ filter(!Year > 2013 | !Year < 2030)
+
+Total_data
+```
+
+
+Total_data2 <- Total_data %>%
+ filter(!Year > 2013 | !Year < 2030)
+Total_data2
+
+
+
+```{r}
+
+hist_quintiles4 <- merge(Generation_stats2 %>% rename(`Energy Percentiles` = variable) %>% filter(!is.na(GCM)), hist_quintiles3 %>% filter(!is.na(variable)), by = c("Basin", "GCM"), all.x = TRUE)
+hist_quintiles4
+
+final <- hist_quintiles4[complete.cases(hist_quintiles4), ]
+final
+```
+
+```{r}
+write_csv(Generation_stats2, "Generation_stats.csv")
+hist_quintiles2
+hist_quintiles3
+Generation_stats %>% filter(Basin == "Stanislaus River" | Year == "1981")
+```
+
+Generation_stats <- Generation_stats1 %>%
+  mutate(#MonthYear = as.Date(as.yearmon(paste(Month,"/",2000,sep=""),format = "%b/%Y")),
+         MonthlyTotal = MonthlyTotal) %>%
+  rename(GCM = variable)%>%
+  group_by(Basin, GCM,Year, WYT) %>%
+  summarize(#Min = min(MonthlyTotal),
+            `1st Quintile` = quantile(MonthlyTotal, 0.2, na.rm = TRUE),
+            #`1st Quartile Generation` = quantile(MonthlyTotal, 0.25, na.rm=TRUE),
+            `2nd Quintile` = quantile(MonthlyTotal, 0.4, na.rm = TRUE),
+            #`Mean Generation` = mean(MonthlyTotal, na.rm=TRUE),
+            #`Median Generation` = median(MonthlyTotal, na.rm=TRUE),
+            `3rd Quintile` = quantile(MonthlyTotal, 0.6, na.rm = TRUE),
+           # `3rd Quartile Generation` = quantile(MonthlyTotal, 0.75, na.rm=TRUE),
+            `4th Quintile` = quantile(MonthlyTotal, 0.8, na.rm = TRUE),
+           # Max = max(MonthlyTotal)
+           ) %>%
+  melt(., id = c("Basin", "GCM", "Year", "WYT"))
+  #          Annual_total = sum(MonthlyTotal)) #%>%
+ #mutate(Months = format(MonthYear, "%m"))
+Generation_stats
+
+
+```{r}
+#Timeseries normalized by hydropower
+ggplot(Total_data %>% filter(Basin == "Stanislaus River"))+#  == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_rect(aes(fill = `Water Year`, xmin = as.numeric(Year)-0.5, xmax = as.numeric(Year)+0.5, ymin = -Inf, ymax = Inf))+
+    scale_y_continuous(limits = c(NA, NA),
+                      expand = c(0, NA),
+                      labels=scales::comma) +
+   
+      geom_line(aes( x = as.numeric(Year), y = Generation, linetype = `Energy Percentiles`)) + #plot monthly observed data in greenish blue
+   scale_x_discrete(breaks = c("1981", "1991", "2001", "2010","2031", "2041", "2051", "2060"),
+      expand = c(0, NA))+
+   #geom_line(aes(x = node, y = value)) +
+#scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+  
+ scale_linetype_manual(values = c("dotted", "longdash", "dotdash", "solid"), name = "Energy Percentiles")+ #"Basin")+ #c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"), name = "Basin")+
+  
+  labs(fill = "Water Year Type",
+       title = "Baseline (2009 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "vertical")+
+   guides(linetype = guide_legend(nrow = 4, byrow = T))+
+     guides(fill = guide_legend(nrow = 5, byrow = T))+
+  facet_wrap(~GCM, ncol = 1, scales ="free_x", strip.position= "left")+
+png("Allbasins_generation_rcp85_timeseries_PostReport_per_mcm.png", units ="in", width=9, height=13, res = 300)
+```
+
+```{r}
+#KWh per mcm of FNF
+ggplot(final$%>% filter(Basin == "Merced River"))+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_rect(aes(fill = `Water Year`, xmin = as.numeric(Year)-0.5, xmax = as.numeric(Year)+0.5, ymin = -Inf, ymax = Inf))+
+    scale_y_continuous(#limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=scales::comma) +
+   
+      geom_line(aes( x = as.numeric(`Water Year`), y = value, linetype = variable)) + #plot monthly observed data in greenish blue
+   scale_x_discrete(breaks = c("1981", "1991", "2001", "2010","2031", "2041", "2051", "2060"),
+      expand = c(0, NA))+
+   #geom_line(aes(x = node, y = value)) +
+#scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+  
+ #scale_linetype_manual(values = c("dotted", "longdash", "dotdash", "solid"), name = "Basin")+ #c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"), name = "Basin")+
+  
+  labs(fill = "Water Year Type",
+       title = "Baseline (2009 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "vertical")+
+   guides(linetype = guide_legend(nrow = 4, byrow = T))+
+     guides(fill = guide_legend(nrow = 6, byrow = T))+
+  facet_wrap(~GCM.y, ncol = 1, scales ="free_x", strip.position= "left")+
+png("Allbasins_generation_rcp85_timeseries_PostReport_6.png", units ="in", width=9, height=13, res = 300)
+```
+
+
+```{r}
+ggplot(Generation_Annual_FNF)+# %>% filter(Basin == "Merced River"))+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') +
+   geom_point(aes( x = (AnnualTotal.y), y =AnnualTotal.x/1000, color = variable, group = variable))+
+  scale_x_log10(expand = c(0,0)) +#, breaks = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+  scale_y_log10(expand = c(0,0)) +
+ # scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ), guide = "none") +
+  scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ))+
+  labs(color = "RCP 8.5",
+       title = "Baseline (2009 prices)",
+      # subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+         aspect.ratio = 1,
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "horizontal")+
+   guides(fill = FALSE)+
+     guides(color = guide_legend(nrow = 2, byrow = F))+
+  facet_wrap(Basin~WYT, scales ="fixed",ncol = 5, strip.position= "top")+
+png("Allbasins_generation_spread_rcp85_scatterplot_GCM_PostReport.png", units ="in", width=9, height=9, res = 300) #width=6, height=13
+  
+  
+```
+
+```{r}
+ggplot(Generation_Annual_FNF)+# %>% filter(Basin == "Merced River"))+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') +
+   geom_point(aes( x = (AnnualTotal.y), y =AnnualTotal.x/1000, color = WYT, group = variable))+
+  scale_x_log10(expand = c(0,0)) +#, breaks = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+  scale_y_log10(expand = c(0,0)) +
+ # scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ), guide = "none") +
+  scale_color_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+                       #c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ))+
+  labs(color = "RCP 8.5",
+       title = "Baseline (2009 prices)",
+      # subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+         aspect.ratio = 1,
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "horizontal")+
+   guides(fill = FALSE)+
+     guides(color = guide_legend(nrow = 1, byrow = F))+
+  facet_wrap(Basin~variable, scales ="fixed", ncol = 11, strip.position= "top")+
+png("Allbasins_generation_spread_rcp85_scatterplot_PostReport.png", units ="in", width=20, height=10, res = 300) #width=6, height=13
+  
+  
+```
+
+```{r}
+ggplot(Generation)+# %>% filter(Basin == "Merced River"))+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_ribbon(aes(x=MonthYear,ymin=Min/1000,ymax=Max/1000,group=variable, fill = variable), alpha = 0.1)+
+  geom_line(aes( x = (MonthYear), y =Median/1000, color = variable, group = variable))+
+  scale_x_date(date_labels = "%b", expand = c(0,0)) +#, breaks = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ), guide = "none") +
+  scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ))+
+  labs(fill = "RCP 8.5",
+       title = "Baseline (2009 prices)",
+      # subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "horizontal")+
+   guides(fill = FALSE)+
+     guides(color = guide_legend(nrow = 2, byrow = F))+
+  facet_wrap(~Basin, ncol = 1, scales ="free_y", strip.position= "left")+
+png("Allbasins_generation_spread_rcp85_timeseries_PostReport.png", units ="in", width=9, height=13, res = 300) #width=6, height=13
+  
+  
+```
+
+```{r}
+ggplot()+# %>% filter(Basin == "Merced River"))+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_ribbon(Generation2,mapping = aes(x=MonthYear,ymin=lower_bound/1000,ymax=upper_bound/1000), alpha = 0.1)+
+  geom_line(Generation, mapping =aes( x = (MonthYear), y =Mean/1000, color = variable, group = variable))+
+  scale_x_date(date_labels = "%b", expand = c(0,0)) +#, breaks = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ), guide = "none") +
+  scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" ))+
+  labs(fill = "RCP 8.5",
+       title = "Baseline (2009 prices)",
+      # subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "horizontal")+
+   guides(fill = FALSE)+
+     guides(color = guide_legend(nrow = 2, byrow = F))+
+  facet_wrap(~Basin, ncol = 1, scales ="free_y", strip.position= "left")+
+png("Allbasins_generation__MeanCI_rcp85_timeseries_PostReport.png", units ="in", width=9, height=13, res = 300) #width=6, height=13
+  
+  
+```
+
+```{r}
+
+ggplot(Generation_Annual)+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_rect(aes(fill = WYT, xmin = as.numeric(Year)-0.5, xmax = as.numeric(Year)+0.5, ymin = -Inf, ymax = Inf))+
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=scales::comma) +
+   
+      geom_line(aes( x = as.numeric(Year), y = AnnualTotal/1000, linetype = Basin)) + #plot monthly observed data in greenish blue
+   scale_x_discrete(breaks = c("1981", "1991", "2001", "2010","2031", "2041", "2051", "2060"),
+      expand = c(0, NA))+
+   #geom_line(aes(x = node, y = value)) +
+#scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+  
+ scale_linetype_manual(values = c("dotted", "longdash", "dotdash", "solid"), name = "Basin")+ #c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"), name = "Basin")+
+  
+  labs(fill = "Water Year Type",
+       title = "Baseline (2009 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "vertical")+
+   guides(linetype = guide_legend(nrow = 4, byrow = T))+
+     guides(fill = guide_legend(nrow = 5, byrow = T))+
+  facet_wrap(~variable, ncol = 1, scales ="free_x", strip.position= "left")+
+png("Allbasins_generation_rcp85_timeseries_PostReport.png", units ="in", width=9, height=13, res = 300) #width=6, height=13
+```
+
+
+```{r}
+
+ggplot(Generation_Annual)+# %>% filter(variable == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_rect(aes(fill = WYT, xmin = as.numeric(Year)-0.5, xmax = as.numeric(Year)+0.5, ymin = -Inf, ymax = Inf))+
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels=scales::comma) +
+   
+      geom_line(aes( x = as.numeric(Year), y = AnnualTotal/1000, linetype = Basin)) + #plot monthly observed data in greenish blue
+   scale_x_discrete(breaks = c("1981", "1991", "2001", "2010","2031", "2041", "2051", "2060"),
+      expand = c(0, NA))+
+   #geom_line(aes(x = node, y = value)) +
+#scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  scale_fill_manual(values = c("tomato2", "orange", "#FEDC56", "cyan3", "dodgerblue2"))+
+  
+ scale_linetype_manual(values = c("dotted", "longdash", "dotdash", "solid"), name = "Basin")+ #c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"), name = "Basin")+
+  
+  labs(fill = "Water Year Type",
+       title = "Baseline (2009 prices)",
+       subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "right",
+        legend.direction = "vertical",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "vertical")+
+   guides(linetype = guide_legend(nrow = 4, byrow = T))+
+     guides(fill = guide_legend(nrow = 5, byrow = T))+
+  facet_wrap(~variable, ncol = 1, scales ="free_x", strip.position= "left")+
+png("Allbasins_generation_rcp85_timeseries_PostReport3.png", units ="in", width=9, height=15, res = 300) #width=6, height=13
+```
+
+```{r}
+Figure_Annual_WYT <-function(basin){ 
+  ggplot(Generation_Annual %>% filter(Basin == basin))+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(#limits = c(0, NA),
+                      expand = c(0, 0))+
+     #                 labels = comma,
+      #                breaks= c(0,200,400, 600, 800)) +
+ #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 8.5", title = basin,
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~WYT, scales = "fixed", ncol = 1, strip.position = "left")+
+png(paste(basin,"_annual_generation_per_WYT_rcp85_baseline_PostReport_2031_2090.png",sep=""), units ="in", width=11.5, height=15, res = 300)
+}
+```
+
+```{r}
+Figure_Annual_WYT("Stanislaus River")
+```
+
+```{r}
+Figure_Annual_WYT("Tuolumne River")
+```
+
+```{r}
+Figure_Annual_WYT("Merced River")
+```
+
+```{r}
+Figure_Annual_WYT("Upper San Joaquin River")
+```
+
+```{r}
+Figure_per_WYT <- function(basin){
+ggplot(Generation %>% filter(Basin == basin)) + 
+  theme_bw(base_size=18, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 8.5",
+       title = basin,
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~WYT, scales = "fixed", ncol = 1, strip.position = "left")+
+png(paste(basin, "_generation_10GCMs_rcp85_baseline_PostReport.png",sep=""), units ="in", width=10, height=15, res = 300)}
+```
+
+```{r}
+#annual aggreagate
+ggplot(all_generation_yearly) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+#    scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+
+  labs(fill = "RCP 4.5",
+       #title = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+         axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"),
+        panel.spacing.y = unit(0, "lines"))+
+    facet_wrap(~Basin, scales = "free_y")+
+png("AllBasins_annual_generation_10GCMs_rcp85_NoIFRs_2045prices_Report_March.png", units ="in", width=8, height=5, res = 300)
+```
+
+
+
+```{r}
+Figure_per_WYT("Merced River")
+```
+
+```{r}
+Figure_per_WYT("Tuolumne River")
+```
+
+```{r}
+Figure_per_WYT("Stanislaus River")
+```
+
+```{r}
+Figure_per_WYT("Upper San Joaquin River")
+
+````
+
+```{r}
+Merced_Montlhy_Stats_Gen <- aggregate(MonthlyTotal ~ Month+variable, Gen_Mer2, mean)
+Merced_Montlhy_Stats_Gen$Month <- factor(Merced_Montlhy_Stats_Gen$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+Merced_Montlhy_Stats_Gen <- reshape::cast(Merced_Montlhy_Stats_Gen, Month~variable)
+write.csv(Merced_Montlhy_Stats_Gen, "Merced_Monthly_Stats_Generation_NoIFRs_2045prices_Report_March.csv")
+
+
+Merced_Annual_Stats_Gen <- aggregate(AnnualTotal ~ variable, Gen_Mer3, mean)
+write.csv(Merced_Annual_Stats_Gen, "Merced_Annual_Stats_Generation_NoIFRs_2045prices_Report_March.csv")
+```
+
+```{r}
+Gen_Mer2$Month <- factor(Gen_Mer2$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) 
+write.csv(Gen_Mer2, "Merced_Monthly_Stats_Generation_RCP4.5_SWRCB2.csv")
+```
+
+```{r}
+
+Baseline <- reshape::cast(Gen_Mer2[-c(1:744),], Year+Month~variable)
+Baseline
+write.csv(Baseline, "Merced_TotalAnnual_Generation_RCP4.5_Baseline.csv")
+```
+
+```{r}
+ggplot(all_generation_monthly) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+
+  labs(fill = "RCP 4.5",
+       #title = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (MWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+png("AllBasins_generation_GCMs_March.png", units ="in", width=8, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(all_generation_yearly) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = comma) +
+    scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A", "#E69F00", "#F0E442", "#009E73", "#56B4E9")) +
+
+  labs(fill = "RCP 4.5",
+       #title = "Upper San Joaquin River",
+    x = element_blank(), 
+       y = "Total Electricity Generation (MWh/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+         axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.text = element_text(size = 9),
+       legend.key.size = unit(0.75,"line"),
+        panel.spacing.y = unit(0, "lines"))+
+    facet_wrap(~Basin, scales = "free_y")+
+png("AllBasins_generation_GCMs2_March.png", units ="in", width=8, height=5, res = 300)
+```
+

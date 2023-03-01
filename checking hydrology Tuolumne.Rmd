@@ -1,0 +1,23 @@
+
+```{r}
+library(readr)
+
+
+tuo <- read_csv("C:/Users/gusta/Documents/CL_LE_Outflows_Inflows.csv") %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"),
+         Month = format(Date, format = "%m"),
+         Year = as.double(lfstat::water_year(Date, "usgs")))%>%
+  group_by(Year) %>%
+  summarize(Outflows = sum(outflows),
+            Inflows = sum(inflows)) %>%
+  mutate(`Mean Inflows` = mean(Inflows),
+         `Mean Outflows` = mean(Outflows))
+tuo
+
+ggplot(tuo) +
+  geom_line(aes(x = Year, y = `Outflows`, color="Outflows")) +
+  geom_line(aes(x = Year, y = `Inflows`, color = "Inflows")) +
+  geom_line(aes(x = Year, y = `Mean Outflows`, color="Mean outflows")) +
+  geom_line(aes(x = Year, y = `Mean Inflows`, color = "Mean inflows")) +
+  ylab("Flows (mcm)") + ggtitle("Cherry + Eleanor - Inflows and Outflows")
+```

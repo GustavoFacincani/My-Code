@@ -11,6 +11,8 @@ SJVI_Livneh <- read_csv(paste(path,"historical/Livneh/SJVI.csv", sep="")) %>%
 
 SJVI_Livneh
 
+write_csv(SJVI_Livneh, paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/SJVI_Historical_Livneh_March.csv",sep=""))
+
 #GCMs SJVI
 
 GCMs <- c("ACCESS1-0", "CanESM2", "CCSM4", "GFDL-CM3", "HadGEM2-ES", "HadGEM2-CC", "MIROC5", "CNRM-CM5", "CMCC-CMS", "CESM1-BGC")
@@ -24,6 +26,8 @@ SJVI_GCMs <- read_csv(paste(path,"gcms/",GCM,"_",rcp,"/SJVI.csv", sep="")) %>%
          Scenario = GCM,
          RCP = rcp)
 SJVI_GCMs
+
+write_csv(SJVI_GCMs, paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/SJVI_",GCM,"_",rcp,"_March.csv",sep=""))
   }
 }
 

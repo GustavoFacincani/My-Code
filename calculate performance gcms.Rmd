@@ -1,0 +1,61 @@
+
+```{r}
+model.assess <- function(Sim, Obs) { #the inputs are numeric simulated and observed data
+  if(!is.numeric(Sim)) { #verifies if the simulated data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Sim)[1])
+  }
+  if(!is.numeric(Obs)) { #verifies if the observed data is really numeric
+    stop('This function only works for numeric input!\n', #throws an error if it is not
+         'You have provided an object of class: ', class(Obs)[1])
+  }    
+  #rmse = sqrt( mean( (Sim - Obs)^2, na.rm = TRUE) ) #Formula to calculate RMSE
+  RSR <- hydroGOF::rsr(Sim, Obs)#rmse / sd(Obs) #object producing RSR test from the RMSE formula
+  PBIAS <- hydroGOF::pbias(Sim, Obs)*-1#100 *(sum((Sim - Obs)/sum(Obs), na.rm =TRUE)*-1) #object producing PBIAS test
+  NSE <- hydroGOF::NSE(Sim, Obs)# 1 - sum((Obs - Sim)^2)/sum((Obs - mean(Obs))^2, na.rm =TRUE) #object producing NSE test
+  stats <- print(paste0("RSR = ", sprintf("%.3f", round(RSR, digits=3)), "    PBIAS = ", sprintf("%.3f",round(PBIAS, digits=3)),"    NSE = ", sprintf("%.3f",round(NSE, digits=3))))  
+  return(stats) #returns the results of the tests
+}
+
+```
+
+
+```{r}
+library(readr)
+library(dplyr)
+gcms <- c("ACCESS1-0_rcp45", "ACCESS1-0_rcp85", "CanESM2_rcp45", "CanESM2_rcp85", "CCSM4_rcp45", "CCSM4_rcp85", "CESM1-BGC_rcp45", "CESM1-BGC_rcp85", "CMCC-CMS_rcp45", "CMCC-CMS_rcp85", "CNRM-CM5_rcp45", "CNRM-CM5_rcp85", "GFDL-CM3_rcp45", "GFDL-CM3_rcp85", "HadGEM2-CC_rcp45", "HadGEM2-CC_rcp85", "HadGEM2-ES_rcp45", "HadGEM2-ES_rcp85", "MIROC5_rcp45", "MIROC5_rcp85")
+
+#i <- "ACCESS1-0_rcp45"
+for(i in gcms){
+SNS.sim <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/gcms/",i,"/preprocessed/full_natural_flow_daily_mcm.csv", sep="")) %>%
+ filter(date >= as.Date("2006-01-01") & date <= as.Date("2099-12-31"))%>%
+  mutate(flow = (flow*1000000*35.314666)/86400,
+         Year = format(date, "%Y"),
+         Month = format(date, "%m")) %>%
+  group_by(Year, Month) %>%
+  summarize(flow = mean(flow))
+SNS.sim
+
+stn <- read_csv(paste("C:/Users/gusta/Documents/GCMs/Stanislaus/streamflow_monthly_",i,"_N_MEL.csv", sep=""))[c(673:1800),c(1,2)] %>%
+   mutate(min = ifelse(min==0, NA, min))
+stn
+
+paste0(i = data.frame(model.assess(SNS.sim$flow, stn$min)))
+
+
+}
+
+```
+
+
+
+MRC.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-01-01") & date <= as.Date("2013-12-30"))
+TLG.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-01-01") & date <= as.Date("2013-12-30"))
+SJF.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv") %>%
+ filter(date >= as.Date("1950-01-01") & date <= as.Date("2013-12-30"))
+
+
+
+```

@@ -1,0 +1,809 @@
+---
+  title: "Output_flow"
+author: "Gustavo Facincani Dourado"
+date: "6/12/2020"
+output: html_document
+---
+  
+```{r}
+library(reshape2)
+library(lfstat)
+library(scales)
+
+Livneh_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]%>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+
+colnames(Livneh_outflow_Mer) <- c("node", "Livneh (Historical)")
+Livneh_outflow_Mer
+
+
+CanESM2_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CanESM2_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(CanESM2_outflow_Mer) <- c("node", "CanESM2\u2020")
+CanESM2_outflow_Mer
+
+#CanESM2_MIF_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices/merced/gcms/CanESM2_rcp85/InstreamFlowRequirement_Min Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+#CanESM2_MIF_Mer
+#CanESM2_MIF_Mer
+
+CNRM_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CNRM-CM5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(CNRM_outflow_Mer) <- c("node", "CNRM-CM5\u2020")
+CNRM_outflow_Mer
+
+HadGEM2_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-ES_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(HadGEM2_outflow_Mer) <- c("node", "HadGEM2-ES\u2020")
+HadGEM2_outflow_Mer
+
+MIROC5_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/MIROC5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(MIROC5_outflow_Mer) <- c("node", "MIROC5\u2020")
+MIROC5_outflow_Mer
+
+
+CCSM4_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CCSM4_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(CCSM4_outflow_Mer) <- c("node", "CCSM4")
+CCSM4_outflow_Mer
+
+CMCC_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CMCC-CMS_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(CMCC_outflow_Mer) <- c("node", "CMCC-CMS")
+CMCC_outflow_Mer
+
+CESM_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CESM1-BGC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(CESM_outflow_Mer) <- c("node", "CESM1-BGC")
+CESM_outflow_Mer
+
+ACCESS1_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/ACCESS1-0_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(ACCESS1_outflow_Mer) <- c("node", "ACCESS1-0")
+ACCESS1_outflow_Mer
+
+HadGEMCC_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-CC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(HadGEMCC_outflow_Mer) <- c("node", "HadGEM2-CC")
+HadGEMCC_outflow_Mer
+
+GFDL_outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/GFDL-CM3_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)]
+
+colnames(GFDL_outflow_Mer) <- c("node", "GFDL-CM3")
+GFDL_outflow_Mer
+
+```
+
+```{r}
+Livneh_Mer_outflow <- Livneh_outflow_Mer 
+Livneh_Mer_outflow <- melt(Livneh_Mer_outflow, id = "node")
+Livneh_Mer_outflow
+
+Outflow_Mer <- cbind(CanESM2_outflow_Mer, CNRM_outflow_Mer[(-1)], 
+                     HadGEM2_outflow_Mer[(-1)], MIROC5_outflow_Mer[(-1)],
+                     CCSM4_outflow_Mer[(-1)], CMCC_outflow_Mer[(-1)],
+                     ACCESS1_outflow_Mer[(-1)],HadGEMCC_outflow_Mer[(-1)],
+                     CESM_outflow_Mer[(-1)], GFDL_outflow_Mer[(-1)])
+
+Outflow_Mer
+
+```
+
+```{r}
+Outflow_Mer1 <- melt(Outflow_Mer, id = "node") 
+Outflow_Mer1
+
+
+
+Outflow_Mer2 <- rbind(Outflow_Mer1, Livneh_Mer_outflow) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value)) 
+#    group_by(Year, Scenario, variable) %>%
+#  dplyr::mutate(AnnualTotal = sum(value))
+Outflow_Mer2
+
+Outflow_Mer2$variable <- factor(Outflow_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+Outflow_Mer2 
+
+
+Outflow_Mer3 <- Outflow_Mer2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+Outflow_Mer3
+
+```
+
+
+#Merced annual outflow
+Outflow_Mer2 %>%
+  filter(variable == "Livneh") %>%
+  
+  ggplot() + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, outlier.alpha = 0.3)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  #  scale_y_continuous(limits = c(0, NA),
+  #                   expand = c(0, NA)) +
+  scale_y_log10()+
+  
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+  labs(title = "Merced River",
+       subtitle = "CNRM-CM5\u2020",
+       x = element_blank(),
+       y = "Total River Outflow (mcm)") + #name of x axis
+  theme(legend.title = element_blank(),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+#  png("Mer_outflow_CNRM-CM5.png", units ="in", width=8, height=5, res = 300)
+
+```{r}
+#Merced outflow
+f <- function(x) {
+  r <- quantile(x, probs = c(0, 0.25, 0.5, 0.75, 1))
+  names(r) <- c("ymin", "lower", "middle", "upper", "ymax")
+  r
+}
+```
+
+```{r}
+ggplot(Outflow_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #  stat_summary(aes( x = Month, y = value, fill = variable),fun.data = f, outlier.alpha = 0.3, fun.y = sum, geom = "boxplot", stat = "identity")+
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_continuous(limits = c(0, NA),
+  #                expand = c(0, NA),
+  #               labels = scales::comma) +
+  scale_y_log10(breaks=c(0.1, 1,10,100,1000), labels=comma, limits = c(0.05, NA), expand = c(0, NA),)+ 
+  
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       title = "No Instreamflow Requirement (2009 prices)",
+       subtitle = "Merced River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_montlhy_outflow_GCMs_logscale_Baseline_2009prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(Outflow_Mer3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  # scale_y_log10(breaks=c(1,10,100,1000), labels=comma, limits = c(0, NA), expand = c(0, NA),)+ 
+  #   scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  # scale_y_log10(breaks=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000), labels=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000))+
+  labs(subtitle = "No Instreamflow Requirement (2009 prices) - RCP 8.5 Scenario",
+       title = "Merced River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_annual_outflow_GCMs_Baseline_2009prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]%>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+
+colnames(Livneh_outflow_Tuo) <- c("node", "Livneh (Historical)")
+Livneh_outflow_Tuo
+
+
+CanESM2_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CanESM2_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(CanESM2_outflow_Tuo) <- c("node", "CanESM2\u2020")
+CanESM2_outflow_Tuo
+
+CNRM_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CNRM-CM5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(CNRM_outflow_Tuo) <- c("node", "CNRM-CM5\u2020")
+CNRM_outflow_Tuo
+
+HadGEM2_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-ES_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(HadGEM2_outflow_Tuo) <- c("node", "HadGEM2-ES\u2020")
+HadGEM2_outflow_Tuo
+
+MIROC5_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/MIROC5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(MIROC5_outflow_Tuo) <- c("node", "MIROC5\u2020")
+MIROC5_outflow_Tuo
+
+
+CCSM4_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CCSM4_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(CCSM4_outflow_Tuo) <- c("node", "CCSM4")
+CCSM4_outflow_Tuo
+
+CMCC_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CMCC-CMS_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(CMCC_outflow_Tuo) <- c("node", "CMCC-CMS")
+CMCC_outflow_Tuo
+
+CESM_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CESM1-BGC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(CESM_outflow_Tuo) <- c("node", "CESM1-BGC")
+CESM_outflow_Tuo
+
+ACCESS1_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/ACCESS1-0_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(ACCESS1_outflow_Tuo) <- c("node", "ACCESS1-0")
+ACCESS1_outflow_Tuo
+
+HadGEMCC_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-CC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(HadGEMCC_outflow_Tuo) <- c("node", "HadGEM2-CC")
+HadGEMCC_outflow_Tuo
+
+GFDL_outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/GFDL-CM3_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)]
+
+colnames(GFDL_outflow_Tuo) <- c("node", "GFDL-CM3")
+GFDL_outflow_Tuo
+
+```
+
+```{r}
+Livneh_Tuo_Outflow <- Livneh_outflow_Tuo
+Livneh_Tuo_Outflow <- melt(Livneh_Tuo_Outflow, id = "node")
+Livneh_Tuo_Outflow
+
+Outflow_Tuo <- cbind(CanESM2_outflow_Tuo, CNRM_outflow_Tuo[-1], 
+                     HadGEM2_outflow_Tuo[-1], MIROC5_outflow_Tuo[-1],
+                     CCSM4_outflow_Tuo[(-1)], CMCC_outflow_Tuo[(-1)],
+                     ACCESS1_outflow_Tuo[(-1)],HadGEMCC_outflow_Tuo[(-1)],
+                     CESM_outflow_Tuo[(-1)], GFDL_outflow_Tuo[(-1)])
+Outflow_Tuo 
+
+Outflow_Tuo2 <- melt(Outflow_Tuo, id = "node")
+Outflow_Tuo2
+```
+
+```{r}
+
+Outflow_Tuo2 <- rbind(Outflow_Tuo2, Livneh_Tuo_Outflow) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Outflow_Tuo2
+
+Outflow_Tuo2$variable <- factor(Outflow_Tuo2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Outflow_Tuo2
+
+Outflow_Tuo3 <- Outflow_Tuo2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+Outflow_Tuo3
+
+
+```
+
+
+
+```{r}
+ggplot(Outflow_Tuo2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #  stat_summary(aes( x = Month, y = value, fill = variable),fun.data = f, outlier.alpha = 0.3, fun.y = sum, geom = "boxplot", stat = "identity")+
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_continuous(limits = c(0, NA),
+  #                expand = c(0, NA),
+  #               labels = scales::comma) +
+  scale_y_log10(breaks=c(0.1, 1,10,100,1000), labels=comma, limits = c(0.05, NA), expand = c(0, NA),)+ 
+  
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       title = "No Instreamflow Requirement (2009 prices)",
+       subtitle = "Tuolumne River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Tuo_montlhy_outflow_GCMs_logscale_Baseline_2009prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(Outflow_Tuo3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  # scale_y_log10(breaks=c(1,10,100,1000), labels=comma, limits = c(0, NA), expand = c(0, NA),)+ 
+  #   scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  # scale_y_log10(breaks=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000), labels=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000))+
+  labs(subtitle = "No Instreamflow Requirement (2009 prices) - RCP 8.5 Scenario",
+       title = "Tuolumne River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Tuo_annual_outflow_GCMs_Baseline_2009prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+```{r}
+Livneh_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]%>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+
+colnames(Livneh_outflow_Stn) <- c("node", "Livneh (Historical)")
+Livneh_outflow_Stn
+
+
+CanESM2_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CanESM2_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CanESM2_outflow_Stn) <- c("node", "CanESM2\u2020")
+CanESM2_outflow_Stn
+
+CNRM_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CNRM-CM5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CNRM_outflow_Stn) <- c("node", "CNRM-CM5\u2020")
+CNRM_outflow_Stn
+
+HadGEM2_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-ES_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(HadGEM2_outflow_Stn) <- c("node", "HadGEM2-ES\u2020")
+HadGEM2_outflow_Stn
+
+MIROC5_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/MIROC5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(MIROC5_outflow_Stn) <- c("node", "MIROC5\u2020")
+MIROC5_outflow_Stn
+
+
+CCSM4_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CCSM4_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CCSM4_outflow_Stn) <- c("node", "CCSM4")
+CCSM4_outflow_Stn
+
+CMCC_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CMCC-CMS_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CMCC_outflow_Stn) <- c("node", "CMCC-CMS")
+CMCC_outflow_Stn
+
+CESM_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CESM1-BGC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CESM_outflow_Stn) <- c("node", "CESM1-BGC")
+CESM_outflow_Stn
+
+ACCESS1_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/ACCESS1-0_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(ACCESS1_outflow_Stn) <- c("node", "ACCESS1-0")
+ACCESS1_outflow_Stn
+
+HadGEMCC_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-CC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(HadGEMCC_outflow_Stn) <- c("node", "HadGEM2-CC")
+HadGEMCC_outflow_Stn
+
+GFDL_outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/GFDL-CM3_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(GFDL_outflow_Stn) <- c("node", "GFDL-CM3")
+GFDL_outflow_Stn
+
+```
+
+
+```{r}
+Livneh_Stn_Outflow <- Livneh_outflow_Stn 
+Livneh_Stn_Outflow <- melt(Livneh_Stn_Outflow, id = "node")
+Livneh_Stn_Outflow
+
+
+Outflow_Stn <- cbind(CanESM2_outflow_Stn, CNRM_outflow_Stn[-1], 
+                     HadGEM2_outflow_Stn[-1], MIROC5_outflow_Stn[-1],
+                     CCSM4_outflow_Stn[(-1)], CMCC_outflow_Stn[(-1)],
+                     ACCESS1_outflow_Stn[(-1)],HadGEMCC_outflow_Stn[(-1)],
+                     CESM_outflow_Stn[(-1)], GFDL_outflow_Stn[(-1)])
+Outflow_Stn
+
+
+Outflow_Stn2 <- melt(Outflow_Stn, id = "node")
+Outflow_Stn2
+```
+
+```{r}
+Outflow_Stn2 <- rbind(Outflow_Stn2, Livneh_Stn_Outflow) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Outflow_Stn2
+
+
+Outflow_Stn2$variable <- factor(Outflow_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+Outflow_Stn2
+
+Outflow_Stn3 <- Outflow_Stn2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Outflow_Stn3
+```
+
+
+```{r}
+ggplot(Outflow_Stn2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #  stat_summary(aes( x = Month, y = value, fill = variable),fun.data = f, outlier.alpha = 0.3, fun.y = sum, geom = "boxplot", stat = "identity")+
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_continuous(limits = c(0, NA),
+  #                expand = c(0, NA),
+  #               labels = scales::comma) +
+  scale_y_log10(breaks=c(1,10,100,1000, 10000), labels=comma, limits = c(0.05, NA), expand = c(0, NA),)+ 
+  
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       title = "No Instreamflow Requirement (2009 prices)",
+       subtitle = "Stanislaus River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stn_montlhy_outflow_GCMs_logscale_Baseline_2009prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(Outflow_Stn3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  # scale_y_log10(breaks=c(1,10,100,1000), labels=comma, limits = c(0, NA), expand = c(0, NA),)+ 
+  #   scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  # scale_y_log10(breaks=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000), labels=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000))+
+  labs(subtitle = "No Instreamflow Requirement (2009 prices) - RCP 8.5 Scenario",
+       title = "Stanislaus River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Stn_annual_outflow_GCMs_Baseline_2009prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+
+
+```{r}
+Livneh_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]%>%
+  filter(between(node, as.Date("1950-10-01"), as.Date("2011-09-30")))
+
+colnames(Livneh_outflow_USJ) <- c("node", "Livneh (Historical)")
+Livneh_outflow_USJ
+
+
+CanESM2_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CanESM2_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CanESM2_outflow_USJ) <- c("node", "CanESM2\u2020")
+CanESM2_outflow_USJ
+
+CNRM_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CNRM_outflow_USJ) <- c("node", "CNRM-CM5\u2020")
+CNRM_outflow_USJ
+
+HadGEM2_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(HadGEM2_outflow_USJ) <- c("node", "HadGEM2-ES\u2020")
+HadGEM2_outflow_USJ
+
+MIROC5_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/MIROC5_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(MIROC5_outflow_USJ) <- c("node", "MIROC5\u2020")
+MIROC5_outflow_USJ
+
+
+CCSM4_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CCSM4_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CCSM4_outflow_USJ) <- c("node", "CCSM4")
+CCSM4_outflow_USJ
+
+CMCC_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CMCC-CMS_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CMCC_outflow_USJ) <- c("node", "CMCC-CMS")
+CMCC_outflow_USJ
+
+CESM_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CESM1-BGC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(CESM_outflow_USJ) <- c("node", "CESM1-BGC")
+CESM_outflow_USJ
+
+ACCESS1_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/ACCESS1-0_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(ACCESS1_outflow_USJ) <- c("node", "ACCESS1-0")
+ACCESS1_outflow_USJ
+
+HadGEMCC_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(HadGEMCC_outflow_USJ) <- c("node", "HadGEM2-CC")
+HadGEMCC_outflow_USJ
+
+GFDL_outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/GFDL-CM3_rcp85/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)]
+
+colnames(GFDL_outflow_USJ) <- c("node", "GFDL-CM3")
+GFDL_outflow_USJ
+```
+
+```{r}
+Livneh_USJ_Outflow <- Livneh_outflow_USJ 
+Livneh_USJ_Outflow <- melt(Livneh_USJ_Outflow, id = "node")
+Livneh_USJ_Outflow
+
+
+Outflow_USJ <- cbind(CanESM2_outflow_USJ, CNRM_outflow_USJ[-1], 
+                     HadGEM2_outflow_USJ[-1], MIROC5_outflow_USJ[-1],
+                     CCSM4_outflow_USJ[(-1)], CMCC_outflow_USJ[(-1)],
+                     ACCESS1_outflow_USJ[(-1)],HadGEMCC_outflow_USJ[(-1)],
+                     CESM_outflow_USJ[(-1)], GFDL_outflow_USJ[(-1)])
+Outflow_USJ
+
+
+Outflow_USJ2 <- melt(Outflow_USJ, id = "node")
+Outflow_USJ2
+```
+
+```{r}
+Outflow_USJ2 <- rbind(Outflow_USJ2, Livneh_USJ_Outflow) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Outflow_USJ2
+
+
+Outflow_USJ2$variable <- factor(Outflow_USJ2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+Outflow_USJ2
+
+Outflow_USJ3 <- Outflow_USJ2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Outflow_USJ3
+```
+
+
+
+```{r}
+ggplot(Outflow_USJ2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #  stat_summary(aes( x = Month, y = value, fill = variable),fun.data = f, outlier.alpha = 0.3, fun.y = sum, geom = "boxplot", stat = "identity")+
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_continuous(limits = c(0, NA),
+  #                expand = c(0, NA),
+  #               labels = scales::comma) +
+  scale_y_log10(breaks=c(0.1, 1,10,100,1000), labels=comma, limits = c(0.05, NA), expand = c(0, NA),)+ 
+  
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       title = "No Instreamflow Requirement (2009 prices)",
+       subtitle = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_montlhy_outflow_GCMs_logscale_Baseline_2009prices_Report_March.png", units ="in", width=10, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(Outflow_USJ3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  # scale_y_log10(breaks=c(1,10,100,1000), labels=comma, limits = c(0, NA), expand = c(0, NA),)+ 
+  #   scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  # scale_y_log10(breaks=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000), labels=c(-10000000,-1000000,-100000,-10000, -1000, -100, -10, 0.1,1,10,100,1000))+
+  labs(subtitle = "No Instreamflow Requirement (2009 prices) - RCP 8.5 Scenario",
+       title = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_annual_outflow_GCMs_Baseline_2009prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+
+```{r}
+#Facet wraps of all basins
+
+Outflow_Mer2$Basin <- "Merced River"
+Outflow_Mer3$Basin <- "Merced River"
+Outflow_Tuo2$Basin <- "Tuolumne River"
+Outflow_Tuo3$Basin <- "Tuolumne River"
+Outflow_Stn2$Basin <- "Stanislaus River"
+Outflow_Stn3$Basin <- "Stanislaus River"
+Outflow_USJ2$Basin <- "Upper San Joaquin River"
+Outflow_USJ3$Basin <- "Upper San Joaquin River"
+
+
+all_Outflow_monthly <- rbind(Outflow_Mer2, Outflow_Tuo2, Outflow_Stn2 ,Outflow_USJ2)
+
+all_Outflow_monthly$Basin <- factor(all_Outflow_monthly$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_Outflow_monthly
+
+all_Outflow_annual <- rbind(Outflow_Mer3, Outflow_Tuo3, Outflow_Stn3 ,Outflow_USJ3)
+
+all_Outflow_annual$Basin <- factor(all_Outflow_annual$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+all_Outflow_annual
+
+```
+
+```{r}
+all_Outflow_monthly$Month <- factor(all_Outflow_monthly$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+all_Outflow_monthly
+
+
+All_Montlhy_Stats_Outflow <- aggregate(MonthlyTotal ~ Month+variable+Basin, all_Outflow_monthly, summary)
+write.csv(All_Montlhy_Stats_Outflow, "All_Monthly_Stats_Outflow_mcm_RCP4.5_Baseline_2009prices_Report_March.csv")
+
+All_Annual_Stats_Outflow <- aggregate(AnnualTotal ~ variable+Basin, all_Outflow_annual, summary)
+write.csv(All_Annual_Stats_Outflow, "All_Annual_Stats_Outflow_mcm_RCP4.5_Baseline_2009prices_Report_March.csv")
+
+all_Outflow_annual
+```
+
+
+
+#RCP 8.5 Statistics
+#Monthly
+all_Outflow_monthly
+All_Mon_Stats <- aggregate(MonthlyTotal ~ variable+Basin, all_Outflow_monthly, summary)
+write.csv(All_Mon_Stats, "All_Monthly_Stats_Outflow_rcp85_Baseline_2009prices.csv")
+
+all_Outflow_monthly
+All_Mon_Stats <- aggregate(AnnualTotal ~ variable+Basin, all_Outflow_annual, summary)
+write.csv(All_Mon_Stats, "All_Annual_Stats_Outflow_rcp85_Baseline_2009prices.csv")
+
+
+
+```{r}
+ggplot(all_Outflow_monthly) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_log10(breaks=c(0, 0.1,1,10,100,1000), labels=scales::comma)+
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+  png("AllBasins_outflow_GCMs_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=9, height=5, res = 300)
+```
+
+```{r}
+#annual aggreagate
+ggplot(all_Outflow_annual) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = scales::comma) +
+  # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES\u2020", "CanESM2\u2020", "MIROC5\u2020", "CNRM-CM5\u2020"))+
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5",
+       #title = "Upper San Joaquin River",
+       x = element_blank(), 
+       y = "Total River Outflow (mcm/year)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        axis.ticks.x=element_blank(),
+        axis.text.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        legend.text = element_text(size = 9),
+        legend.key.size = unit(0.75,"line"),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, scales = "free_y")+
+  png("AllBasins_outflow_GCMs2_rcp85_Baseline_2009prices_Report_March.png", units ="in", width=11.5, height=4.5, res = 300)
+```
+

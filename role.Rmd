@@ -1,0 +1,113 @@
+
+```{r}
+wood <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES 232/Woodland.txt")
+wood$Precipitation[wood$Precipitation == "M"] <- NA
+wood$Snowfall[wood$Snowfall == "M"] <- NA
+wood <- wood %>%
+  mutate(Year = format(Date, "%Y"),#lfstat::water_year(Date, "usgs"),
+         Month = format(Date, "%m"),
+           Precipitation = as.double(Precipitation),
+         Snowfall = as.double(Snowfall))
+wood
+
+wood_2 <- wood %>%
+  mutate(Year = format(Date, "%Y"),#lfstat::water_year(Date, "usgs"),
+         Month = format(Date, "%m"),
+           Precipitation = as.double(Precipitation),
+         Snowfall = as.double(Snowfall)) %>%
+  group_by(Year) %>%
+  summarize(Precipitation = sum(Precipitation, na.rm=T))
+wood_2
+
+wood2 <- wood %>%
+  group_by(Month)  %>%
+  summarize(mean_total = mean(Precipitation, na.rm=T))#%>%
+#  mutate(Year = format(Date, "%Y"))
+wood2
+
+
+wood21 <- wood %>% filter(Year == "2019" | Year == "2020" | Year == 
+                            "2021")%>%
+  group_by(Year, Month) %>%
+  summarize(mean = mean(Precipitation, na.rm=T))
+#            deviation = mean - wood2$mean_tot)
+wood21
+
+wood21 <- wood21[c(10:27),]
+
+wood2[13,] <- wood2[1,]
+wood2[14,] <- wood2[2,]
+wood2[15,] <- wood2[3,]
+wood2[16,] <- wood2[10,]
+wood2[17,] <- wood2[11,]
+wood2[18,] <- wood2[12,]
+#wood2[19,] <- wood2[12,]
+wood2
+
+
+wood21$mean_total[1,4] <- wood2[1,2]
+wood21[14,] <- wood2[2,]
+wood21[15,] <- wood2[3,]
+wood21[16,] <- wood2[10,]
+wood21[17,] <- wood2[11,]
+wood21[18,] <- wood2[12,]
+
+wood211 <- cbind(wood2, wood21, by = c("Month"))
+wood211
+
+wood212  <-read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES 232/po.csv")
+#wood21$mean_total <- wood2$mean_total
+wood212 <- wood212 %>%
+  mutate(MonthYear = paste(Year,"/",Month,sep=""),
+    `Absolute difference` = Mean_Total - Mean,
+         `Relative difference (%)` = as.double(paste((Mean_Total - Mean)/Mean*100, sep="")),
+         change = ifelse(`Absolute difference` < 0, "Negative", "Positive"))
+wood212
+```
+
+```{r}
+
+ggplot(wood) + geom_line(aes(x = Date, y =Precipitation, color = "Precipitation"), size = 1.1) +  ylab("Precipitation (inches)")+ labs(color = element_blank())+ scale_x_date(#breaks = c(1910, 1930, 1950, 1970, 1990, 2010), 
+  expand = c(0,0))+ xlab(element_blank())+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+
+
+ggplot(wood_2) + geom_line(aes(x = as.numeric(Year)+1906, y =Precipitation, color = "Precipitation"), size = 1.1) +  ylab("Precipitation (inches)")+ labs(color = element_blank())+ scale_x_continuous(breaks = c(1910, 1930, 1950, 1970, 1990, 2010), 
+ expand = c(0,0))+ xlab(element_blank())+ scale_y_continuous(limits = c(5,40))+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))
+```
+
+
+```{r}
+
+
+
+ggplot(wood212) + geom_bar(aes(x = as.factor(MonthYear), y = `Absolute difference`, fill = change), stat = "identity") +  ylab("Change in precipitation (inches)")+ labs(color = element_blank())+
+  scale_fill_manual(values = c("red", "blue"), guide = FALSE)+ #scale_x_continuous(breaks = c(1910, 1930, 1950, 1970, 1990, 2010), 
+ #expand = c(0,0))+ 
+  
+  xlab(element_blank())+# scale_y_continuous(limits = c(5,40))+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("deviation from average2.png", units ="in", width=12, height=6, res = 150)
+```

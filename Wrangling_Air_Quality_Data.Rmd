@@ -1,0 +1,45 @@
+```{r}
+
+AQ <- Sys.glob("C:/Users/gusta/Desktop/PhD/RS of reservoirs/Air_Quality/*")
+
+AirQ <- lapply(AQ, read_csv)
+AirQ
+
+Air_Q <- rbindlist(AirQ) %>%
+  ungroup() %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+Air_Q
+
+write.csv(Air_Q, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/Air_Quality/Air_Quality_per_County_PM2.5.csv", row.names = F)
+```
+
+```{r}
+Air_Q2 <- Air_Q %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))%>%
+  group_by(Date, COUNTY) %>%
+  summarize(`Daily Mean PM2.5 Concentration (ug/m3 LC)` = mean(`Daily Mean PM2.5 Concentration`))
+
+Air_Q2
+
+#write.csv(Air_Q2, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/Air_Quality/Average_Air_Quality_per_County_PM2.5.csv", row.names = F)
+
+```
+
+
+```{r}
+#SA <- Sys.glob("C:/Users/gusta/Desktop/PhD/RS of reservoirs/Surface_area_sqm/*")
+
+#Surf_A <- lapply(SA, read_csv)
+#Surf_A
+
+#Surf_Area <- merge(Surf_A, by = "system:time_start", all=TRUE) #%>%
+#  ungroup() %>%
+ # mutate(Date = as.Date(`system:time_start`, format = "%B %d, %Y"))
+#Surf_Area
+
+
+#merge(list(Surf_A), by = "system:time_start"))
+do.call("cbind.na", Surf_A)
+#melt(Surf_A, by = "system:time_start")
+##write.csv(Surf_Area, "C:/Users/gusta/Desktop/PhD/RS of reservoirs/Surface_area_sqm/Surface_Area_100reservoirs.csv", row.names = F)
+```

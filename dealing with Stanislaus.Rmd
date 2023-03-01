@@ -1,0 +1,137 @@
+```{r}
+new_spicer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/gauges/streamflow_cfs.csv", na = "")
+
+
+#new_spicer$`USGS 11293372 NF STANISLAUS R BL UTICA RES NR BEAR VALLEY CA`[is.na(new_spicer$`USGS 11293372 NF STANISLAUS R BL UTICA RES NR BEAR VALLEY CA`)] <- ""
+new_spicer
+
+
+new_spicer <- new_spicer[c(1,16)] %>%
+  mutate(Date = as.Date(Date, format = "Y%-%m-%d")) %>%
+  filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-30"))%>%
+  mutate(Year = format(Date, "%Y"),
+         Month = format(Date, "%m"),
+         #USGS = as.double(.[[2]], na.rm = TRUE)
+         ) %>%
+  group_by(Year, Month) %>%
+  summarize(`USGS 11293760 NEW SPICER MDW DAM PP A NSMD NR B MDW CA` = mean(as.double(`USGS 11293760 NEW SPICER MDW DAM PP A NSMD NR B MDW CA`, na.rm = TRUE))) 
+
+write_csv(new_spicer, "ifr_bl_NewSpicerPH.csv")
+new_spicer
+```
+
+```{r}
+relief <- read_csv("C:/Users/gusta/Desktop/PhD/Classes/ES207/IFR_bl_relief.csv")
+relief
+relief <- relief %>%
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y")) %>%
+ # filter(Date >= as.Date("1980-10-01") & Date <= as.Date("2011-09-30"))%>%
+  mutate(Year = format(Date, "%Y"),
+         Month = format(Date, "%m")  ) %>%
+         #USGS = as.double(.[[2]], na.rm = TRUE)
+   
+  group_by(Year, Month) %>%
+  mutate(USGS_11292000 = sum(USGS_11292000),
+         Livneh = sum(Livneh))
+  
+relief
+write_csv(relief, "C:/Users/gusta/Desktop/PhD/Classes/ES207/IFR_bl_relief2.csv")
+```
+
+
+```{r}
+series <- c("01", "02", "03", "04", "05", "06", "07", "13", "14", "15",  "22")
+
+#series<- c("20")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = flw*0.912)
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+
+```
+
+```{r}
+
+series<- c("20", "21")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = ifelse(flw < quantile(.$flw, probs = 0.99), flw*2, flw))
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+
+
+series<- c("08", "09", "10", "11", "12")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = flw*0.80)
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+
+```
+
+```{r}
+
+series<- c("12", "11")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = flw*0.70)
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+
+#series<- c("08", "09", "10")
+
+#for(i in series) {
+#tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+#  mutate(flw = flw*0.80)
+  
+#tuo
+
+#write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+#}
+
+```
+
+
+```{r}
+series <- c("01", "02", "03", "04", "05", "06", "07", "13", "14", "15", "16", "17", "22")
+
+#series<- c("20")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = flw*0.93)
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+```
+
+series<- c("20", "21")
+
+for(i in series) {
+tuo <-  read_csv(paste0("C:/Users/gusta/Desktop/Original Stanislaus runoff/tot_runoff_sb",i,"_mcm.csv", sep="")) %>%
+  mutate(flw = ifelse(flw < quantile(.$flw, probs = 0.99), flw*2, flw))
+  
+tuo
+
+write_csv(tuo, paste0("C:/Users/gusta/Desktop/Corrected Stanislaus/tot_runoff_sb",i,"_mcm.csv"))
+}
+```

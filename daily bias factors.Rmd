@@ -1,0 +1,36 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(readr)
+library(dplyr)
+
+#Set path to bias correction factors
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/bias correction/TUOR/SubCatchment_RO_BC/"
+
+Livneh_path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/runoff/"
+
+
+Sb11 <- read_csv(paste(Livneh_path, "tot_runoff_sb11_mcm.csv", sep ="")) %>%
+  mutate(date = format(as.Date(Date), format = "%-d",%b", ))
+Sb11
+
+#multiply each day of Livneh data by the respective bias factor
+
+biasfactors <- read_csv(paste(path,"Daily_Bias_Correction_Factors_sb11.csv", sep=""))[-c(1:10),-c(2)] %>% #removing non averaged factors and empty rows
+  filter(row_number() <= n()-10)# %>% #filtering out the 10 last empty rows
+  #mutate(Day = as.Date(format(as.Date(Day, format = "%d-%b"), format = "%d-%b")), format = "%d-%b")
+
+
+
+biasfactors
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

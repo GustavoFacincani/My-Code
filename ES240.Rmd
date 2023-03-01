@@ -1,0 +1,45 @@
+---
+title: "Untitled"
+author: "Gustavo Facincani Dourado"
+date: "2/16/2021"
+output: html_document
+---
+
+```{r}
+precip <- read_csv("C:/Users/gusta/Downloads/sampledata.csv")
+precip
+```
+
+```{r}
+library(ggplot2)
+library(ggpmisc)
+
+ggplot(precip, aes(x=year, y = sac_feb_precip_in)) + geom_line()
+
+my.formula <- precip$sac_feb_precip_in ~ precip$mei
+
+ggplot(precip, aes(y= sac_feb_precip_in, x = mei)) + geom_point()+
+   geom_smooth(method = "lm", se=FALSE, color="black") +#, formula = my.formula) +
+   stat_poly_eq(formula = my.formula,
+                eq.with.lhs = "italic(hat(y))~`=`~",
+                aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")), 
+                parse = TRUE) 
+```
+
+
+```{r}
+meanprecip <- mean(precip$sac_feb_precip_in)
+meanprecip
+
+median(precip$sac_feb_precip_in)
+
+precip2020 <- precip %>% filter(year == "2020")
+
+precip2020$sac_feb_precip_in/meanprecip*100
+
+max(precip$sac_feb_precip_in)
+
+precip %>% filter(sac_feb_precip_in == "0")
+
+cor.test(precip$mei, precip$sac_feb_precip_in, method= "pearson")
+```

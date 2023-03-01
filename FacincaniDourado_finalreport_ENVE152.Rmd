@@ -1,0 +1,272 @@
+This script was created by Gustavo Facincani Dourado, for completion of the final project of the ENVE 152 class.
+
+```{r}
+#Calling packages that will be used
+library(raster)
+library(maptools)
+library(rgdal)
+library(extrafont)
+library(rgeos)
+library(dplyr)
+library(RCurl)
+library(readr)
+library(ggplot2)
+library(devtools)
+```
+
+```{r}
+#Setting the path to where my data is and where I'm going to save my results
+path <- "C:/Users/gusta/Desktop/PhD/Classes/ENVE152/final"
+
+#These are the acquisition and processing times of the images selected for this study
+training_data <- c("20160229_20200907")#, "20160316_20200907", "20160401_20200907", "20160823_20200906", "20170522_20200903", "20190715_20200827", "20180930_20200830", "20140903_20200911", "20150821_20200908", "20161111_20200905", "20150618_20200909", "20150922_20200908", "20170623_20200903")
+
+validation_data <- c("20140615_20200911", "20150805_20200908", "20170810_20200903", "20150501_20200909", "20160112_20200907", "20160213_20200907", "20160519_20200907", "20160706_20200906", "20170709_20200903", "20170927_20200903", "20171114_20200902", "20180423_20200901", "20180626_20200831")
+
+
+donpedro <- shapefile(paste(path, "/DonPedro.shp",sep="")) #reading the shapefile from the California Natural Resources Agency
+snowline <- shapefile(paste(path, "/nonsnow.shp",sep="")) #reading the shapefile from the 
+DonPedro_Storage <- readxl::read_excel(paste(path, "/DonPedroStorage.xlsx", sep=""))#reading the file with storage data saved from USGS website
+DonPedro_Storage
+
+DPS <- DonPedro_Storage %>% 
+ mutate(Hour = format(Date, "%H:%M"), #extract hour from the data-time column
+   Date = as.Date(Date)) %>% #read date as date
+  filter(Hour == "18:45") #filtering only the storage closest to the image acquisition time
+DPS
+```
+
+
+Here I'm creating a function to (1) create the MNDWI for each date, (2) save the raster file, (3) read the raster and a vector (Don Pedro reservoir's shapefile, in this case), (4) extract the area comprised by the vector + a buffer zone, (5) select only the water pixels by masking out all others, (6) produce a map of the final result for sanity check and (7) calculate the area occupied by the reservoir and save this information in a csv file
+
+```{r}
+#extract_RSdata <- function(image_name, data_type){ 
+a = "20160229_20200907"
+#for(a in image_name){ #Here I'm using a loop to read the satellite images, one at a time, based on their acquisition and processing dates
+
+#Here I'm reading bands 3 (green) and 6 (SWIR) of Landsat 8 OLI TIRS 
+
+b3 <- raster(paste("C:/Users/gusta/Desktop/PhD/Classes/ENVE152/final/LC08_L2SP_043034_",a,"_02_T1_SR_B3.TIF",sep=""))
+   
+b6 <- raster(paste("C:/Users/gusta/Desktop/PhD/Classes/ENVE152/final/LC08_L2SP_043034_",a,"_02_T1_SR_B6.TIF",sep=""))
+
+
+mndwi <- raster(paste("C:/Users/gusta/Desktop/PhD/Classes/ENVE152/MNDWI220160229.tif"))
+
+
+#writeRaster(mndwi, datatype="FLT4S", filename = paste("MNDWI2",substr(a,1,nchar(a)-9),".tif",sep=""), format = "GTiff", overwrite=TRUE) #writing each raster file in case we want to save them
+
+donpedro3 <- spTransform(donpedro, crs(mndwi)) #making sure the shapefile and raster are on the same projection
+donpedro3 <- gBuffer(donpedro3, width= 150, byid = FALSE) #adding a 150-m buffer around the shapefile
+snowline <- spTransform(snowline, crs(mndwi)) #making sure the shapefile and raster are on the same projection
+
+macalt <- mask(mndwi, snowline) #selecAAting only the area comprised by the shapefile + buffer
+
+DonPedro <- raster::calc(mndwi, function(x){x[x < -0.2] <- NA;return(x)}) #masking out the non-water pixels (below 0)
+
+#plotting the reservoir's extracted area only
+windowsFonts(A = windowsFont("Times New Roman")) 
+tiff(file=paste("MNDWI2_",substr(a,1,nchar(a)-9),".tiff",sep=""), width=6, height=9, units="in", res=300)
+plot(DonPedro, #xlim=c(725500,739000), ylim=c(4172000,4198000)
+    xaxs="i", yaxs="i", col = terrain.colors(100), main = as.Date(substr(a,1,nchar(a)-9), "%Y%m%d"), family = "A")
+plot(gBuffer(donpedro3, width= 150, byid = FALSE), add=T) #adding the buffer zone of 150 m
+dev.off()
+
+#r <- DonPedro 
+#r[r<1,] <- 1 #here I'm reclassifying the water pixels to be in one class only (1), so that I get the area for that class of pixels
+
+plot(DonPedro, #xlim=c(722000,740000), ylim=c(4170000,4200000),
+     xaxs="i", yaxs="i") #plotting this figure for sanity check
+
+
+```
+
+```{r}
+#applying function to training data
+extract_RSdata("20160229_20200907", "Training Data")
+
+```
+
+```{r}
+#applying function to validation data
+extract_RSdata(validation_data, "Validation Data")
+```
+
+```{r}
+gee <- read_csv("C:/Users/gusta/Downloads/DonPedro_L05_1%.csv") %>%
+  mutate(`system:time_start` = as.Date(`system:time_start`, "%m/%d/%Y")) %>%
+  rename(Date = `system:time_start`)
+gee
+
+
+full_data2 <- merge(DPS, gee, by = "Date")
+full_data2
+
+ggplot(full_data2, aes(y=Storage, x = waterArea)) + geom_point()
+```
+
+
+```{r}
+full_data2 <- merge(full_data2, data, by = "Date")
+full_data2
+
+
+training2 <- full_data2 %>% filter(Type == "Training Data") #separating out training data
+validation2 <- full_data2 %>% filter(Type == "Validation Data") #separating out validation data
+
+linear_model <- lm(training2$`Storage`~training2$`waterArea`)
+
+
+#Getting the stats from the model
+require(broom) 
+stats <- summary(linear_model)
+stats
+
+slope <- stats$coefficients[1] #Here we are separating the slope of the regression line
+slope
+
+intercept <- stats$coefficients[2] #Here we are separating the y intercept of the regression line
+intercept
+```
+```{r}
+
+#Dealing with model results
+model_result <- validation2 %>%
+  mutate(`Modeled Storage (TAF)` = `waterArea`*intercept + slope, #applying the equation given in the regression
+         `Absolute Difference` = `Modeled Storage (TAF)` - `Storage`, #getting absolute difference
+         `Relative Difference (%)` = `Absolute Difference`/`Storage` * 100) #getting relative difference
+model_result
+
+
+NSE <- round(NSE(model_result$`Modeled Storage (TAF)`, model_result$`Storage`),digits = 3)
+NSE
+
+#Percent-bias
+PBIAS <- round(pbias(model_result$`Modeled Storage (TAF)`, model_result$`Storage`)*-1) #this package calculates PBIAS as: negative values = negative bias and positive values = positive bias, but it should be the opposite, so I'm multiplying it by -1
+PBIAS
+
+#Root mean square error
+RMSE <- round(rmse(model_result$`Modeled Storage (TAF)`, model_result$`Storage`),digits = 3)
+RMSE
+```
+
+```{r}
+data<- read_csv(paste(path, "/DonPedro_Surface_Area_m2.csv",sep=""))
+data
+
+full_data <- merge(DPS, data, by = "Date") %>%
+  mutate(`Storage (TAF)` = Storage/1000, #let's deal with storage in thousand acre-feet
+         `Area (km2)` = `Area (sqm)`/1000000) #let's deal with area in square kilometers
+full_data
+
+training <- full_data %>% filter(Type == "Training Data") #separating out training data
+validation <- full_data %>% filter(Type == "Validation Data") #separating out validation data
+
+#fitting linear model in the training data
+linear_model <- lm(training$`Storage (TAF)`~training$`Area (km2)`)
+
+
+#Getting the stats from the model
+require(broom) 
+stats <- summary(linear_model)
+stats
+
+slope <- stats$coefficients[1] #Here we are separating the slope of the regression line
+slope
+
+intercept <- stats$coefficients[2] #Here we are separating the y intercept of the regression line
+intercept
+
+```
+
+
+
+
+```{r}
+#Dealing with model results
+model_result <- validation %>%
+  mutate(`Modeled Storage (TAF)` = `Area (km2)`*intercept + slope, #applying the equation given in the regression
+         `Absolute Difference` = `Modeled Storage (TAF)` - `Storage (TAF)`, #getting absolute difference
+         `Relative Difference (%)` = `Absolute Difference`/`Storage (TAF)` * 100) #getting relative difference
+model_result
+
+#Model Assessment
+
+library(hydroGOF)
+
+#Nash Sutcliffe Model Efficiency Coefficient
+NSE <- round(NSE(model_result$`Modeled Storage (TAF)`, model_result$`Storage (TAF)`),digits = 3)
+NSE
+
+#Percent-bias
+PBIAS <- round(pbias(model_result$`Modeled Storage (TAF)`, model_result$`Storage (TAF)`)*-1) #this package calculates PBIAS as: negative values = negative bias and positive values = positive bias, but it should be the opposite, so I'm multiplying it by -1
+PBIAS
+
+#Root mean square error
+RMSE <- round(rmse(model_result$`Modeled Storage (TAF)`, model_result$`Storage (TAF)`),digits = 3)
+RMSE
+```
+
+```{r}
+#Creating figure to show the storage timeseries and vertical lines showing when and at which level of storage each image was captured
+ggplot(DonPedro_Storage, aes(x = as.Date(Date), y = Storage/1000000)) + #plotting storage values in million AF
+   theme_bw(base_size=12, base_family='Times New Roman') +
+  scale_x_date(labels = scales::date_format("%b/%Y"), expand = c(0, NA), # breaks = full_data$Date, 
+               limits = c(as.Date("5/20/2014", format = "%m/%d/%Y"), as.Date("7/30/2019", format = "%m/%d/%Y")))+ #limiting the x axis to show only the range of dates selected
+  #adding the vertical lines showing the images used for training data in orange
+  geom_vline(xintercept= full_data$Date[full_data$Type == "Training Data"], color = "darkorange")+
+  #adding the vertical lines showing the images used for validation data in blue
+    geom_vline(xintercept= full_data$Date[full_data$Type == "Validation Data"], color = "deepskyblue3")+
+  #adding the horizontal lines showing the minimum and maximum storage values of the reservoir
+  geom_hline(yintercept= c(0.810713, 2.030), linetype = "dashed")+
+    geom_line()+ xlab(element_blank()) + ylab("Storage (Million Acre-feet)")+
+   annotate("text", x = c(as.Date("9/15/2018", format = "%m/%d/%Y"),as.Date("9/15/2018", format = "%m/%d/%Y")), y = c(1.935,0.715), label = c("Maximum Storage", "Minimum Storage"), vjust = -0.5, family='Times New Roman') +
+  #theme(axis.text.x = element_blank())+ #element_text(angle = 90, vjust = 0.5, hjust=0))+
+ png("storage.png", units ="in", width=5, height=3.5, res = 300)
+```
+
+
+```{r}
+#Creating figure with linear regression of the training data
+ggplot(full_data %>% filter(Type == "Training Data"), aes(x = `Area (km2)`, y = `Storage (TAF)`/1000)) +
+   theme_bw(base_size=12, base_family='Times New Roman') +
+  stat_smooth(aes(x = `Area (km2)`, y = `Storage (TAF)`/1000), method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Storage (Million Acre-feet)") + xlab(expression(paste("Area (km"^"2",")")))+
+   scale_x_continuous(limits = c(20, 48), breaks = c(20, 30, 40))+
+  scale_y_continuous(limits = c(0.5, 2.25))+#seting the limits for the axes
+  geom_point(alpha = 0.5, size = 1.5)+
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") +
+   ggpmisc::stat_poly_eq(formula = "y~x",
+             aes(x = `Area (km2)`, y = `Storage (TAF)`/1000,label = paste0("atop(", ..eq.label.., ",", ..rr.label..,")")),
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.97, size = 4.3, family= "Times New Roman")+
+ggpubr::stat_cor(aes(x = `Area (km2)`, y = `Storage (TAF)`/1000, label = ..r.label..),label.x.npc = 0.44, label.y.npc = 0.85, size = 4.3, family= "Times New Roman")+
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("training.png", units ="in", width=4, height=4, res = 300)
+
+```
+
+```{r}
+#Creating figure with linear regression of the modeled vs simulated results
+ggplot(model_result, aes(x = `Storage (TAF)`/1000, y = `Modeled Storage (TAF)`/1000)) +
+   theme_bw(base_size=12, base_family='Times New Roman') +
+  stat_smooth(aes(x = `Storage (TAF)`/1000, y =  `Modeled Storage (TAF)`/1000), method = "lm", se = TRUE, colour="#FC4E07", fullrange = TRUE) + ylab("Modeled Storage (Million Acre-feet)") + xlab(expression(paste("Observed Storage (Million Acre-feet)")))+
+   scale_x_continuous(limits = c(0.5, 2.25))+ #seting the limits for the axes
+     scale_y_continuous(limits = c(0.5, 2.25))+
+  geom_point(alpha = 0.5, size = 1.5)+
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed") + #adding dashed line to show the slope of 1
+   ggpmisc::stat_poly_eq(formula = "y~x", #adding the R2 and equation
+             aes(x =  `Storage (TAF)`/1000, y =  `Modeled Storage (TAF)`/1000,label = paste0("atop(", ..eq.label.., ",", ..rr.label..,")")),
+             parse = TRUE, label.x.npc = "center", label.y.npc = 0.98, size = 4.3, family= "Times New Roman")+
+ggpubr::stat_cor(method = "pearson", p.accuracy = 0.001,label.x.npc = 0.32, label.y.npc = 0.85, size = 4.3, family= "Times New Roman")+ #adding the p-value and pearson's R
+  annotate("text", x = 1.75, y = 0.8, label = paste("NSE = ",NSE,"\n", "PBIAS = ",PBIAS,"% \n", "RMSE = ",RMSE,"\n",sep=""), family='Times New Roman')+ #adding the other stats calculated above
+  theme(aspect.ratio = 1,
+        plot.title = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("validation.png", units ="in", width=4, height=4, res = 300)
+
+```

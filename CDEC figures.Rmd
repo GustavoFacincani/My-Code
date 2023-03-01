@@ -38,6 +38,12 @@ TLG.obs$Value <- TLG.obs$Value/810.71318210885
 #Binding the 4 stations together into one object
 Obs <- rbind(SNS.obs, TLG.obs, SJF.obs, MRC.obs)
 head(Obs) #checking if it is all right
+
+
+write_csv(TLG.obs, "Tuolumne monthly CDEC data (mcm).csv")
+write_csv(MRC.obs, "Merced monthly CDEC data (mcm).csv")
+write_csv(SNS.obs, "Stanislaus monthly CDEC data (mcm).csv")
+write_csv(SJF.obs, "Upper San Joaquin monthly CDEC data (mcm).csv")
 ```
 
 ```{r}
@@ -46,7 +52,7 @@ head(Obs) #checking if it is all right
 SNS.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
 MRC.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
 TLG.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
-SJF.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
+  SJF.sim <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
 
 #Binding the 4 stations together into one object
 Sim <- rbind(SNS.sim, TLG.sim, SJF.sim, MRC.sim)
