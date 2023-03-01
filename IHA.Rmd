@@ -1,0 +1,51 @@
+
+```{r}
+Livneh_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline - 2021-01-26/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv")[c(1,5)] %>%
+  mutate(Percentile25 = stats::quantile(Livneh_Tuo$`IFR at La Grange`, probs = .25),
+         Count_RF = ifelse(`IFR at La Grange` < Percentile25, 1, 0))
+Livneh_Tuo
+
+Livneh_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv") %>%
+  mutate(Percentile25 = stats::quantile(.$flow, probs = .25),
+         Count_NF = ifelse(flow < Percentile25, 1, 0)) %>%
+  filter(between(date, as.Date("1950-10-01"), as.Date("2012-09-30")))
+Livneh_FF
+
+combined <- cbind(Livneh_Tuo[c(1,4)], Livneh_FF[c(4)])
+combined
+```
+
+
+```{r}
+
+IHA <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/historical/Livneh/Output_Flow_mcm.csv")[-c(1:3), c(1,6)] %>% rename(flow= `Tuolumne River Outflow`) 
+IHA
+
+library(IHA)
+
+data = zoo(as.numeric(IHA$flow), IHA$node)
+IHA4 <- as.data.frame(group4(data, year = "calendar"))
+IHA4
+
+
+IHA_UF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
+IHA_UF
+
+data2 = zoo(as.numeric(IHA_UF$flow), IHA_UF$date)
+IHA4 <- as.data.frame(group4(data2, year = "water"))
+IHA4
+```
+
+```{r}
+combined2 <- combined %>% melt(., id = "Date") %>%
+  mutate(Year = lfstat::water_year(Date, origin="usgs")) %>%
+  group_by(Year,variable) %>%
+  summarise(value = sum(value))
+combined2
+```
+
+```{r}
+ggplot(combined2, aes(x = variable, y = value, fill= variable, group = variable)) + geom_boxplot()
+
+ggplot(IHA4, aes( y = `Low pulse number`)) + geom_boxplot()
+```

@@ -1,0 +1,406 @@
+
+```{r}
+#RCP 8.5
+
+
+NM_hist_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         node = as.Date(node),
+         `Don Pedro PH` = as.numeric(`Don Pedro PH`),
+         WaterYear = water_year(node, origin = "usgs"))
+NM_hist_Gen2
+
+NM_Can_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM_Can_Gen2
+
+NM_Mir_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM_Mir_Gen2
+
+NM_CNR_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM_CNR_Gen2
+
+NM_Had_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM_Had_Gen2
+
+NM_CCSM4_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM_CCSM4_Gen2
+
+NM_GFDL_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM_GFDL_Gen2
+
+NM_HadGEMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM_HadGEMCC_Gen2
+
+NM_CMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM_CMCC_Gen2
+
+NM_ACCESS1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM_ACCESS1_Gen2
+
+NM_CESM1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-04-08/tuolumne/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,10)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM_CESM1_Gen2
+
+```
+
+
+```{r}
+library(lfstat)
+New_Mel1 <- rbind(
+          NM_Mir_Gen2, NM_Had_Gen2, NM_CNR_Gen2, NM_Can_Gen2,
+          NM_HadGEMCC_Gen2, NM_CMCC_Gen2, NM_ACCESS1_Gen2, NM_CESM1_Gen2, NM_GFDL_Gen2, NM_CCSM4_Gen2) %>%
+    mutate(`Don Pedro PH` = as.numeric(`Don Pedro PH`),
+           node = as.Date(node),
+           WaterYear = water_year(node, origin = "usgs")) %>%
+  filter(WaterYear %in% (2031:2060))
+  
+New_Mel1
+
+New_Mel <- rbind(NM_hist_Gen2, New_Mel1)
+
+New_Mel2 <- New_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs")) %>%
+      mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  #  filter(WaterYear %in% (2040:2059)) %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(Generation = sum(`Don Pedro PH`)) %>%
+  ungroup() %>%
+    group_by(Scenario, Model) %>%
+    summarize(Generation = mean(Generation))
+New_Mel2
+
+New_Mel_GenWY <- New_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs"),
+         Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario, Month) %>%
+  summarize(Generation = sum(`Don Pedro PH`))
+New_Mel_GenWY
+
+New_Mel_Gen_Ensem <- New_Mel1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(Generation = sum(`Don Pedro PH`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(Generation = mean(Generation)) %>%
+    mutate(Model = "Ensemble")
+  
+New_Mel_Gen_Ensem
+
+New_Mel_GenWY2 <- rbind(New_Mel_Gen_Ensem, New_Mel_GenWY)%>%
+  filter(!Scenario == "RCP 4.5")
+  
+New_Mel_GenWY2
+New_Mel_GenWY2$Model <- factor(New_Mel_GenWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New_Mel_Genannual <- New_Mel_GenWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(Generation = sum(Generation))
+New_Mel_Genannual
+
+New_Mel_Genannual_Livneh <- New_Mel_Genannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(Generation = mean(Generation))
+New_Mel_Genannual_Livneh
+
+New_Mel_Genannual2 <- New_Mel_Genannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (Generation-as.numeric(paste(New_Mel_Genannual_Livneh[2]))),
+         RelativeDiff = (Generation-as.numeric(paste(New_Mel_Genannual_Livneh[2])))/as.numeric(paste(New_Mel_Genannual_Livneh[2]))*100)
+New_Mel_Genannual2
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM1_hist_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         node = as.Date(node),
+         `Don Pedro PH_1` = as.numeric(`Don Pedro PH_1`),
+         WaterYear = water_year(node, origin = "usgs"))
+NM1_hist_Gen2
+
+NM1_Can_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM1_Can_Gen2
+
+NM1_Mir_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM1_Mir_Gen2
+
+NM1_CNR_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM1_CNR_Gen2
+
+NM1_Had_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM1_Had_Gen2
+
+NM1_CCSM4_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM1_CCSM4_Gen2
+
+NM1_GFDL_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM1_GFDL_Gen2
+
+NM1_HadGEMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM1_HadGEMCC_Gen2
+
+NM1_CMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM1_CMCC_Gen2
+
+NM1_ACCESS1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM1_ACCESS1_Gen2
+
+NM1_CESM1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical and GCMs - 2021-04-08/tuolumne/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM1_CESM1_Gen2
+
+```
+
+
+```{r}
+library(lfstat)
+New1_Mel1 <- rbind(
+          NM1_Mir_Gen2, NM1_Had_Gen2, NM1_CNR_Gen2, NM1_Can_Gen2,
+          NM1_HadGEMCC_Gen2, NM1_CMCC_Gen2, NM1_ACCESS1_Gen2, NM1_CESM1_Gen2, NM1_GFDL_Gen2, NM1_CCSM4_Gen2) %>%
+    mutate(`Don Pedro PH_1` = as.numeric(`Don Pedro PH_1`),
+           node = as.Date(node),
+           WaterYear = water_year(node, origin = "usgs")) %>%
+  filter(WaterYear %in% (2031:2060))
+  
+New1_Mel1
+
+New1_Mel <- rbind(NM1_hist_Gen2, New1_Mel1) 
+
+New1_Mel2 <- New1_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs")) %>%
+      mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  #  filter(WaterYear %in% (2040:2059)) %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(Generation = sum(`Don Pedro PH_1`)) %>%
+  ungroup() %>%
+    group_by(Scenario, Model) %>%
+    summarize(Generation = mean(Generation))
+New1_Mel2
+
+New1_Mel_GenWY <- New1_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs"),
+         Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario, Month) %>%
+  summarize(Generation = sum(`Don Pedro PH_1`))
+New1_Mel_GenWY
+
+New1_Mel_Gen_Ensem <- New1_Mel1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(Generation = sum(`Don Pedro PH_1`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(Generation = mean(Generation)) %>%
+    mutate(Model = "Ensemble")
+  
+New1_Mel_Gen_Ensem
+
+New1_Mel_GenWY2 <- rbind(New1_Mel_Gen_Ensem, New1_Mel_GenWY)%>%
+  filter(!Scenario == "RCP 4.5")#%>%
+#  rename(`Don Pedro PH` = `Don Pedro PH_1`)
+  
+New1_Mel_GenWY2
+New1_Mel_GenWY2$Model <- factor(New1_Mel_GenWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New1_Mel_Genannual <- New1_Mel_GenWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(Generation = sum(Generation))
+New1_Mel_Genannual
+
+New1_Mel_Genannual_Livneh <- New1_Mel_Genannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(Generation = mean(Generation))
+New1_Mel_Genannual_Livneh
+
+New1_Mel_Genannual2 <- New1_Mel_Genannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (Generation-as.numeric(paste(New1_Mel_Genannual_Livneh[2]))),
+         RelativeDiff = (Generation-as.numeric(paste(New1_Mel_Genannual_Livneh[2])))/as.numeric(paste(New1_Mel_Genannual_Livneh[2]))*100)
+New1_Mel_Genannual2
+```
+
+
+```{r}
+#RCP 8.5
+
+
+NM2_hist_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "Livneh (Historical)",
+         Scenario = "RCP 8.5",
+         node = as.Date(node),
+         `Don Pedro PH_1` = as.numeric(`Don Pedro PH_1`),
+         WaterYear = water_year(node, origin = "usgs"))
+NM2_hist_Gen2
+
+NM2_Can_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/CanESM2_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CanESM2",
+         Scenario = "RCP 8.5")
+NM2_Can_Gen2
+
+NM2_Mir_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/MIROC5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "MIROC5",
+         Scenario = "RCP 8.5")
+NM2_Mir_Gen2
+
+NM2_CNR_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/CNRM-CM5_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CNRM-CM5",
+         Scenario = "RCP 8.5")
+NM2_CNR_Gen2
+
+NM2_Had_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/HadGEM2-ES_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "HadGEM2-ES",
+         Scenario = "RCP 8.5")
+NM2_Had_Gen2
+
+NM2_CCSM4_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/CCSM4_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CCSM4",
+         Scenario = "RCP 8.5")
+NM2_CCSM4_Gen2
+
+NM2_GFDL_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/GFDL-CM3_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "GFDL-CM3",
+         Scenario = "RCP 8.5")
+NM2_GFDL_Gen2
+
+NM2_HadGEMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/HadGEM2-CC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "HadGEM2-CC",
+         Scenario = "RCP 8.5")
+NM2_HadGEMCC_Gen2
+
+NM2_CMCC_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/CMCC-CMS_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CMCC-CMS",
+         Scenario = "RCP 8.5")
+NM2_CMCC_Gen2
+
+NM2_ACCESS1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/ACCESS1-0_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "ACCESS1-0",
+         Scenario = "RCP 8.5")
+NM2_ACCESS1_Gen2
+
+NM2_CESM1_Gen2 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/SWRCB40 - 2021-04-08/tuolumne/gcms/CESM1-BGC_rcp85/Hydropower_Energy_MWh.csv")[-c(1:3), c(1,7)] %>%
+  mutate(Model = "CESM1-BGC",
+         Scenario = "RCP 8.5")
+NM2_CESM1_Gen2
+
+```
+
+
+```{r}
+library(lfstat)
+New2_Mel1 <- rbind(
+          NM1_Mir_Gen2, NM1_Had_Gen2, NM1_CNR_Gen2, NM2_Can_Gen2,
+          NM1_HadGEMCC_Gen2, NM1_CMCC_Gen2, NM1_ACCESS1_Gen2, NM1_CESM1_Gen2, NM1_GFDL_Gen2, NM1_CCSM4_Gen2) %>%
+    mutate(`Don Pedro PH_1` = as.numeric(`Don Pedro PH_1`),
+           node = as.Date(node),
+           WaterYear = water_year(node, origin = "usgs")) %>%
+  filter(WaterYear %in% (2031:2060))
+  
+New2_Mel1
+
+New2_Mel <- rbind(NM1_hist_Gen2, New2_Mel1) 
+
+New2_Mel2 <- New2_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs")) %>%
+      mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  #  filter(WaterYear %in% (2040:2059)) %>%
+  group_by(WaterYear, Model, Scenario) %>%
+  summarize(Generation = sum(`Don Pedro PH_1`)) %>%
+  ungroup() %>%
+    group_by(Scenario, Model) %>%
+    summarize(Generation = mean(Generation))
+New2_Mel2
+
+New2_Mel_GenWY <- New2_Mel %>%
+  mutate(WaterYear = water_year(node, origin = "usgs"),
+         Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+  group_by(WaterYear, Model, Scenario, Month) %>%
+  summarize(Generation = sum(`Don Pedro PH_1`))
+New2_Mel_GenWY
+
+New2_Mel_Gen_Ensem <- New2_Mel1 %>% 
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b"))) %>%
+    group_by(WaterYear, Month, Scenario, Model) %>% 
+    summarize(Generation = sum(`Don Pedro PH_1`)) %>%
+    ungroup() %>%
+    group_by(WaterYear, Scenario, Month) %>%
+    summarize(Generation = mean(Generation)) %>%
+    mutate(Model = "Ensemble")
+  
+New2_Mel_Gen_Ensem
+
+New2_Mel_GenWY2 <- rbind(New2_Mel_Gen_Ensem, New2_Mel_GenWY)%>%
+  filter(!Scenario == "RCP 4.5")#%>%
+#  rename(`Don Pedro PH` = `Don Pedro PH_1`)
+  
+New2_Mel_GenWY2
+New2_Mel_GenWY2$Model <- factor(New2_Mel_GenWY2$Model, levels = c("Livneh (Historical)","MIROC5", "ACCESS1-0", "GFDL‐CM3","CMCC-CMS",  "HadGEM2-ES", "CCSM4", "CESM1-BGC", "HadGEM2‐CC","CanESM2",  "CNRM-CM5", "Ensemble"))
+
+New2_Mel_Genannual <- New2_Mel_GenWY2 %>%
+  group_by(Model, WaterYear) %>%
+  summarize(Generation = sum(Generation))
+New2_Mel_Genannual
+
+New2_Mel_Genannual_Livneh <- New2_Mel_Genannual %>%
+  filter(Model == "Livneh (Historical)") %>%
+  summarize(Generation = mean(Generation))
+New2_Mel_Genannual_Livneh
+
+New2_Mel_Genannual2 <- New2_Mel_Genannual %>%
+  filter(!Model == "Livneh (Historical)") %>%
+  mutate(AbsoluteDiff = (Generation-as.numeric(paste(New2_Mel_Genannual_Livneh[2]))),
+         RelativeDiff = (Generation-as.numeric(paste(New2_Mel_Genannual_Livneh[2])))/as.numeric(paste(New2_Mel_Genannual_Livneh[2]))*100)
+New2_Mel_Genannual2
+```
+
+
+```{r}
+
+New_Mel_GenWY2_2 <- rbind(New_Mel_GenWY2 %>%mutate(Scenario = "Baseline"), New1_Mel_GenWY2 %>%mutate(Scenario = "Functional Flows"), New2_Mel_GenWY2 %>% mutate(Scenario = "SWRCB 40%"))
+
+Figure_Monthly(New_Mel_GenWY2_2, New_Mel_GenWY2_2$Generation, "", "Hydropower Generation (GWh/month)", "Hydropower", "Figure 1. Monthly hydropower generation by the Don Pedro Powerhouse")
+
+```

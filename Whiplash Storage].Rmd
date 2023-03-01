@@ -1,0 +1,129 @@
+---
+title: "Whiplash Storage"
+author: "Gustavo Facincani Dourado"
+date: '2023-02-16'
+output: html_document
+---
+
+```{r}
+Mer_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))  %>%
+  mutate(Merced = rowSums(.[c(2,3)])) %>%  select(1,4)
+Mer_Tot_Storage
+
+Tuo_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))  %>%
+  mutate(Tuolumne = rowSums(.[c(2:5)])) %>%  select(1,6)
+Tuo_Tot_Storage
+
+Stn_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))  %>%
+  mutate(Stanislaus = rowSums(.[c(2:11)])) %>%  select(1,12)
+Stn_Tot_Storage
+
+USJ_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))  %>%
+  mutate(`Upper San Joaquin` = rowSums(.[c(2:10)]))%>%  select(1,11)
+USJ_Tot_Storage
+```
+
+
+
+```{r}
+mer <-mean(Mer_Tot_Storage$Merced)
+tuo <- mean(Tuo_Tot_Storage$Tuolumne)
+stn <- mean(Stn_Tot_Storage$Stanislaus)
+usj <- mean(USJ_Tot_Storage$`Upper San Joaquin`) 
+
+```
+
+
+```{r}
+All_storage <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "Reservoir_Storage_mcm.csv", ., value = TRUE)
+
+head(All_storage)
+```
+
+```{r}
+filelist_storage <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_storage,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_storage) <- paste(All_storage)
+```
+
+
+```{r}
+filelist_storage2<- invisible(lapply(names(filelist_storage), function(x) assign(x,filelist_storage[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist_storage[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist_storage2)
+
+```
+
+```{r}
+Storage_Mer <- filelist_storage2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(Total = rowSums(.[c(2:3)]))%>%
+  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Storage_Mer
+
+Storage_Tuo <- filelist_storage2 %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(Total = rowSums(.[c(2:5)]))%>%
+  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Storage_Tuo
+
+Storage_Stn <- filelist_storage2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(Total = rowSums(.[c(2:11)]))%>%
+  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Storage_Stn
+
+Storage_USJ <- filelist_storage2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(Total = rowSums(.[c(2:10)]))%>%
+  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Storage_USJ
+```
+
+```{r}
+Storage <- rbind(Storage_Mer, Storage_Tuo, Storage_Stn, Storage_USJ) %>%
+  rename(Storage = value) %>%
+  mutate(Rel_Difference = 100*ifelse(Basin == "merced", (Storage - mer)/mer, ifelse(Basin == "stanislaus", (Storage - stn)/stn, ifelse(Basin == "tuolumne", (Storage - tuo)/tuo, (Storage - usj)/usj)))) %>%
+  group_by(Basin, Sequence, Scenario) %>%
+  summarize(Storage = mean(Storage),
+            Rel_Difference = mean(Rel_Difference)) %>%
+                group_by(Basin, Scenario) %>%
+            summarize(Mean_Rel_Difference = mean(Rel_Difference),
+            Min_Storage = min(Rel_Difference),
+            Max_Storage = max(Rel_Difference))
+Storage
+
+```
+```{r}
+write_csv(Storage, "C:/Users/gusta/University of California Merced/WhiplashTotal_Storage.csv")
+
+
+```

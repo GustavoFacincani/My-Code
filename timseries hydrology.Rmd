@@ -1,0 +1,72 @@
+---
+title: "timeseries hydrology"
+author: "Gustavo Facincani Dourado"
+date: '2022-09-08'
+output: html_document
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+mer_hist <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_monthly_mcm.csv")
+mer_hist$GCM <- as.factor("Livneh (Historical)")
+mer_hist
+
+#caraca <- function(gcm_name, gcm){
+  
+#gcm <- c("ACCESS1-0_rcp85", "CanESM2_rcp85", "CCSM4_rcp85", "CESM1-BGC_rcp85", "CMCC-CMS_rcp85", "CNRM-CM5_rcp85", "GFDL-CM3_rcp85", "HadGEM2-ES_rcp85", "HadGEM2-CC_rcp85", "MIROC5_rcp85")  
+  
+#gcm_name <- c("access", "canes", "ccsm", "cesm", "cmcc", "cnrm", "gfdl", "hades", "hadcc", "miroc")
+
+  
+#  for (a in gcm) {
+   # for (i in gcm_name) {
+
+acces <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/ACCESS1-0_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+acces$GCM <- as.factor("ACCESS1-0")
+acces
+canes <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CanESM2_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+canes$GCM <- as.factor("CanESM2\u2020")
+canes
+ccsm <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CCSM4_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+ccsm$GCM <- as.factor("CCSM4")
+ccsm
+cesm <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CESM1-BGC_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+cesm$GCM <- as.factor("CESM1-BGC")
+cesm
+cmcc <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CMCC-CMS_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+cmcc$GCM <- as.factor("CMCC-CMS")
+cmcc
+cnrm <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/CNRM-CM5_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+cnrm$GCM <- as.factor("CNRM-CM5\u2020")
+cnrm
+gfdl <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/GFDL-CM3_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+gfdl$GCM <- as.factor("GFDL-CM3")
+gfdl
+hades <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-ES_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+hades$GCM <- as.factor("HadGEM2-ES\u2020")
+hades
+hadcc <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/HadGEM2-CC_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+hadcc$GCM <- as.factor("HadGEM2-CC")
+hadcc
+miroc <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/gcms/MIROC5_rcp85/preprocessed/full_natural_flow_monthly_mcm.csv",sep="")) %>% filter(between(date, as.Date("2014-01-01"), as.Date("2099-12-31")))
+miroc$GCM <- as.factor("MIROC5\u2020")
+miroc
+    
+  
+#}
+
+
+```
+
+
+```{r}
+ggplot(mer_hist, aes(x=date , y=flow)) + 
+  stat_summary(geom = "line", fun.y = mean) #+
+  #stat_summary(geom="ribbon", fun.data=mean_cl_boot, 
+     #          conf.int=0.95, alpha = 0.0, linetype="dashed", colour="red")
+```

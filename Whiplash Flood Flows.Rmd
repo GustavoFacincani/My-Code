@@ -1,0 +1,530 @@
+---
+title: "Whiplash Flood Flows"
+author: "Gustavo Facincani Dourado"
+date: '2023-02-08'
+output: html_document
+---
+
+```{r}
+Mer_Total_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/TotalSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Mer_Total_Spill
+Tuo_Total_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/TotalSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Tuo_Total_Spill
+Stn_Total_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/TotalSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Stn_Total_Spill
+USJ_Total_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/TotalSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+USJ_Total_Spill
+Mer_Unc_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Mer_Unc_Spill
+Tuo_Unc_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Tuo_Unc_Spill
+Stn_Unc_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Stn_Unc_Spill
+USJ_Unc_Spill <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+USJ_Unc_Spill
+```
+
+```{r}
+Unc_Spill <- cbind(Mer_Unc_Spill, Tuo_Unc_Spill[2], Stn_Unc_Spill[2], USJ_Unc_Spill[2]) %>%
+      reshape2::melt(., id = "node") %>%
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         Occurrence = ifelse(value > 0, 1, 0)) %>%
+  group_by(WaterYear, variable) %>%
+  summarize(Spill = sum(value),
+            Days = sum(Occurrence))
+Unc_Spill
+```
+
+```{r}
+ggplot(Unc_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Days), stat = "identity") +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA), breaks = c(0, 10, 20, 30, 40, 50, 60)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+                              "1951", "1961", "1971"),
+                    expand = c(0, NA))+
+  facet_wrap(~variable, scales = "free_x", ncol = 4) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Uncontrolled Spill Occurrence\n(Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_UncSpill.png", units ="in", width=10, height=3, res = 300)
+```
+
+```{r}
+Total_Spill <- cbind(Mer_Total_Spill, Tuo_Total_Spill[2], Stn_Total_Spill[2], USJ_Total_Spill[2]) %>%
+      reshape2::melt(., id = "node") %>%
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         Occurrence = ifelse(value > 0, 1, 0)) %>%
+  group_by(WaterYear, variable) %>%
+  summarize(Total_Spill = sum(value),
+            Days = sum(Occurrence)) 
+
+Total_Spill
+
+Total_Spill2 <- Total_Spill%>%
+  group_by(variable) %>%
+  summarize(Average_Spill_Days = mean(Days),
+         Min_Spill_Days = min(Days),
+         Max_Spill_Days = max(Days),
+         Average_Spill = mean(Total_Spill),
+         Min_Spill = min(Total_Spill),
+         Max_Spill = max(Total_Spill))
+Total_Spill2
+
+#write_csv(Total_Spill2, "Total_Spill_Whiplash.csv")
+```
+
+```{r}
+ggplot(Total_Spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Total_Spill), stat = "identity") +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+                              "1951", "1961", "1971"),
+                    expand = c(0, NA))+
+  facet_wrap(~variable, scales = "free_x", ncol = 4) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Flood Control Releases\n(mcm/year)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_FloodControl.png", units ="in", width=10, height=3, res = 300)
+```
+
+```{r}
+Mer_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/preprocessed/full_natural_flow_annual_mcm.csv")
+Mer_FNF
+
+Tuo_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_annual_mcm.csv")
+Tuo_FNF
+
+Stn_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_annual_mcm.csv")
+Stn_FNF
+
+USJ_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_annual_mcm.csv")
+USJ_FNF
+```
+
+
+```{r}
+FNF <- cbind(USJ_FNF, Tuo_FNF[2], Stn_FNF[2], Mer_FNF[2])
+
+colnames(FNF) <- c("Date", "Merced", "Tuolumne", "Stanislaus", "Upper San Joaquin") 
+
+FNF <- FNF %>%
+  mutate(flow = rowSums(.[2:5])) 
+FNF
+```
+```{r}
+#Get quintiles
+
+quantile(FNF$flow, probs = seq(0, 1, 1/5)) 
+```
+
+```{r}
+
+FNF_Total <- FNF[-c(1,65),] %>%
+  mutate(Quintile = ifelse(flow < quantile(FNF$flow, probs = seq(0,1,1/5))[2], "1st Quintile", 
+                    ifelse(flow >= quantile(FNF$flow, probs = seq(0,1,1/5))[2] & flow < quantile(FNF$flow, probs = seq(0,1,1/5))[3], "2nd Quintile",
+                    ifelse(flow >= quantile(FNF$flow, probs = seq(0,1,1/5))[3] & flow < quantile(FNF$flow, probs = seq(0,1,1/5))[4], "3rd Quintile",
+                    ifelse(flow >= quantile(FNF$flow, probs = seq(0,1,1/5))[4] & flow < quantile(FNF$flow, probs = seq(0,1,1/5))[5], "4th Quintile", "5th Quintile")))))
+
+FNF_Total
+```
+```{r}
+FNF2 <- FNF
+
+colnames(FNF2) <- c("Date", "Exchequer.Dam.Flood.Release", "Don.Pedro.Lake.Flood.Control", "New.Melones.Lake.Flood.Control", "Millerton.Lake.Flood.Release") 
+
+FNF3 <- FNF_Total[,c(1,7)] %>% rename(WaterYear = Date) %>% mutate(WaterYear = as.factor(WaterYear))
+
+
+FNF2 <- FNF2%>%
+      reshape2::melt(., id = "Date") %>%
+  rename(WaterYear = Date) %>%
+  mutate(WaterYear = as.factor(WaterYear)) %>%
+  inner_join(Total_Spill, by = c("WaterYear", "variable")) %>%
+  inner_join(FNF3, by = "WaterYear") %>%
+  mutate(Percentage_of_FNF = (Total_Spill/value)*100)
+FNF2
+```
+
+```{r}
+ggplot(FNF2) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+    geom_rect(aes(fill = Quintile, xmin = as.numeric(WaterYear)-0.5, xmax = as.numeric(WaterYear)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.5)+
+  geom_bar(aes(x= as.numeric(WaterYear), y=Days), stat = "identity") +
+   geom_line(aes(x= as.numeric(WaterYear), y=Percentage_of_FNF*3.41)) +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA), 
+                   sec.axis = sec_axis( trans=~./3.41, name= "Percentage of FNF (%)"))+#, breaks = c(0, 10, 20, 30, 40, 50, 60)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+                              "1951", "1961", "1971"),
+                    expand = c(0, NA))+
+    scale_fill_manual(values = c("tomato2", "orange", "white", "white", "dodgerblue2"))+
+
+  facet_wrap(~variable, scales = "free_x", ncol = 1) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Uncontrolled Spill Occurrence\n(Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Percentageofflow.png", units ="in", width= 6, height=10, res = 300)
+
+```
+
+
+
+
+```{r}
+ggplot(FNF_Total)+#  == "ACCESS1-0" | variable == "GFDL-CM3")) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_rect(aes(fill = Quintile, xmin = as.numeric(Date)-0.5, xmax = as.numeric(Date)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.5)+
+    scale_y_continuous(limits = c(NA, NA),
+                      expand = c(0, NA),
+                      labels=scales::comma) +
+   
+      geom_line(aes( x = as.numeric(Date), y = flow)) + #plot monthly observed data in greenish blue
+   scale_x_continuous(#breaks = c("1951", "1981", "1991", "2001", "2011"),
+      expand = c(0, NA))+
+   #geom_line(aes(x = node, y = value)) +
+#scale_color_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  scale_fill_manual(values = c("tomato2", "orange", "white", "white", "dodgerblue2"))+
+  
+# scale_linetype_manual(values = c("dotted", "longdash", "dotdash", "solid"), name = "Energy Percentiles")+ #"Basin")+ #c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"), name = "Basin")+
+  
+  labs(fill = "Water Year Type",
+      # title = "Baseline (2009 prices)",
+       #subtitle = "Merced River",
+    x = element_blank(), 
+       y = "Full Natural Flow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -10),
+        plot.title = element_text(hjust = 0.5),
+           plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.box = "horizontal")+
+  # guides(linetype = guide_legend(nrow = 4, byrow = T))+
+   #  guides(fill = guide_legend(nrow = 5, byrow = T))+
+  png("Allbasins_FNF_per_mcm.png", units ="in", width=8, height=5, res = 300)
+  #facet_wrap(, ncol = 1, scales ="free_x", strip.position= "left")
+```
+
+
+```{r}
+All_FloodRelease <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "TotalSpill_Flow_mcm.csv", ., value = TRUE)
+
+head(All_FloodRelease)
+```
+
+```{r}
+filelist_FloodRelease <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_FloodRelease,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_FloodRelease) <- paste(All_FloodRelease)
+```
+
+
+```{r}
+filelist_FloodRelease2<- invisible(lapply(names(filelist_FloodRelease), function(x) assign(x,filelist_FloodRelease[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_FloodRelease[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist_FloodRelease[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist_FloodRelease[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist_FloodRelease[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist_FloodRelease2)
+
+```
+
+```{r}
+FloodRelease_Mer <- filelist_FloodRelease2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:3)]))%>%
+#  select(node, Sequence, Scenario, Number,  Basin) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+FloodRelease_Mer
+
+FloodRelease_Tuo <- filelist_FloodRelease2 %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  #mutate(Total = rowSums(.[c(2:5)]))%>%
+#  select(node, Sequence, Scenario, Number,  Basin) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+FloodRelease_Tuo
+
+FloodRelease_Stn <- filelist_FloodRelease2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:11)]))%>%
+ # select(node, Sequence, Scenario, Number,  Basin) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+FloodRelease_Stn
+
+FloodRelease_USJ <- filelist_FloodRelease2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:10)]))%>%
+ # select(node, Sequence, Scenario, Number,  Basin) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+FloodRelease_USJ
+
+All_FloodRelease <- rbind(FloodRelease_Mer, FloodRelease_Tuo, FloodRelease_Stn, FloodRelease_USJ) %>%
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs")) %>%
+  group_by(WaterYear, Sequence, Scenario, Number, Basin, variable) %>%
+  summarize(value = sum(value))
+All_FloodRelease
+
+
+All_FloodRelease$variable <- factor(All_FloodRelease$variable, levels = c("New.Melones.Lake.Flood.Control",  "Don.Pedro.Lake.Flood.Control","Exchequer.Dam.Flood.Release", "Millerton.Lake.Flood.Release"))
+```
+
+```{r}
+ggplot(All_FloodRelease) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_line(aes(x= as.Date(WaterYear, "%Y"), y=value, color = Number)) +
+   geom_ribbon(ymin=-Inf, aes(x= as.Date(WaterYear, "%Y"), y= Spill, ymax=Spill, fill = Number), alpha=0.4) +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA)) +
+  #scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+         #                     "1951", "1961", "1971"),
+          #          expand = c(0, NA))+
+  facet_grid(variable~Scenario, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Flood Control Releases\n(mcm/year)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    legend.position = "none",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_FloodControl_Whiplash_withSpill.png", units ="in", width=20, height=10, res = 300)
+```
+
+```{r}
+ggplot(All_FloodRelease) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_line(aes(x= as.Date(WaterYear, "%Y"), y=value, color = Number)) +
+  # geom_ribbon(ymin=-Inf, aes(x= as.Date(WaterYear, "%Y"), y= Spill, ymax=Spill, color = Number), fill='gray', alpha=0.4) +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA)) +
+  #scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+         #                     "1951", "1961", "1971"),
+          #          expand = c(0, NA))+
+  facet_grid(variable~Scenario, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Flood Control Releases\n(mcm/year)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    legend.position = "none",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_FloodControl_Whiplash.png", units ="in", width=20, height=10, res = 300)
+```
+
+```{r}
+All_UncSpill <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "UncontrolledSpill_Flow_mcm.csv", ., value = TRUE)
+
+head(All_UncSpill)
+```
+
+```{r}
+filelist_UncSpill <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_UncSpill,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_UncSpill) <- paste(All_UncSpill)
+```
+
+
+```{r}
+filelist_UncSpill2<- invisible(lapply(names(filelist_UncSpill), function(x) assign(x,filelist_UncSpill[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_UncSpill[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist_UncSpill[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist_UncSpill[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist_UncSpill[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist_UncSpill2)
+
+```
+
+```{r}
+UncSpill_Mer <- filelist_UncSpill2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:3)]))%>%
+  #select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+UncSpill_Mer
+
+UncSpill_Tuo <- filelist_UncSpill2 %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:5)]))%>%
+#  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+UncSpill_Tuo
+
+UncSpill_Stn <- filelist_UncSpill2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:11)]))%>%
+#  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+UncSpill_Stn
+
+UncSpill_USJ <- filelist_UncSpill2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+ # mutate(Total = rowSums(.[c(2:10)]))%>%
+#  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+UncSpill_USJ
+
+
+All_UncSpill <- rbind(UncSpill_Mer, UncSpill_Tuo, UncSpill_Stn, UncSpill_USJ) %>%
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         Count = ifelse(value > 0.01, 1, 0)) %>%
+  group_by(WaterYear, Sequence, Scenario, Number, Basin, variable) %>%
+  summarize(Count = sum(Count),
+            Spill = sum(value))
+All_UncSpill
+
+All_FloodRelease$Spill <- All_UncSpill$Spill
+
+All_UncSpill$variable <- factor(All_UncSpill$variable, levels = c("New.Melones.Lake.Flood.Control",  "Don.Pedro.Lake.Flood.Control","Exchequer.Dam.Flood.Release", "Millerton.Lake.Flood.Release"))
+```
+
+
+```{r}
+ggplot(All_UncSpill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+#ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", "2011", 
+                              "1951", "1961", "1971"),
+                    expand = c(0, NA))+
+  facet_grid(variable~Scenario, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+    #  subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Total Flood Control Releases\n(mcm/year)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        axis.text.x = element_text(angle = -40, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_FloodControl_whiplash.png", units ="in", width=20, height=15, res = 300)
+```

@@ -1,0 +1,311 @@
+
+```{r}
+library(readr)
+library(dplyr)
+library(lfstat)
+library(tidyverse)
+```
+
+
+```{r}
+#Historical deliveries
+Mer_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Mer_Hist_Deliveries
+Tuo_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Tuo_Hist_Deliveries
+Stn_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Stn_Hist_Deliveries
+USJ_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+USJ_Hist_Deliveries
+Mer_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Mer_ExpHist_Deliveries
+Tuo_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Tuo_ExpHist_Deliveries
+Stn_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+Stn_ExpHist_Deliveries
+USJ_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
+  select(., -contains(".1"))
+USJ_ExpHist_Deliveries
+  
+```
+
+```{r}
+#y = expected demand, x = flow delivery
+Mer_Irrig <- Mer_Hist_Deliveries%>% 
+  inner_join(Mer_ExpHist_Deliveries, by = 'node') %>% 
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         UnmetAg = ifelse(((MID.Northside.y - MID.Northside.x) + (MID.Main.y - MID.Main.x)) < 0.001, 0, ((MID.Northside.y - MID.Northside.x) + (MID.Main.y - MID.Main.x))),
+         Failure = ifelse(UnmetAg > 0, 1, 0),
+         NonFailure = ifelse(UnmetAg == 0, 0, 1),
+         `Volumetric Reliability` = (MID.Northside.x + MID.Main.x)/(MID.Northside.y + MID.Main.y)*100) %>%
+  group_by(WaterYear) %>%
+  summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
+            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
+  mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
+Mer_Irrig
+
+Tuo_Irrig <- Tuo_Hist_Deliveries%>% 
+  inner_join(Tuo_ExpHist_Deliveries, by = 'node') %>% 
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         UnmetAg = ifelse(((Turlock.Irrigation.District.y - Turlock.Irrigation.District.x) + (Modesto.Irrigation.District.y - Modesto.Irrigation.District.x)) < 0.001, 0, ((Turlock.Irrigation.District.y - Turlock.Irrigation.District.x) + (Modesto.Irrigation.District.y - Modesto.Irrigation.District.x))),
+         SFPUC.y = ifelse(SFPUC.y > 1.1, 1.1, SFPUC.y),
+         UnmetUrban = ifelse((SFPUC.y - SFPUC.x) < 0.001, 0, (SFPUC.y - SFPUC.x)),
+         Failure = ifelse(UnmetAg > 0, 1, 0),
+         NonFailure = ifelse(UnmetAg == 0, 0, 1),
+         UrbanFailure = ifelse(UnmetUrban > 0, 1, 0),
+         UrbanNonFailure = ifelse(UnmetUrban == 0, 0, 1),
+         `Volumetric Reliability` = (Modesto.Irrigation.District.x + Turlock.Irrigation.District.x) / (Modesto.Irrigation.District.y + Turlock.Irrigation.District.y)*100,
+         `Urban Volumetric Reliability` = (SFPUC.x/SFPUC.y)*100) %>%
+  group_by(WaterYear) %>%
+  summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
+            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0),
+            `Urban Volumetric Reliability` = mean(`Urban Volumetric Reliability`),
+            `Urban Time Reliability` = (1-sum(UrbanNonFailure)/365)*100,
+            `Urban Failed Year` = ifelse(`Urban Volumetric Reliability` < 100, 1, 0)) %>% 
+  mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100,
+         `Urban Annual Reliability` = (1-sum(`Urban Failed Year`)/length(unique(.$WaterYear)))*100)
+Tuo_Irrig
+
+Stn_Irrig <- Stn_Hist_Deliveries%>% 
+  inner_join(Stn_ExpHist_Deliveries, by = 'node') %>% 
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         UnmetAg = ifelse(((South.San.Joaquin.Irrigation.District.y - South.San.Joaquin.Irrigation.District.x) + (Oakdale.Irrigation.District.y - Oakdale.Irrigation.District.x)) < 0.001, 0, ((South.San.Joaquin.Irrigation.District.y - South.San.Joaquin.Irrigation.District.x) + (Oakdale.Irrigation.District.y - Oakdale.Irrigation.District.x))),
+         Failure = ifelse(UnmetAg > 0, 1, 0),
+         NonFailure = ifelse(UnmetAg == 0, 0, 1),
+         `Volumetric Reliability` = (Oakdale.Irrigation.District.x + South.San.Joaquin.Irrigation.District.x)/(Oakdale.Irrigation.District.y + South.San.Joaquin.Irrigation.District.y)*100,
+      #   Days = ifelse(`Volumetric Reliability` != "NaN", 1,0)
+      )%>% tidyr::drop_na() %>%
+  group_by(WaterYear) %>%
+  summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
+            `Time Reliability` = (1-sum(NonFailure)/245)*100, #Stanislaus just has ag deliveries 245 days/year
+            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
+  mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
+Stn_Irrig
+
+USJ_Irrig <- USJ_Hist_Deliveries%>% 
+  inner_join(USJ_ExpHist_Deliveries, by = 'node') %>% 
+  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         CVP.Friant.Kern.Canal.y =ifelse(CVP.Friant.Kern.Canal.y > 10.57710973, 10.57710973, CVP.Friant.Kern.Canal.y),
+         CVP.Madera.Canal.y = ifelse(CVP.Madera.Canal.y > 3.132, 3.132, CVP.Madera.Canal.y),
+         UnmetAg = ifelse(((CVP.Friant.Kern.Canal.y - CVP.Friant.Kern.Canal.x) + (CVP.Madera.Canal.y - CVP.Madera.Canal.x)) < 0.001, 0, ((CVP.Friant.Kern.Canal.y - CVP.Friant.Kern.Canal.x) + (CVP.Madera.Canal.y - CVP.Madera.Canal.x))),
+         Failure = ifelse(UnmetAg > 0, 1, 0),
+         NonFailure = ifelse(UnmetAg == 0, 0, 1),
+         `Volumetric Reliability` = (CVP.Friant.Kern.Canal.x + CVP.Madera.Canal.x)/(CVP.Friant.Kern.Canal.y + CVP.Madera.Canal.y)*100) %>%
+  group_by(WaterYear) %>%
+  summarize(`Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
+            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
+  mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
+USJ_Irrig
+
+ # select(node, `MID Northside`, `MID Main`)
+```
+
+```{r}
+
+All_demands <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "Output_Demand_mcm.csv", ., value = TRUE)
+
+head(All_demands)
+
+All_deliveries <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "Output_Flow_mcm.csv", ., value = TRUE)
+
+head(All_deliveries)
+#names_mer <- substr(Mer_D2W1,18,57)
+#names_mer
+```
+
+```{r}
+filelist_deliveries <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_deliveries,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_deliveries) <- paste(All_deliveries)
+
+
+filelist_demands <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_demands,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_demands) <- paste(All_demands)
+#note the invisible function keeps lapply from spitting out the data.frames to the console
+```
+  
+```{r}
+filelist_deliveries2<- invisible(lapply(names(filelist_deliveries), function(x) assign(x,filelist_deliveries[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist_deliveries[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist_deliveries2)
+
+filelist_demands2<- invisible(lapply(names(filelist_demands), function(x) assign(x,filelist_demands[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist_demands[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist_demands2)
+#D2_W1 <- read_csv(print("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2022-12-14/",MER_Hydro, sep=""))
+#D2_W1
+```
+
+```{r}
+Demand_Mer <- filelist_demands2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Demand_Mer
+
+Demand_Tuo <- filelist_demands2 %>%
+ # purrr::discard(~ nrow(.x) == 0) %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(SFPUC = ifelse(SFPUC > 1.1, 1.1, SFPUC)) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Demand_Tuo
+
+Demand_Stn <- filelist_demands2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Demand_Stn
+
+Demand_USJ <- filelist_demands2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(CVP.Friant.Kern.Canal = ifelse(CVP.Friant.Kern.Canal > 10.57710973, 10.57710973, CVP.Friant.Kern.Canal),
+         CVP.Madera.Canal = ifelse(CVP.Madera.Canal > 3.132, 3.132, CVP.Madera.Canal)) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Demand_USJ
+
+
+Delivery_Mer <- filelist_deliveries2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Delivery_Mer
+
+Delivery_Tuo <- filelist_deliveries2 %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Delivery_Tuo
+
+Delivery_Stn <- filelist_deliveries2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Delivery_Stn
+
+Delivery_USJ <- filelist_deliveries2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"))
+Delivery_USJ
+```
+
+```{r}
+Demand <- rbind(Demand_Mer, Demand_Tuo, Demand_Stn, Demand_USJ) %>%
+  rename(Demand = value)
+Demand
+
+Delivery <- rbind(Delivery_Mer, Delivery_Tuo, Delivery_Stn, Delivery_USJ) %>%
+  rename(Delivery = value)
+Delivery
+
+```
+
+
+```{r}
+
+Irrigation <- Delivery %>% inner_join(., Demand, by = c("node", "Sequence", "Scenario", "Number", "Basin", "variable")) %>%
+  mutate(Type = ifelse(variable == "SFPUC", "Urban", "Agricultural")) %>%
+  group_by(node, Sequence, Scenario, Number, Basin, Type) %>%
+  summarize(Delivery = sum(Delivery),
+            Demand = sum(Demand))
+Irrigation
+  
+Irrigation2 <- Irrigation %>%  mutate(WaterYear = lfstat::water_year(node, origin = "usgs"),
+         UnmetAg = ifelse(Demand - Delivery  < 0.001, 0, Demand - Delivery),
+         Failure = ifelse(UnmetAg > 0, 1, 0),
+         NonFailure = ifelse(UnmetAg == 0, 0, 1),
+         `Volumetric Reliability` = (Delivery/Demand)*100)
+Irrigation2
+```
+```{r}
+Irrigation3 <- Irrigation2 %>% tidyr::drop_na() %>% group_by(Basin,Sequence, Scenario, WaterYear, Type) %>%
+  summarize(`Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
+            `Time Reliability` = ifelse(Basin=="stanislaus", (1-sum(NonFailure)/245)*100, (1-sum(NonFailure)/365)*100),
+            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0))
+           
+Irrigation3
+
+```
+
+```{r}
+Irrigation4 <- Irrigation3 %>%
+#  mutate(Length = lenght(unique(WaterYear))
+    group_by(Basin,Type, Sequence, Scenario) %>%
+  summarise(`Annual Reliability` = (1-sum((`Failed Year`))/length(WaterYear))*100) %>%
+  group_by(Basin,Type, Scenario) %>%
+  summarize(`Mean Annual Reliability` = mean(`Annual Reliability`),
+         `Min Annual Reliability`= min(`Annual Reliability`),
+         `Max Annual Reliability`= max(`Annual Reliability`))
+Irrigation4
+
+write_csv(Irrigation4, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_AnnualReliability2.csv")
+
+```
+
+```{r}
+Irrigation5 <- Irrigation3 %>% group_by(Basin, Type, Scenario) %>%
+  summarize(`Mean Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
+            `Min Volumetric Reliability` = ifelse(min(`Volumetric Reliability`) > 100, 100, min(`Volumetric Reliability`)),
+            `Max Volumetric Reliability` = ifelse(max(`Volumetric Reliability`) > 100, 100, max(`Volumetric Reliability`)),
+            `Mean Time Reliability` = mean(`Time Reliability`),
+            `Min Time Reliability` = min(`Time Reliability`), #ifelse(Basin=="stanislaus", (1-max(NonFailure)/245)*100, (1-max(NonFailure)/365)*100),
+            `Max Time Reliability` = max(`Time Reliability`))#ifelse(Basin=="stanislaus", (1-min(NonFailure)/245)*100, (1-min(NonFailure)/365)*100),)
+           
+Irrigation5
+```
+
+
+```{r}
+Irrigation3 %>%group_by(Basin, Type, Scenario, Sequence)   %>% count(WaterYear)
+```
+
+```{r}
+#write_csv(Irrigation3 %>% filter(Basin == "upper_san_joaquin"), "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_Stats_USJ.csv")
+write_csv(Irrigation5, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_Stats.csv")
+```
+

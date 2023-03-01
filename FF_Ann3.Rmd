@@ -1,0 +1,1081 @@
+---
+  title: "Generation"
+author: "Gustavo Facincani Dourado"
+date: "6/12/2020"
+output: html_document
+---
+  
+```{r}
+library(lfstat)
+library(extrafont)
+library(reshape2)
+library(dplyr)
+library(ggplot2)
+library(readr)
+```
+
+```{r}
+#Merced
+#No Instreamflow Requirement 2009 -      1,2,6,10
+#No IFR 2009 -   1,3,7,11
+#No Instreamflow Requirement 2009 - 1,4,8,12
+#No IFR 2009 -   1,5,9,13
+
+#Tuolumne
+#No Instreamflow Requirement 2009 -      1,2,6,10,14
+#No IFR 2009 -   1,3,7,11,15
+#No Instreamflow Requirement 2009 - 1,4,8,12,16
+#No IFR 2009 -   1,5,9,13,17
+
+#Stanislaus
+#No Instreamflow Requirement -      1,2,6,10,14,18,22,26,30,34,38,42
+#No IFR 2009 -   1,3,7,11,15,19,23,27,31,35,39,43
+#No Instreamflow Requirement 2009 - 1,4,8,12,16,20,24,28,32,36,40,44
+#No IFR 2009 -   1,5,9,13,17,21,25,29,33,37,41,45
+
+#USJ
+#No Instreamflow Requirement 2009 -      1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62
+#No IFR 2009 -                      1,3,7,11,15,19,23,27,31,35,39,43,47,51,55,59,63
+#No Instreamflow Requirement 2009 - 1,4,8,12,16,20,24,28,32,36,40,44,48,52,56,60,64
+#No IFR 2009 -                      1,5,9,13,17,21,25,29,33,37,41,45,49,53,57,61,65
+```
+
+```{r}
+#FF
+Livneh_Gen_Mer_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,4,7,10)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Mer_FF <- Livneh_Gen_Mer_FF %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Mer_FF[c(2:4)]),
+         Basin = "Merced River", Scenario = "Functional Flows")
+Livneh_Gen_Mer_FF
+
+Livneh_Gen_Stn_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)]%>%#1,4,7,10,13,16,19,22,25,28,31,34)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Stn_FF<- Livneh_Gen_Stn_FF %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Stn_FF[c(2)]),
+         Basin = "Stanislaus River", Scenario = "Functional Flows")
+Livneh_Gen_Stn_FF
+
+Livneh_Gen_USJ_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,28)] %>%#1,4,7,10,13,16,19,22,25,28,31,34,37,40,43,46,49)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_USJ_FF<- Livneh_Gen_USJ_FF  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_USJ_FF[c(2)]),
+         Basin = "Upper San Joaquin River", Scenario = "Functional Flows")
+Livneh_Gen_USJ_FF
+
+Livneh_Gen_Tuo_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)] %>% #1,4,7,10,13)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Tuo_FF<- Livneh_Gen_Tuo_FF  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Tuo_FF[c(2)]),
+         Basin = "Tuolumne River", Scenario = "Functional Flows")
+Livneh_Gen_Tuo_FF
+
+```
+
+```{r}
+Livneh_Gen_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2,5,8)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Mer <- Livneh_Gen_Mer %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Mer[c(2:4)]),
+         Basin = "Merced River", Scenario = "Baseline")
+Livneh_Gen_Mer
+
+Livneh_Gen_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,14)] %>%#1,2,5,8,11,14,17,20,23,26,29,32)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Stn<- Livneh_Gen_Stn %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Stn[c(2)]),
+         Basin = "Stanislaus River", Scenario = "Baseline")
+Livneh_Gen_Stn
+
+Livneh_Gen_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,26)] %>% #1,2,5,8,11,14,17,20,23,26,29,32,35,38,41,44,47)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_USJ<- Livneh_Gen_USJ  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_USJ[c(2)]),
+         Basin = "Upper San Joaquin River", Scenario = "Baseline")
+Livneh_Gen_USJ
+
+Livneh_Gen_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,8)] %>%#1,2,5,8,11)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_Tuo<- Livneh_Gen_Tuo  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_Tuo[c(2)]),
+         Basin = "Tuolumne River", Scenario = "Baseline")
+Livneh_Gen_Tuo
+```
+
+```{r}
+Livneh_Gen_SWRCBMer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,3,6,9)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_SWRCBMer <- Livneh_Gen_SWRCBMer %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_SWRCBMer[c(2:4)]),
+         Basin = "Merced River", Scenario = "40% Full Natural Flow")
+Livneh_Gen_SWRCBMer
+
+Livneh_Gen_SWRCBStn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,15)]%>%#1,3,6,9,12,15,18,21,24,27,30,33)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_SWRCBStn<- Livneh_Gen_SWRCBStn %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_SWRCBStn[c(2)]),
+         Basin = "Stanislaus River", Scenario = "40% Full Natural Flow")
+Livneh_Gen_SWRCBStn
+
+Livneh_Gen_SWRCBUSJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,27)]%>%#1,3,6,9,12,15,18,21,24,27,30,33,36,39,42,45,48)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_SWRCBUSJ<- Livneh_Gen_SWRCBUSJ  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_SWRCBUSJ[c(2)]),
+         Basin = "Upper San Joaquin River", Scenario = "40% Full Natural Flow")
+Livneh_Gen_SWRCBUSJ
+
+Livneh_Gen_SWRCBTuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,9)]%>%#1,3,6,9,12)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Gen_SWRCBTuo<- Livneh_Gen_SWRCBTuo  %>%
+  mutate(`Livneh (Historical)` = rowSums(Livneh_Gen_SWRCBTuo[c(2)]),
+         Basin = "Tuolumne River", Scenario = "40% Full Natural Flow")
+Livneh_Gen_SWRCBTuo
+```
+
+
+
+
+
+
+
+
+
+```{r}
+library(reshape2)
+library(lfstat)
+#Can't cbind livneh as it has one day less (Feb 29) in its count
+#Deal with Livneh separately
+
+Gen_Mer <- rbind(Livneh_Gen_Mer[-c(2:4)], Livneh_Gen_Mer_FF[-c(2:4)], 
+                 Livneh_Gen_Tuo[-c(2 )], Livneh_Gen_Tuo_FF[-c(2 )], 
+                 Livneh_Gen_Stn[-c(2 )], Livneh_Gen_Stn_FF[-c(2)],
+                 Livneh_Gen_USJ[-c(2 )], Livneh_Gen_USJ_FF[-c(2 )],
+                 Livneh_Gen_SWRCBMer[-c(2:4)], Livneh_Gen_SWRCBTuo[-c(2 )],
+                 Livneh_Gen_SWRCBStn[-c(2 )], Livneh_Gen_SWRCBUSJ[-c(2 )])
+
+
+#Gen_Mer <- Gen_Mer %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_Mer
+#Gen_Mer
+
+Gen_Mer1 <- melt(Gen_Mer, id = c("node", "Basin", "Scenario")) #, "Basin", "Year", "Month")) #"Annual_Can",                                   "Annual_CNRM", "Annual_Had", "Annual_MIR")
+#           Month = as.Date(cut(node, breaks = "month")),
+
+#             mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+#          Year = as.Date(cut(node, breaks = "year")))
+Gen_Mer1$Basin <- factor(Gen_Mer1$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+```
+
+
+```{r}
+
+Gen_Mer2 <- Gen_Mer1 %>%#rbind(Gen_Mer1, Livneh_Mer) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         #Year = as.Date(cut(node, breaks = "year")),
+         Year = water_year(node, origin = "usgs"))%>%
+        # Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, Basin, Scenario) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Gen_Mer2
+
+#Gen_Mer2$variable <- factor(Gen_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_Mer3 <- Gen_Mer2 %>%
+  group_by(Year, Scenario, Basin) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Gen_Mer3
+
+
+Gen_Mer4 <- Gen_Mer3 
+#df[3:ncol(df)] <- df[3:ncol(df)]-df[,2]
+
+```
+
+
+
+
+ggplot(Gen_Mer2) +
+theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = Scenario), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+#geom_line(aes(x = node, y = value)) +
+scale_y_continuous(limits = c(0, NA),
+expand = c(0, NA))+
+#                   scale_y_log10(labels=comma) +
+scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+scale_fill_manual(values = c(#"#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2",
+"#5A5A5A",  "#FBB117", "#009E73" )) +
+labs(fill = "Historical (Livneh)",
+title = element_blank(),
+#subtitle = "Merced River",
+x = element_blank(),
+y = "Total Electricity Generation (GWh/month)") + #name of x axis
+theme(legend.position = "bottom",
+legend.direction = "horizontal",
+legend.box.margin = margin(t = -17),
+plot.title = element_text(hjust = 0.5),
+plot.subtitle = element_text(hjust = 0.5),
+strip.placement = "outside",
+strip.background = element_blank(),
+panel.spacing.y = unit(0, "lines"))+
+facet_wrap(~Basin, ncol=1, scales = "free_y", strip.position = "left") +
+png("Allbasins_RCP85_2009prices_FlowScenarios_log2_postmanuscript.png", units ="in", width=6, height=10, res = 300)
+
+ # ungroup() %>%
+  #group_by(Basin, Scenario, Year) %>%
+  #summarise(AnnualCount = sum(Count)) %>%
+  #ungroup()
+
+```{r}
+library(scales)
+#Merced annual generation
+#Gen_Mer2 %>%
+#  filter(variable == "CanESM2") %>%
+Gen_Mer2$Scenario <- factor(Gen_Mer2$Scenario, levels = c("Baseline", "40% Full Natural Flow", "Functional Flows"))
+ggplot(Gen_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal/1000, fill = Scenario), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA))+
+  #                   scale_y_log10(labels=comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c(#"#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2",
+   "#5A5A5A",  "#FBB117", "#009E73" )) +
+  
+  labs(#fill = "Historical (Livneh)",
+       title = element_blank(),
+       #subtitle = "Merced River",
+       x = element_blank(), 
+       y = "Total Electricity Generation (GWh/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, ncol=1, scales = "free_y", strip.position = "left") +
+  png("Allbasins_RCP85_2009prices_FlowScenarios_log2_postmanuscript2.png", units ="in", width=6, height=10, res = 300)
+
+```
+
+
+#annual aggreagate
+#Gen_Mer3 %>%
+#  filter(variable == "Livneh (Historical)" | variable == "ACCESS1-0" | variable == "CNRM-CM5") %>%
+ggplot(Gen_Mer3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal/1000, fill = variable)) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  scale_y_continuous(limits = c(0, NA),
+                     expand = c(0, NA),
+                     labels = comma,
+                     breaks= c(0,200,400, 600, 800)) +
+  #   scale_x_discrete(limits=c(c("Livneh (Historical)", "ACCESS1-0",# "CMCC-CMS", "MIROC5", "GFDL-CM3", "CCSM4", "HadGEM2-ES", "HadGEM2-CC", "CanESM2", "CESM1-BGC", 
+  #                              "CNRM-CM5")))+ 
+  scale_fill_manual(values = c("#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695" )) +
+  
+  labs(fill = "RCP 8.5", title = "Merced River",
+       subtitle = "No Instreamflow Requirement (2009 prices)",
+       x = element_blank(), 
+       y = "Total Electricity Generation (GWh/year)") + #name of x axis
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("Mer_annual_generation_RCP85_NoIFRs_2009prices_manuscript.png", units ="in", width=11.5, height=4.5, res = 300)
+
+
+```{r}
+Gen_Mer2$Month <- factor(Gen_Mer2$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+All_Montlhy_Stats_Gen <- aggregate(MonthlyTotal ~ Month+Scenario+Basin, Gen_Mer2, summary)
+write.csv(All_Montlhy_Stats_Gen, "All_Monthly_Stats_Generation_Baseline_RCP85_postmanuscript.csv")
+
+All_Annual_Stats_Gen <- aggregate(AnnualTotal ~ Scenario+Basin, Gen_Mer3, summary)
+write.csv(All_Annual_Stats_Gen, "All_Annual_Stats_Generation_Baseline_RCP85_postmanuscript.csv")
+```
+
+
+
+
+
+
+
+```{r}
+#FF
+Livneh_Outflow_Mer_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,10)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Mer_FF <- Livneh_Outflow_Mer_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Mer_FF[c(2:4)]),
+         Basin = "Merced River", Scenario = "Functional Flows") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Mer_FF
+
+Livneh_Outflow_Stn_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Stn_FF<- Livneh_Outflow_Stn_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Stn_FF[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Functional Flows") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Stn_FF
+
+Livneh_Outflow_USJ_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,4)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_USJ_FF<- Livneh_Outflow_USJ_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_USJ_FF[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Functional Flows") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_USJ_FF
+
+Livneh_Outflow_Tuo_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,7)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Tuo_FF<- Livneh_Outflow_Tuo_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Tuo_FF[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Functional Flows") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Tuo_FF
+
+```
+
+```{r}
+Livneh_Outflow_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,8)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Mer <- Livneh_Outflow_Mer %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Mer[c(2:4)]),
+         Basin = "Merced River", Scenario = "Baseline") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Mer
+
+Livneh_Outflow_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Stn<- Livneh_Outflow_Stn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Stn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Baseline") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Stn
+
+Livneh_Outflow_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_USJ<- Livneh_Outflow_USJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_USJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Baseline") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_USJ
+
+Livneh_Outflow_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,5)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_Tuo<- Livneh_Outflow_Tuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_Tuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Baseline") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_Tuo
+```
+
+```{r}
+Livneh_Outflow_SWRCBMer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,9)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_SWRCBMer <- Livneh_Outflow_SWRCBMer %>%
+ mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_SWRCBMer[c(2:4)]),
+         Basin = "Merced River", Scenario = "40% Full Natural Flow") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_SWRCBMer
+
+Livneh_Outflow_SWRCBStn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,3)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_SWRCBStn<- Livneh_Outflow_SWRCBStn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_SWRCBStn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "40% Full Natural Flow") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_SWRCBStn
+
+Livneh_Outflow_SWRCBUSJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,3)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_SWRCBUSJ<- Livneh_Outflow_SWRCBUSJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_SWRCBUSJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "40% Full Natural Flow") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_SWRCBUSJ
+
+Livneh_Outflow_SWRCBTuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Output_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,6)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Outflow_SWRCBTuo<- Livneh_Outflow_SWRCBTuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Outflow_SWRCBTuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "40% Full Natural Flow") %>%
+  rename(Outflow = 2)
+Livneh_Outflow_SWRCBTuo
+```
+
+
+
+
+```{r}
+library(reshape2)
+library(lfstat)
+#Can't cbind livneh as it has one day less (Feb 29) in its count
+#Deal with Livneh separately
+
+Outflow_Mer <- rbind(Livneh_Outflow_Mer, Livneh_Outflow_Mer_FF, 
+                 Livneh_Outflow_Tuo, Livneh_Outflow_Tuo_FF, 
+                 Livneh_Outflow_Stn, Livneh_Outflow_Stn_FF,
+                 Livneh_Outflow_USJ, Livneh_Outflow_USJ_FF,
+                 Livneh_Outflow_SWRCBMer, Livneh_Outflow_SWRCBTuo,
+                 Livneh_Outflow_SWRCBStn, Livneh_Outflow_SWRCBUSJ)
+
+
+#Outflow_Mer <- Outflow_Mer %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Outflow_Mer
+#Outflow_Mer
+
+Outflow_Mer1 <- melt(Outflow_Mer, id = c("node", "Basin", "Scenario")) #, "Basin", "Year", "Month")) #"Annual_Can",                                   "Annual_CNRM", "Annual_Had", "Annual_MIR")
+#           Month = as.Date(cut(node, breaks = "month")),
+
+#             mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+#          Year = as.Date(cut(node, breaks = "year")))
+Outflow_Mer1
+```
+```{r}
+ff <- Outflow_Mer1 %>%
+  mutate(Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor(Scenario)) %>%
+  filter(Year == "1964" | Year == "1965")
+ff
+```
+
+
+ggplot(Outflow_Mer2, aes(x= Month, y = MonthlyTotal)) + geom_area()+#aes(fill=Scenario)) +
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  scale_color_manual(values = c( "#5A5A5A",  "#FBB117", "#009E73" )) +
+  scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA))+
+ # scale_x_date(#limits = c(0, NA),
+  #                    expand = c(0, 0))+
+  labs(#fill = "Historical (Livneh)",
+       title = element_blank(),
+       #subtitle = "Merced River",
+       x = element_blank(), 
+       y = "Total Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Year, ncol =1, scales = "free", strip.position = "left")+
+png("IFR_ShafferBidge_Merced_Baseline_2009prices_FlowScenarios_Outflow_postmanuscript.png", units ="in", width=7, height=6, res = 300)
+
+
+```{r}
+library(extrafont)
+
+ff <- rbind(Livneh_Outflow_SWRCBMer,Livneh_Outflow_Mer, Livneh_Outflow_Mer_FF) %>%
+mutate(Year = water_year(node, origin = "usgs"),
+Scenario = as.factor(Scenario)) %>%
+filter(Year == "1964" | Year == "1965")
+ff$Scenario <- factor(ff$Scenario, levels = c("Baseline", "40% Full Natural Flow", "Functional Flows"))
+ggplot(ff) + geom_line(aes(x= node, y = Outflow, color = Scenario), alpha = 0.6, lwd=1.2)+
+  theme_bw(base_size=10, base_family='Times New Roman') + 
+  facet_wrap(~Year, ncol =1, scales = "free", strip.position = "left") +
+  scale_x_date()+#limits = c(as.Date("1963-10-01"), as.Date("1964-09-30")))+#limits = c(0, NA), 
+   # scale_y_continuous() +
+   scale_color_manual(values = c("#5A5A5A",  "#FBB117", "#009E73")) + 
+  scale_y_continuous(limits = c(0, NA), expand = c(0, NA)) +
+  labs(fill = "Historical (Livneh)",
+       title = "IFR at Shaffer Bridge",
+       #subtitle = "Merced River",
+       x = element_blank(), 
+       y = "Outflow (mcm/day)") +
+#name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -15),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Year, ncol=1, scales = "free", strip.position = "left") +
+png("IFRShafferBridge_Baseline_FlowScenarios_postmanuscript.png", units ="in", width=7, height=6, res = 300)
+
+#ggplot(ff, aes(x= node, y = value)) + geom_area(aes(fill=Scenario))
+```
+
+```{r}
+
+Outflow_Mer2 <- Outflow_Mer1 %>%#rbind(Outflow_Mer1, Livneh_Mer) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         #Year = as.Date(cut(node, breaks = "year")),
+         Year = water_year(node, origin = "usgs"))%>%
+        # Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, Basin, Scenario) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+Outflow_Mer2
+
+#Outflow_Mer2$variable <- factor(Outflow_Mer2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Outflow_Mer3 <- Outflow_Mer2 %>%
+  group_by(Basin, Scenario,Year) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Outflow_Mer3
+
+
+Outflow_Mer4 <- Outflow_Mer3 
+#df[3:ncol(df)] <- df[3:ncol(df)]-df[,2]
+write.csv(Outflow_Mer3, "Total_Outflow_per_WY_Flowscenarios_manuscript.csv")
+```
+
+
+
+```{r}
+Outflow_Mer2$Month <- factor(Outflow_Mer2$Month, levels = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+All_Montlhy_Stats_Gen <- aggregate(MonthlyTotal ~ Month+Scenario+Basin, Outflow_Mer2, summary)
+write.csv(All_Montlhy_Stats_Gen, "All_Monthly_Stats_Outflow_Generation_Baseline_manuscript_March.csv")
+
+All_Annual_Stats_Gen <- aggregate(AnnualTotal ~ Scenario+Basin, Outflow_Mer3, summary)
+write.csv(All_Annual_Stats_Gen, "All_Annual_Stats_Outflow_Baseline_manuscript_March.csv")
+```
+
+
+```{r}
+library(scales)
+#Merced annual generation
+#Outflow_Mer2 %>%
+#  filter(variable == "CanESM2") %>%
+
+Outflow_Mer2$Scenario <- factor(Outflow_Mer2$Scenario, levels = c("Baseline", "40% Full Natural Flow", "Functional Flows"))
+Outflow_Mer2$Basin <- factor(Outflow_Mer2$Basin, levels = c("Stanislaus River", "Tuolumne River", "Merced River", "Upper San Joaquin River"))
+ggplot(Outflow_Mer2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = Scenario), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  #geom_line(aes(x = node, y = value)) +
+  #scale_y_continuous(limits = c(0, NA),
+  #                   expand = c(0, NA),
+                     scale_y_log10(
+  labels=comma) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c(#"#5A5A5A", "#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2",
+   "#5A5A5A",  "#FBB117", "#009E73" )) +
+  
+  labs(fill = "Historical (Livneh)",
+       title = element_blank(),
+       #subtitle = "Merced River",
+       x = element_blank(), 
+       y = "Total Outflow (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  facet_wrap(~Basin, ncol=1, scales = "fixed", strip.position = "left") +
+  png("Allbasins_RCP85_2009prices_FlowScenarios_Outflow_manuscript.png", units ="in", width=6, height=9, res = 300)
+
+```
+
+
+
+
+Gen_Stn <- cbind(CanES_Gen_Stn[-c(2:12)], CNRM_Gen_Stn[-c(1:12)], 
+                 HadGEM_Gen_Stn[-c(1:12)], MIROC_Gen_Stn[-c(1:12)],
+                 CMCC_Gen_Stn[-c(1:12)], ACCESS1_Gen_Stn[-c(1:12)],
+                 HadGEMCC_Gen_Stn[-c(1:12)], CESM_Gen_Stn[-c(1:12)],
+                 CCSM4_Gen_Stn[-c(1:12)], GFDL_Gen_Stn[-c(1:12)])
+Gen_Stn
+
+
+#Gen_Stn <- Gen_Stn %>%
+#       mutate(Ensemble = rowMeans(as.matrix((.[-1])))) %>%
+#  filter(between(node, as.Date("2029-10-01"), as.Date("2060-09-30")))
+#Gen_Stn
+
+Gen_Stn2 <- melt(Gen_Stn, id = "node")
+Gen_Stn2
+
+Gen_Stn2 <- rbind(Gen_Stn2, Livneh_Stn_Gen) %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"),
+         Scenario = as.factor("RCP 8.5")) %>%
+  group_by(Year, Month, variable) %>%
+  dplyr::summarize(MonthlyTotal = sum(value))
+
+
+Gen_Stn2$variable <- factor(Gen_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+Gen_Stn3 <- Gen_Stn2 %>%
+  group_by(Year, variable) %>%
+  dplyr::summarize(AnnualTotal = sum(MonthlyTotal)) 
+
+Gen_Stn2
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#FF
+Livneh_Stor_Mer_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,7)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Mer_FF <- Livneh_Stor_Mer_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Mer_FF[c(2:4)]),
+         Basin = "Merced River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Mer_FF
+
+Livneh_Stor_Stn_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,23)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Stn_FF<- Livneh_Stor_Stn_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Stn_FF[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Stn_FF
+
+Livneh_Stor_USJ_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,7)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_USJ_FF<- Livneh_Stor_USJ_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_USJ_FF[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_USJ_FF
+
+Livneh_Stor_Tuo_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,11)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Tuo_FF<- Livneh_Stor_Tuo_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Tuo_FF[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Tuo_FF
+
+```
+
+```{r}
+Livneh_Stor_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,6)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Mer <- Livneh_Stor_Mer %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Mer[c(2:4)]),
+         Basin = "Merced River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Mer
+
+Livneh_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,22)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Stn<- Livneh_Stor_Stn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Stn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Stn
+
+Livneh_Stor_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,6)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_USJ<- Livneh_Stor_USJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_USJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_USJ
+
+Livneh_Stor_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,10)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_Tuo<- Livneh_Stor_Tuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_Tuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_Tuo
+```
+
+```{r}
+Livneh_Stor_SWRCBMer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,5)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_SWRCBMer <- Livneh_Stor_SWRCBMer %>%
+ mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_SWRCBMer[c(2:4)]),
+         Basin = "Merced River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_SWRCBMer
+
+Livneh_Stor_SWRCBStn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,13)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_SWRCBStn<- Livneh_Stor_SWRCBStn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_SWRCBStn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_SWRCBStn
+
+Livneh_Stor_SWRCBUSJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,7)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_SWRCBUSJ<- Livneh_Stor_SWRCBUSJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_SWRCBUSJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_SWRCBUSJ
+
+Livneh_Stor_SWRCBTuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,7)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh_Stor_SWRCBTuo<- Livneh_Stor_SWRCBTuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh_Stor_SWRCBTuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh_Stor_SWRCBTuo
+```
+
+```{r}
+Spill_Mer <- rbind(Livneh_Stor_Mer,Livneh_Stor_SWRCBMer,Livneh_Stor_Mer_FF)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         #Scenario = as.factor("RCP 4.5"),
+         #DeadPool = as.numeric(142),
+         #OperatingCapacity = (Reservoir - DeadPool),
+         Count = ifelse(Reservoir >= 1238.6, 1,0),
+         variable = as.factor("Lake McClure"))
+Spill_Mer
+
+
+Spill_Stn <- rbind(Livneh_Stor_Stn, Livneh_Stor_Stn_FF,Livneh_Stor_SWRCBStn)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+        # Scenario = as.factor("RCP 4.5"),
+        # DeadPool = as.numeric(98.6785),
+        # OperatingCapacity = (as.numeric(Reservoir) - DeadPool),
+         Count = ifelse(Reservoir >= 2985, 1,0),
+         variable = as.factor("New Melones Reservoir"))
+Spill_Stn  
+
+
+Spill_Tuo <- rbind(Livneh_Stor_Tuo, Livneh_Stor_Tuo_FF, Livneh_Stor_SWRCBTuo)%>%
+ # rename(GCM=variable)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+        # Scenario = as.factor("RCP 4.5"),
+        # DeadPool = as.numeric(381.0965),
+        # OperatingCapacity = (as.numeric(Reservoir) - DeadPool),
+         Count = ifelse(Reservoir >= 2504, 1,0),
+         variable = as.factor("Don Pedro Reservoir"))
+Spill_Tuo
+
+
+Spill_USJ <- rbind(Livneh_Stor_USJ,Livneh_Stor_USJ_FF, Livneh_Stor_SWRCBUSJ)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         #Scenario = as.factor("RCP 4.5"),
+        # DeadPool = as.numeric(165.3532),
+         #OperatingCapacity = (Reservoir - DeadPool),
+         Count = ifelse(Reservoir >= 641.42, 1,0),
+         variable = as.factor("Millerton Lake"))
+Spill_USJ                    
+                 
+All_Spill1 <- rbind(Spill_Mer, Spill_USJ, Spill_Tuo, Spill_Stn)
+All_Spill1$Month <- factor(All_Spill1$Month, levels = c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+All_Spill <- All_Spill1 %>%
+  group_by(Basin, Scenario, Year, Month) %>%
+  summarise(MonthlyCount = sum(Count),
+            Monhtlymean = mean(Count))# %>%
+ # ungroup() %>%
+  #group_by(Basin, Scenario, Year) %>%
+  #summarise(AnnualCount = sum(Count)) %>%
+  #ungroup()
+All_Spill
+
+All_Spill_annual <- All_Spill1 %>%
+  group_by(Basin, Scenario, Year) %>%
+  summarise(AnnualCount = sum(Count),
+            Annualmean = mean(Count))# %>%
+#Outflow_Mer1 <- melt(Outflow_Mer, id = c("node", "Basin", "Scenario")) 
+write.csv(All_Spill_annual, "Annual_Spill_per_Basin_per_scenario_manuscript_March.csv")
+write.csv(All_Spill, "Monthly_Spill_per_Basin_per_scenario_manuscript_March.csv")
+```
+
+
+
+```{r}
+Storage_Mer <- rbind(Livneh_Stor_Mer,Livneh_Stor_SWRCBMer,Livneh_Stor_Mer_FF)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         #Scenario = as.factor("RCP 4.5"),
+         #DeadPool = as.numeric(142),
+         #OperatingCapacity = (Reservoir - DeadPool),
+         MonthDay = format(node, "%m/%d"),
+         variable = as.factor("Lake McClure"),
+         Count = ifelse(Reservoir < 412.8667 & MonthDay == "10/01", 1,0))
+Storage_Mer
+
+
+Storage_Stn <- rbind(Livneh_Stor_Stn, Livneh_Stor_Stn_FF,Livneh_Stor_SWRCBStn)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+        # Scenario = as.factor("RCP 4.5"),
+       #  DeadPool = as.numeric(98.6785),
+        # OperatingCapacity = (as.numeric(Reservoir) - DeadPool),
+        # Count = ifelse(Reservoir >= 2985, 1,0),
+       MonthDay = format(node, "%m/%d"),
+        Count = ifelse(Reservoir < 995 & MonthDay == "10/01", 1,0),
+         variable = as.factor("New Melones Reservoir"))
+Storage_Stn  
+
+
+Storage_Tuo <- rbind(Livneh_Stor_Tuo, Livneh_Stor_Tuo_FF, Livneh_Stor_SWRCBTuo)%>%
+ # rename(GCM=variable)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+        # Scenario = as.factor("RCP 4.5"),
+        # DeadPool = as.numeric(381.0965),
+        # OperatingCapacity = (as.numeric(Reservoir) - DeadPool),
+        MonthDay = format(node, "%m/%d"),
+        Count = ifelse(Reservoir < 834.6667 & MonthDay == "10/01", 1,0),
+         variable = as.factor("Don Pedro Reservoir"))
+Storage_Tuo
+
+
+Storage_USJ <- rbind(Livneh_Stor_USJ,Livneh_Stor_USJ_FF, Livneh_Stor_SWRCBUSJ)%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+                           Year = water_year(node, origin = "usgs"),
+         #Scenario = as.factor("RCP 4.5"),
+       #  DeadPool = as.numeric(165.3532),
+        # OperatingCapacity = (Reservoir - DeadPool),
+       MonthDay = format(node, "%m/%d"),
+         Count = ifelse(Reservoir < 213.8067 & MonthDay == "10/01", 1,0),
+         variable = as.factor("Millerton Lake"))
+Storage_USJ                    
+                 
+All_Spill1 <- rbind(Storage_Mer, Storage_USJ, Storage_Tuo, Storage_Stn)
+All_Spill1$Month <- factor(All_Spill1$Month, levels = c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+All_Spill <- All_Spill1 %>%
+  group_by(Basin, Scenario, Year, Month) %>%
+  summarise(MonthlyCount = sum(Count),
+            Monhtlymean = mean(Count))# %>%
+ # ungroup() %>%
+  #group_by(Basin, Scenario, Year) %>%
+  #summarise(AnnualCount = sum(Count)) %>%
+  #ungroup()
+All_Spill
+
+All_Storage_annual <- All_Spill1 %>%
+  group_by(Basin, Scenario, Year) %>%
+  summarise(AnnualCount = sum(Count),
+            Annualmean = mean(Count))# %>%
+#Outflow_Mer1 <- melt(Outflow_Mer, id = c("node", "Basin", "Scenario")) 
+write.csv(All_Storage_annual, "Annual_Storag_Below30%Oct1_per_Basin_per_scenario_manuscript_March.csv")
+write.csv(All_Spill, "Monthly_Storage_Below30%Oct1_per_Basin_per_scenario_manuscript_March.csv")
+```
+
+
+
+
+```{r}
+#FF
+Livneh__SpillMer_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,3)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillMer_FF <- Livneh__SpillMer_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillMer_FF[c(2:4)]),
+         Basin = "Merced River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh__SpillMer_FF
+
+Livneh__SpillStn_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,35)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillStn_FF<- Livneh__SpillStn_FF %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillStn_FF[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh__SpillStn_FF
+
+Livneh__SpillUSJ_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical - 2021-03-29/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,32)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillUSJ_FF<- Livneh__SpillUSJ_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillUSJ_FF[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh__SpillUSJ_FF
+
+Livneh__SpillTuo_FF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical - 2021-03-28/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,16)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillTuo_FF<- Livneh__SpillTuo_FF  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillTuo_FF[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Functional Flows") %>%
+  rename(Reservoir = 2)
+Livneh__SpillTuo_FF
+
+```
+
+```{r}
+Livneh__SpillMer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,2)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillMer <- Livneh__SpillMer %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillMer[c(2:4)]),
+         Basin = "Merced River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh__SpillMer
+
+Livneh__SpillStn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,34)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillStn<- Livneh__SpillStn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillStn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh__SpillStn
+
+Livneh__SpillUSJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical - 2021-03-29/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,30)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillUSJ<- Livneh__SpillUSJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillUSJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh__SpillUSJ
+
+Livneh__SpillTuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Functional Flows Historical - 2021-03-28/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c(1,14)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillTuo<- Livneh__SpillTuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillTuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "Baseline") %>%
+  rename(Reservoir = 2)
+Livneh__SpillTuo
+```
+
+```{r}
+Livneh__SpillSWRCBMer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/merced/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,3)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillSWRCBMer <- Livneh__SpillSWRCBMer %>%
+ mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillSWRCBMer[c(2:4)]),
+         Basin = "Merced River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh__SpillSWRCBMer
+
+Livneh__SpillSWRCBStn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/stanislaus/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,19)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillSWRCBStn<- Livneh__SpillSWRCBStn %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillSWRCBStn[c(2:12)]),
+         Basin = "Stanislaus River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh__SpillSWRCBStn
+
+Livneh__SpillSWRCBUSJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/upper_san_joaquin/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,17)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillSWRCBUSJ<- Livneh__SpillSWRCBUSJ  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillSWRCBUSJ[c(2:17)]),
+         Basin = "Upper San Joaquin River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh__SpillSWRCBUSJ
+
+Livneh__SpillSWRCBTuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/All IFR scenarios - 2021-09-21/tuolumne/historical/Livneh/InstreamFlowRequirement_Flow_mcm.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:2), c(1,9)] %>%
+  filter(between(node, as.Date("1951-10-01"), as.Date("2011-09-30")))
+
+Livneh__SpillSWRCBTuo<- Livneh__SpillSWRCBTuo  %>%
+  mutate(#`Livneh (Historical)` = rowSums(Livneh__SpillSWRCBTuo[c(2:5)]),
+         Basin = "Tuolumne River", Scenario = "40% Full Natural Flow") %>%
+  rename(Reservoir = 2)
+Livneh__SpillSWRCBTuo
+```
+
+```{r}
+Spill_Mer <- rbind(Livneh__SpillMer,Livneh__SpillSWRCBMer,Livneh__SpillMer_FF)%>%
+  mutate(MaxFlow = as.numeric(15.903),
+         Spill = as.numeric(Reservoir - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+Spill_Mer
+
+
+Spill_Stn <- rbind(Livneh__SpillStn, Livneh__SpillStn_FF,Livneh__SpillSWRCBStn)%>%
+  mutate(MaxFlow = as.numeric(19.6),
+         Spill = as.numeric(Reservoir - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+Spill_Stn
+
+
+Spill_Tuo <- rbind(Livneh__SpillTuo, Livneh__SpillTuo_FF, Livneh__SpillSWRCBTuo)%>%
+  mutate(MaxFlow = as.numeric(22),
+         Spill = as.numeric(Reservoir - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+Spill_Tuo
+
+
+Spill_USJ <- rbind(Livneh__SpillUSJ,Livneh__SpillUSJ_FF, Livneh__SpillSWRCBUSJ)%>%
+  mutate(MaxFlow = as.numeric(19.6),
+         Spill = as.numeric(Reservoir - MaxFlow),
+         Count = ifelse(Spill > 0, 1,0))
+Spill_USJ
+
+All_Spill <- rbind(Spill_Mer, Spill_USJ, Spill_Tuo, Spill_Stn)
+
+All_Spill1 <- All_Spill%>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"))%>%
+  group_by(Basin, Scenario, Year, Month) %>%
+  summarise(MonthlyCount = sum(Count),
+            Monhtlymean = mean(Count))# %>%Gen_Mer2$Scenario <- factor(Gen_Mer2$Scenario, levels = c("Baseline", "40% Full Natural Flow", "Functional Flows"))
+
+All_Spill1$Month <- factor(All_Spill1$Month, levels = c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))
+All_Spill1
+
+All_Spill_annual <- All_Spill %>%
+  mutate(Month = as.factor(format(as.Date(node, format = "%B"), "%b")),
+         Year = water_year(node, origin = "usgs"))%>%
+  group_by(Basin, Scenario, Year) %>%
+  summarise(AnnualCount = sum(Count),
+            Annualmean = mean(Count))# %>%
+#Outflow_Mer1 <- melt(Outflow_Mer, id = c("node", "Basin", "Scenario")) 
+write.csv(All_Spill_annual, "Annual_Spill_per_Basin_per_scenario_manuscript.csv")
+write.csv(All_Spill1, "Monthly_Spill_per_Basin_per_scenario_manuscript.csv")
+```

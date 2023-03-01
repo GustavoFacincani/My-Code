@@ -1,0 +1,101 @@
+
+```{r}
+Livneh_Gen_USJ_NOPT <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline - 2021-10-13 - no planning/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv")[, #c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)
+                                                                                                                                                                                                                                                                                                      ] %>%
+    filter(Date > "2004-09-30")%>%
+  filter(Date < "2005-10-01")%>%
+  mutate(Total_NOpt  = rowSums(.[c(2:17)]))
+Livneh_Gen_USJ_NOPT
+
+
+Livneh_Gen_USJ_OPT <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/historical/Livneh/Hydropower_Energy_MWh.csv", col_types = cols(node = col_date(), .default = col_double()))[-c(1:3), c( 1,2,6,10,14,18,22,26,30,34,38,42,46,50,54,58,62)] %>%
+  filter(node > "2004-09-30")%>%
+  filter(node < "2005-10-01")%>%
+  mutate(Total_Opt  = rowSums(.[c(2:17)]))
+Livneh_Gen_USJ_OPT
+
+hydrology <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>%
+  filter(date > "2004-09-30")%>%
+  filter(date < "2005-10-01")
+hydrology
+
+elec_prices <- read_csv("C:/Users/gusta/Desktop/PhD/CERCWET/GCMs/Electricity_prices_daily_2009.csv")
+elec_prices
+
+
+all <- cbind(Livneh_Gen_USJ_OPT[-c(2:17)], Livneh_Gen_USJ_NOPT[-c(1:17)], elec_prices[-c(1)], hydrology[-c(1)]) %>%
+  mutate(Month = as.numeric(format(node, "%m"))) #%>%
+  #group_by(Month) %>%
+#  summarize(Total_Opt = mean(Total_Opt),
+ #           Total_NOpt = mean(Total_NOpt))
+all <- all[1:365,]
+all
+```
+
+```{r}
+all2 <- all[,-4] %>%
+  rename("Optimized generation"= Total_Opt,
+         "Non-optimized generation" = Total_NOpt,
+         "Full natural flow" = flow) %>%
+  mutate(`Optimized generation` = `Optimized generation`/1000,
+         `Non-optimized generation` = `Non-optimized generation`/1000) %>%
+  reshape2::melt(., id = c("node", "Month"))
+all2
+```
+
+
+```{r}
+
+g1 <-ggplot(all) +  theme_bw(base_size=12, base_family='Times New Roman')+
+  geom_line(aes(x=node,# ymin= 60, ymax = Prices), color = "green", fill = "green", alpha=0.5) +
+                y = Prices), color = "black", size= 1.1)+
+  scale_y_continuous(limits = c(60,NA), breaks=c(60,80,100, 120), expand= c(0,0))+ ylab ("Electricity\nPrices (US$/day)" )+
+  scale_x_date(expand = c(0, 0), breaks = scales::breaks_pretty(13))+
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        text = element_text(size=12),
+        axis.text.y = element_text(size = 12))
+
+
+g2 <- ggplot(all2) +
+  theme_bw(base_size=12, base_family='Times New Roman')+
+geom_line(aes(x=node, y= value, color = variable), size= 1.1) +#+ geom_area(aes(Livneh_Gen_USJ_OPT, x= node, y= Total_Opt))
+  #geom_line(aes(x=node, y= Total_NOpt, color = "Non-optimized generation"), size= 1.1)+ 
+  scale_x_date(expand = c(0, 0), breaks = scales::breaks_pretty(13))+# breaks = c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+ 
+  ylab("Electricity\nGeneration (GWh/day)")+
+  scale_y_continuous(limits = c(0,NA), expand = c(0, 0), sec.axis = sec_axis(trans=~.*1, name = "Full natural flow (mcm/day)"))+
+  #geom_line(aes(x=node, y= flow, color = "Full natural flow"), size= 1.1)+
+  
+   scale_color_manual(values = c('dark green', 'red', "dodgerblue")) +
+  theme(axis.title.x=element_blank(),
+        #axis.text.x=element_blank(),
+       # axis.ticks.x=element_blank(),
+        #plot.title = element_text(hjust = 0.5),
+        #plot.subtitle = element_text(hjust = 0.5),
+        #strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"),
+        legend.position = "bottom",#c(0.15, 0.80),
+        legend.title = element_blank(),
+       legend.direction = "horizontal",
+       legend.background=element_rect(fill = alpha("white", 0)),
+       text = element_text(size=12),
+       legend.text=element_text(size=12),
+       axis.text.y = element_text(size = 12),
+       axis.text.x = element_text(size = 12))
+
+
+plot_grid(g1,g2,align = "v", nrow = 2, rel_heights = c(1.2/5, 3.8/5)) 
+
+g <- plot_grid(g1,g2,align = "v", nrow = 2, rel_heights = c(1.2/5, 3.8/5)) 
+
+g + png(file="Generation_USJ_daily_2005_3.png", units = "in", width = 8, height = 5, res=300)
+
+g2+ png(file="Generation_USJ_daily_2005_4.png", units = "in", width = 8, height = 5, res=300)
+```

@@ -1,0 +1,38 @@
+```{r}
+library(readr)
+library(viridis)
+library(dplyr)
+library(extrafont)
+loadfonts(device = "win")
+library(ggplot2)
+```
+
+```{r}
+reservoirs <- readr::read_csv("C:/Users/gusta/University of California Merced/VICE Lab - UCM - Review paper/World_Reservoirs_Map.csv")
+
+reservoirs$MAIN_USE <- factor(reservoirs$MAIN_USE, levels=c("Hydroelectricity", "Irrigation", "Water supply", "Flood control", "Navigation", "Recreation", "Fisheries", "Other"))
+```
+
+```{r}
+world <- map_data("world")
+world
+
+```
+
+```{r}
+ggplot() +
+  geom_map(
+    data = world, map = world,
+    mapping=aes(long, lat, map_id = region),
+    color = "white", fill = "lightgray", size = 0.1) +
+  geom_point(reservoirs %>% filter(!MAIN_USE == "NA"),
+             mapping=aes(x = LONG_DD, y = LAT_DD, size = CAP_MCM, color = MAIN_USE, shape = MULTIPLE2),
+                       alpha = 0.5) +   viridis::scale_color_viridis(option="turbo",discrete = TRUE)+
+  theme_void() +
+  theme(legend.position = "left",text=element_text(family="serif")) +
+  scale_size_continuous(range = c(1, 20))+
+    labs(shape="Purpose", colour="Main use", size = "Storage capacity (mcm)")+
+  scale_size_continuous(breaks=c(1,1000,10000,100000, 200000))+#,labels=c(1,1000,10000,100000, 200000))+
+  png("world_map.png", units ="in", width=11, height=5, res = 400)
+
+```

@@ -1,0 +1,400 @@
+
+```{r}
+library(readr)
+library(dplyr)
+library(lfstat)
+library(tidyverse)
+```
+
+
+filenames <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2022-02-03/", recursive=TRUE)
+
+# Find all .csv files
+#files <- dir("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2022-12-14/merced/sequences/S0001_Y08_D2W1_N01/", recursive=TRUE, full.names=TRUE, pattern="//.csv$")
+#filenames
+# Apply the function to all files.
+#result <- sapply(files, processFile)
+
+
+
+
+MER_Hydro <- filenames %>%
+  grep("D2W1", ., value = TRUE) %>%
+  grep("merced", ., value = TRUE) %>%
+  grep("Hydropower_Energy", ., value = TRUE)
+MER_Hydro
+  
+
+```{r}
+
+All <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
+ # grep("D2W1", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "Hydropower_Energy_MWh", ., value = TRUE)
+
+head(All)
+
+#names_mer <- substr(Mer_D2W1,18,57)
+#names_mer
+```
+
+```{r}
+filelist <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist) <- paste(All)
+
+#note the invisible function keeps lapply from spitting out the data.frames to the console
+```
+
+
+```{r}
+filelist2<- invisible(lapply(names(filelist), function(x) assign(x,filelist[[x]][-c(1,2),]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist[x]), "/")[[1]][3], 1,5), 
+                                                                          Scenario = substr(str_split(names(filelist[x]), "/")[[1]][3], 11,14),
+                                                                          Number = substr(str_split(names(filelist[x]), "/")[[1]][3], 16,20),
+                                                                          Basin = str_split(names(filelist[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
+head(filelist2)
+#D2_W1 <- read_csv(print("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2022-12-14/",MER_Hydro, sep=""))
+#D2_W1
+```
+
+
+for (x in 1:800) {
+names(filelist2[[x]])
+}
+
+```{r}
+D2W1_Mer <- filelist2 %>%
+  lapply(., function(x) filter(x, Basin == "merced"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Total = rowSums(.[c(2:4)]))
+D2W1_Mer
+
+D2W1_Tuo <- filelist2 %>%
+  lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Total = rowSums(.[c(2:5)]))
+D2W1_Tuo
+
+D2W1_Stn <- filelist2 %>%
+  lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains(".1")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Total = rowSums(.[c(2:11)]))
+D2W1_Stn
+
+D2W1_USJ <- filelist2 %>%
+  lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
+  do.call("rbind", .) %>%
+  select(., -contains("PH.1")) %>%
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Total = rowSums(.[c(2:15)]))
+D2W1_USJ
+```
+
+ggplot(D2W1_Mer, aes(x = node, y = Total, color = Scenario)) + geom_line()
+
+
+
+#ggplot(D2W1_Mer, x = node, y = Total) + geom_line()
+
+#write.csv(D2W1_Mer, "Whiplash_Mer.csv")
+write.csv(D2W1_Tuo, "Whiplash_Tuo.csv")
+write.csv(D2W1_Stn, "Whiplash_Stn.csv")
+write.csv(D2W1_USJ, "Whiplash_USJ_storage.csv")
+
+
+
+#D2W1_Mer %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+#D2W1_Tuo %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+#D2W1_Stn %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+#D2W1_USJ %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+
+
+diff_Mer <- D2W1_Mer %>% mutate(`Relative Difference` = (Total - 990.2191077)/990.2191077*100, `Absolute Difference` = Total - 990.2191077) #%>% group_by(Scenario) %>% summarize(Total = mean(Total))
+diff_Tuo <- D2W1_Tuo %>% mutate(`Relative Difference` = (Total - 6223.447953)/6223.447953*100, `Absolute Difference` = Total - 6223.447953) #%>% group_by(Scenario) %>% summarize(Total = mean(Total))
+diff_Stn <- D2W1_Stn %>% mutate(`Relative Difference` = (Total - 4681.885331)/4681.885331*100, `Absolute Difference` = Total - 4681.885331)# %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+diff_USJ <- D2W1_USJ %>% mutate(`Relative Difference` = (Total - 12070.95512)/12070.95512*100, `Absolute Difference` = Total - 12070.95512)# %>% group_by(Scenario) %>% summarize(Total = mean(Total))
+
+head(diff_Mer)
+
+
+```{r}
+#hydropower
+Total_Mer <- D2W1_Mer %>% select(node, Total, Basin, Scenario, Sequence, Number) %>% mutate(`Relative Difference` = (Total - 990.2191077)/990.2191077*100, `Absolute Difference` = Total - 990.2191077) 
+Total_Tuo <- D2W1_Tuo %>% select(node, Total, Basin, Scenario, Sequence, Number) %>% mutate(`Relative Difference` = (Total - 6223.447953)/6223.447953*100, `Absolute Difference` = Total - 6223.447953) 
+Total_Stn <- D2W1_Stn %>% select(node, Total, Basin, Scenario, Sequence, Number) %>% mutate(`Relative Difference` = (Total - 4681.885331)/4681.885331*100, `Absolute Difference` = Total - 4681.885331) 
+Total_USJ <- D2W1_USJ %>% select(node, Total, Basin, Scenario, Sequence, Number) %>% mutate(`Relative Difference` = (Total - 12070.95512)/12070.95512*100, `Absolute Difference` = Total - 12070.95512) 
+
+Total_Gen <- rbind(Total_Mer, Total_Tuo, Total_Stn, Total_USJ) %>%
+  mutate(Month = as.Date(node, format = "%B/%Y"),#as.Date(cut(node,  breaks = "month")),
+         Year = as.Date(water_year(node, origin = "usgs"), "%Y"),
+         #Year = as.Date(cut(node, breaks = "year")),
+         Scenario = as.factor(Scenario)) %>%
+#    Month = as.factor(format(as.Date(node, format = "%B/%Y"), "%b/%Y")))%>%
+ #        Year = water_year(node, origin = "usgs")) %>%
+  group_by(Basin, Month, Year, Sequence, Number, Scenario) %>%
+   dplyr::summarize(MonthlyTotal = sum(Total),
+                    `Absolute Difference` = sum(`Absolute Difference`),
+                    `Relative Difference` = mean(`Relative Difference`))# %>%
+#  mutate(YearType = ifelse(.$Scenario == "D2W1" & .$Year == "2003-02-08", "Wet", "Dry"))
+Total_Gen
+
+Total_Gen$YearType <- ifelse(Total_Gen$Scenario == "D2W1" & Total_Gen$Year == "2003-02-08", "Wet", 
+ifelse(Total_Gen$Year == "2003-02-08" & Total_Gen$Scenario == "D2W2", "Wet", 
+       ifelse(Total_Gen$Year == "2004-02-08" & Total_Gen$Scenario == "D2W2", "Wet",
+       ifelse(Total_Gen$Scenario == "D3W1" & Total_Gen$Year == "2004-02-08", "Wet",
+ifelse(Total_Gen$Year == "2004-02-08" & Total_Gen$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen$Year == "2005-02-08" & Total_Gen$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen$Scenario == "D4W1" & Total_Gen$Year == "2005-02-08", "Wet", 
+ifelse(Total_Gen$Year == "2005-02-08" & Total_Gen$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen$Year == "2006-02-08" & Total_Gen$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen$Scenario == "D5W1" & Total_Gen$Year == "2006-02-08", "Wet",
+ifelse(Total_Gen$Year == "2006-02-08" & Total_Gen$Scenario == "D5W2", "Wet",
+       ifelse(Total_Gen$Year == "2007-02-08" & Total_Gen$Scenario == "D5W2", "Wet","Dry"))))))))))))
+
+Total_Gen_Year <- Total_Gen %>%
+group_by(Basin, Year, Scenario, YearType) %>%
+dplyr::summarize(`Annual Total` = sum(MonthlyTotal),
+`Absolute Difference` = sum(`Absolute Difference`),
+`Relative Difference` = mean(`Relative Difference`),
+Change = ifelse(`Absolute Difference` < 0, "Negative", "Positive")) %>%
+mutate(Basin = replace(Basin, Basin == 'merced', 'Merced')) %>%
+mutate(Basin = replace(Basin, Basin == 'stanislaus', 'Stanislaus')) %>%
+mutate(Basin = replace(Basin, Basin == 'tuolumne', 'Tuolumne')) %>%
+mutate(Basin = replace(Basin, Basin == 'upper_san_joaquin', 'Upper San Joaquin'))
+Total_Gen_Year
+
+Total_Gen_Year$YearType <- ifelse(Total_Gen_Year$Scenario == "D2W1" & Total_Gen_Year$Year == "2003-02-08", "Wet", 
+ifelse(Total_Gen_Year$Year == "2003-02-08" & Total_Gen_Year$Scenario == "D2W2", "Wet", 
+       ifelse(Total_Gen_Year$Year == "2004-02-08" & Total_Gen_Year$Scenario == "D2W2", "Wet",
+       ifelse(Total_Gen_Year$Scenario == "D3W1" & Total_Gen_Year$Year == "2004-02-08", "Wet",
+ifelse(Total_Gen_Year$Year == "2004-02-08" & Total_Gen_Year$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen_Year$Year == "2005-02-08" & Total_Gen_Year$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen_Year$Scenario == "D4W1" & Total_Gen_Year$Year == "2005-02-08", "Wet", 
+ifelse(Total_Gen_Year$Year == "2005-02-08" & Total_Gen_Year$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen_Year$Year == "2006-02-08" & Total_Gen_Year$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen_Year$Scenario == "D5W1" & Total_Gen_Year$Year == "2006-02-08", "Wet",
+ifelse(Total_Gen_Year$Year == "2006-02-08" & Total_Gen_Year$Scenario == "D5W2", "Wet",
+       ifelse(Total_Gen_Year$Year == "2007-02-08" & Total_Gen_Year$Scenario == "D5W2", "Wet","Dry"))))))))))))
+
+Total_Gen_Year2 <- Total_Gen %>%
+  group_by(Basin, Year, Number, Scenario) %>%
+   dplyr::summarize(`Annual Total` = sum(MonthlyTotal),
+                    `Absolute Difference` = sum(`Absolute Difference`),
+                    `Relative Difference` = mean(`Relative Difference`),
+                    Change = ifelse(`Absolute Difference` < 0, "Negative", "Positive")) %>%
+  mutate(Basin = replace(Basin, Basin == 'merced', 'Merced')) %>%
+    mutate(Basin = replace(Basin, Basin == 'stanislaus', 'Stanislaus')) %>%
+  mutate(Basin = replace(Basin, Basin == 'tuolumne', 'Tuolumne')) %>%
+  mutate(Basin = replace(Basin, Basin == 'upper_san_joaquin', 'Upper San Joaquin'))
+
+Total_Gen_Year2
+
+Total_Gen_Year2$YearType <- ifelse(Total_Gen_Year2$Scenario == "D2W1" & Total_Gen_Year2$Year == "2003-02-08", "Wet", 
+ifelse(Total_Gen_Year2$Year == "2003-02-08" & Total_Gen_Year2$Scenario == "D2W2", "Wet", 
+       ifelse(Total_Gen_Year2$Year == "2004-02-08" & Total_Gen_Year2$Scenario == "D2W2", "Wet",
+       ifelse(Total_Gen_Year2$Scenario == "D3W1" & Total_Gen_Year2$Year == "2004-02-08", "Wet",
+ifelse(Total_Gen_Year2$Year == "2004-02-08" & Total_Gen_Year2$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen_Year2$Year == "2005-02-08" & Total_Gen_Year2$Scenario == "D3W2", "Wet", 
+       ifelse(Total_Gen_Year2$Scenario == "D4W1" & Total_Gen_Year2$Year == "2005-02-08", "Wet", 
+ifelse(Total_Gen_Year2$Year == "2005-02-08" & Total_Gen_Year2$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen_Year2$Year == "2006-02-08" & Total_Gen_Year2$Scenario == "D4W2", "Wet", 
+       ifelse(Total_Gen_Year2$Scenario == "D5W1" & Total_Gen_Year2$Year == "2006-02-08", "Wet",
+ifelse(Total_Gen_Year2$Year == "2006-02-08" & Total_Gen_Year2$Scenario == "D5W2", "Wet",
+       ifelse(Total_Gen_Year2$Year == "2007-02-08" & Total_Gen_Year2$Scenario == "D5W2", "Wet","Dry"))))))))))))
+
+
+#replace(Total_Gen_Year$Basin == "merced", "Merced")
+#Total_Gen_Year$Basin == "stanislaus" <- "Stanislaus"
+#Total_Gen_Year$Basin == "tuolumne" <- "Tuolumne"
+#Total_Gen_Year$Basin == "upper_san_joaquin" <- "Upper San Joaquin"
+
+Total_Gen_Year$Basin <- factor(Total_Gen_Year$Basin, levels = c("Stanislaus", "Tuolumne", "Merced", "Upper San Joaquin"))
+Total_Gen_Year2$Basin <- factor(Total_Gen_Year2$Basin, levels = c("Stanislaus", "Tuolumne", "Merced", "Upper San Joaquin"))
+
+```
+
+```{r}
+
+ ggplot(Total_Gen)+# aes(Month, Total)) + 
+ # stat_summary(fun.y = sum, # adds up all observations for the week
+  #  geom = "line") 
+  geom_line(aes(x=as.Date(Month), y = MonthlyTotal/1000, color = Number))+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+# stat_summary(aes(x = Month, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9, fun = sum, geom = "line")+ #plot monthly observed data in greenish blue
+ #stat_summary(aes(x = Month, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7, fun = sum, geom = "line")+
+#plot monthly observed data in orange
+#stat_summary(aes(x = Month, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7, fun = sum, geom = "line")+
+    scale_y_continuous(expand = c(0, 0))+
+   scale_x_date(date_labels = "%b/%Y")+
+  #scale_x_date(date_labels = "%b/%Y",
+        #          breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+     #             expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+ # scale_color_manual(values=c("#313695", "#4575B4", "dodgerblue2",  "deepskyblue2", "cadetblue2", "gold1", "chocolate1", "#D73027","#A50026"))+#name = element_blank(),
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower Generation (GWh)") + #name of x axis
+  facet_grid(Scenario~Basin, scales = "free")+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Generation.png", units ="in", width=16, height=10, res = 300)
+
+```
+
+```{r}
+
+ ggplot(Total_Gen_Year2)+# aes(Month, Total)) + 
+ # stat_summary(fun.y = sum, # adds up all observations for the week
+  #  geom = "line") 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = as.numeric(format(Year, "%Y"))-0.5, xmax = as.numeric(format(Year, "%Y"))+0.5, ymin = -Inf, ymax = Inf), alpha = 0.025)+
+  geom_line(aes(x=as.numeric(format(Year, "%Y")), y = `Annual Total`/1000, color=Number))+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+# stat_summary(aes(x = Month, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9, fun = sum, geom = "line")+ #plot monthly observed data in greenish blue
+ #stat_summary(aes(x = Month, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7, fun = sum, geom = "line")+
+    scale_fill_manual(values = c("white", "lightblue"))+
+
+#plot monthly observed data in orange
+#stat_summary(aes(x = Month, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7, fun = sum, geom = "line")+
+    scale_y_continuous(limits = c(0, NA), expand = c(0, 0))+
+  # scale_x_date(date_labels = "%b/%Y")+
+  scale_x_continuous(expand = c(0, 0))+
+        #          breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+     #             expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+ # scale_color_manual(values=c("#313695", "#4575B4", "dodgerblue2",  "deepskyblue2", "cadetblue2", "gold1", "chocolate1", "#D73027","#A50026"))+#name = element_blank(),
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower Generation (GWh)") + #name of x axis
+  facet_grid(Basin~Scenario, scales = "free")+
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        axis.text.x = element_text(angle = -45, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+ # guides(colour = guide_legend(nrow = 1))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Generation_Annual2.png", units ="in", width=18, height=10, res = 300)
+
+```
+
+```{r}
+
+ ggplot(Total_Gen_Year2, aes(x=as.numeric(format(Year, "%Y")), color=Number))+# aes(Month, Total)) + 
+ # stat_summary(fun.y = sum, # adds up all observations for the week
+  #  geom = "line") 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = as.numeric(format(Year, "%Y"))-0.5, xmax = as.numeric(format(Year, "%Y"))+0.5, ymin = -Inf, ymax = Inf), alpha = 0.025)+
+  geom_line(aes(y = cumsum(`Annual Total`)/1000000))+
+    geom_line(aes(y = (cumsum(`Annual Total`)/1000000)+(cumsum(`Absolute Difference`)/1000000)), linetype = "twodash")+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+# stat_summary(aes(x = Month, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9, fun = sum, geom = "line")+ #plot monthly observed data in greenish blue
+ #stat_summary(aes(x = Month, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7, fun = sum, geom = "line")+
+    
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+#plot monthly observed data in orange
+#stat_summary(aes(x = Month, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7, fun = sum, geom = "line")+
+    scale_y_continuous(expand = c(0, 0)) +
+  # scale_x_date(date_labels = "%b/%Y")+
+  scale_x_continuous(expand = c(0, 0), limits = c(2001,NA))+
+        #          breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+     #             expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+ # scale_color_manual(values=c("#313695", "#4575B4", "dodgerblue2",  "deepskyblue2", "cadetblue2", "gold1", "chocolate1", "#D73027","#A50026"))+#name = element_blank(),
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower Generation (TWh)") + #name of x axis
+  facet_grid(Basin~Scenario, scales = "free")+
+  theme(legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -19),
+        axis.text.x = element_text(angle = -45, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+ # guides(colour = guide_legend(nrow = 1))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Generation_Annual_Difference5.png", units ="in", width=18, height=10, res = 300)
+
+```
+
+
+
+ ggplot(Total_Gen)+# aes(Month, Total)) + 
+ # stat_summary(fun.y = sum, # adds up all observations for the week
+  #  geom = "line") 
+  geom_violin(aes(x=Year, y = MonthlyTotal/1000, fill=Scenario), draw_quantiles = c(.25, .5, .75))+
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+# stat_summary(aes(x = Month, y = `New Exchequer PH`, colour = "#000000"), alpha = 0.9, fun = sum, geom = "line")+ #plot monthly observed data in greenish blue
+ #stat_summary(aes(x = Month, y = `McSwain PH`, colour = "#56B4E9"), linetype = "dashed", alpha = 0.7, fun = sum, geom = "line")+
+#plot monthly observed data in orange
+#stat_summary(aes(x = Month, y = `Merced Falls PH`, colour = "#F0E442"), linetype = "dotdash", alpha = 0.7, fun = sum, geom = "line")+
+    scale_y_continuous(expand = c(0, 0))+
+   scale_x_discrete()+
+  #scale_x_date(date_labels = "%b/%Y",
+        #          breaks = c(as.Date("1980-10-01"), as.Date("1990-10-01"), as.Date("2000-10-01"), as.Date("2010-10-01")),
+     #             expand = c(0, 0)) + #scale x axis by each 6 years and label it by month and year
+  scale_color_manual(values=c("#313695", "#4575B4", "dodgerblue2",  "deepskyblue2", "cadetblue2", "gold1", "chocolate1", "#D73027","#A50026"))+#name = element_blank(),
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Hydropower Generation (GWh)") + #name of x axis
+  facet_wrap(Scenario~Basin, scales = "free_x", ncol=4)+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Generation_Violin.png", units ="in", width=16, height=10, res = 300)
+
+
+
+
+```{r}
+
+ ggplot(Total_Gen_Year)+# aes(Month, Total)) + 
+ # stat_summary(fun.y = sum, # adds up all observations for the week
+  #  geom = "line") 
+ geom_rect(aes(fill = `YearType`, xmin = as.Date(as.numeric(Year)-182), xmax = as.Date(as.numeric(Year)+182), ymin = -Inf, ymax = Inf), alpha = 0.5)+
+
+  geom_col(aes(x=Year, y = `Relative Difference`, fill = Change), position = "identity")+# fill=Scenario))+#, draw_quantiles = c(.25, .5, .75))+
+  theme_bw(base_size=12, base_family='Times New Roman') +
+  #  scale_fill_manual(values = c("red", "blue"), guide = FALSE)+
+#change font to Times New Roman, 12pt, Bold
+#plot monthly observed data in orange
+    scale_fill_manual(values = c("white", "red", "blue", "lightblue"))+
+
+    scale_y_continuous(expand = c(0, 0))+
+   scale_x_continuous(expand = c(0, 0))+
+  #scale_x_date(date_labels = "%b/%Y",
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Relative Difference in Hydropower Generation (%)") + #name of x axis
+  facet_grid(Basin~Scenario, scales = "free_x")+
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -19),
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Generation_Ba3r.png", units ="in", width=16, height=10, res = 300)
+
+```
+
+

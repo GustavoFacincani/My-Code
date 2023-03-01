@@ -1,0 +1,122 @@
+```{r}
+# library
+library(circlize)
+library(tibble)
+
+chord <- readxl::read_xlsx("C:/Users/gusta/University of California Merced/VICE Lab - UCM - Review paper/Paper_ERL3.xlsx", sheet = "Sheet11")
+chord
+
+```
+
+```{r}
+myCol = c("pink1", #"violet", 
+          "mediumpurple1", #"slateblue1", 
+          "purple", "purple4",
+          "turquoise2", #"skyblue", 
+          "steelblue", "blue2", 
+          "navyblue",
+          "orange", "tomato", 
+          "coral2", "palevioletred", "violetred", "red2",
+          "springgreen2", "yellowgreen", "palegreen4",
+          "wheat2", "tan", "tan2", "tan3", "brown", "grey50")
+```
+
+
+```{r}
+
+
+#cols <- rainbow(26) #hcl.colors(69, "Geyser")#hcl.colors(69, "Temps") #viridis::viridis
+
+#grid.cols <- viridis::magma(26) #rainbow(26)
+
+png(filename="eflowchor_tentative3.png", units ="in", width=22, height=16, res = 600)
+#par(mar = c(1,1,1,1), xaxs="i", yaxs="i")
+
+chord2 <- (chord)
+par(cex = 1.5)
+circos.par(gap.after = 1.1)
+circos.par(canvas.ylim=c(-3,3), # edit  canvas size 
+           #gap.after = gaps, # adjust gaps between regions
+           track.margin = c(0.01, 0.01), # adjust bottom and top margin
+           # track.margin = c(0.01, 0.1)
+           track.height = 0.01,
+           start.degree = 100)
+
+eflowchord <- chordDiagram(chord2,  
+#                           col = cols, 
+                           grid.col = myCol, 
+                           annotationTrack = "grid", preAllocateTracks = list(track.height = 0.025))
+
+
+#highlight.sector(c(chord2$from), track.index = 1, col = "red", 
+#    circos.text = "Data Gaps", cex = 0.8, text.col = "white", niceFacing = F)
+#highlight.sector(c(chord2$to), track.index = 1, col = "green", 
+#    circos.text = "Ignorance & Governance", cex = 0.8, text.col = "white", niceFacing = F)
+
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  circos.text(mean(xlim), ylim[1] , sector.name, facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.5))
+}, bg.border = NA)
+
+#circos.trackPlotRegion(track.index = 2, panel.fun = function(x, y) {
+#  circos.axis("bottom", major.tick.percentage = 0.2, labels.cex = 0.4)
+#}, bg.border = NA) 
+
+
+dev.off()
+
+```
+
+
+```{r}
+countries <- read_csv("C:/Users/gusta/University of California Merced/VICE Lab - UCM - Review paper/World_Collaboration_Map.csv")
+countries
+```
+
+
+```{r}
+
+#myCol <- viridis::magma(21)#rainbow(21) #hcl.colors(69, "Geyser")#hcl.colors(69, "Temps") #viridis::viridis
+
+#grid.cols <- viridis::magma(26) #rainbow(26)
+
+png(filename="Country_Collaboration4.png", units ="in", width=22, height=16, res = 600)
+#par(mar = c(1,1,1,1), xaxs="i", yaxs="i")
+
+chord2 <- (chord)
+par(cex = 1.5)
+circos.par(gap.after = 2.78)
+circos.par(canvas.ylim=c(-3,3), # edit  canvas size 
+           #gap.after = gaps, # adjust gaps between regions
+           track.margin = c(0.01, 0.01), # adjust bottom and top margin
+           # track.margin = c(0.01, 0.1)
+           track.height = 0.01,
+           start.degree = 100)
+
+eflowchord <- chordDiagram(countries,  
+#                           col = cols, 
+                           grid.col = myCol, 
+                           annotationTrack = "grid", preAllocateTracks = list(track.height = 0.025))
+
+
+#highlight.sector(c(chord2$from), track.index = 1, col = "red", 
+#    circos.text = "Data Gaps", cex = 0.8, text.col = "white", niceFacing = F)
+#highlight.sector(c(chord2$to), track.index = 1, col = "green", 
+#    circos.text = "Ignorance & Governance", cex = 0.8, text.col = "white", niceFacing = F)
+
+circos.trackPlotRegion(track.index = 1, panel.fun = function(x, y) {
+  xlim = get.cell.meta.data("xlim")
+  ylim = get.cell.meta.data("ylim")
+  sector.name = get.cell.meta.data("sector.index")
+  circos.text(mean(xlim), ylim[1] , sector.name, facing = "clockwise", niceFacing = TRUE, adj = c(0, 0.5))
+}, bg.border = NA)
+
+#circos.trackPlotRegion(track.index = 2, panel.fun = function(x, y) {
+#  circos.axis("bottom", major.tick.percentage = 0.2, labels.cex = 0.4)
+#}, bg.border = NA) 
+
+
+dev.off()
+```

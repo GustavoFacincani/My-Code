@@ -1,0 +1,478 @@
+
+
+```{r}
+#Spill redflags
+
+Livneh_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]%>%
+    filter(between(as.Date(node), as.Date("1980-10-01"), as.Date("2010-09-30")))# %>%
+ # rename(node = node)
+
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+Livneh_Spill_Mer$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Mer
+
+
+CanESM2_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CanESM2_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CanESM2_Spill_Mer$GCM <- as.factor("CanESM2\u2020")
+CanESM2_Spill_Mer
+
+CNRM_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CNRM-CM5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CNRM_Spill_Mer$GCM <- as.factor("CNRM-CM5\u2020")
+CNRM_Spill_Mer
+
+
+HadGEM2_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-ES_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM2_Spill_Mer$GCM <- as.factor("HadGEM2-ES\u2020")
+HadGEM2_Spill_Mer 
+
+MIROC5_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/MIROC5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+MIROC5_Spill_Mer$GCM <- as.factor("MIROC5\u2020")
+MIROC5_Spill_Mer
+
+CCSM4_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CCSM4_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#CanESM2_RedFlag_Mer$CanESM2 <- rowSums(CanESM2_RedFlag_Mer[c(2,3)])
+CCSM4_Spill_Mer$GCM <- as.factor("CCSM4")
+CCSM4_Spill_Mer
+
+CCMCC_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CMCC-CMS_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Mer$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Mer[c(2,3)])
+CCMCC_Spill_Mer$GCM <- as.factor("CMCC-CMS")
+CCMCC_Spill_Mer
+
+
+HadGEM_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/HadGEM2-CC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+HadGEM_Spill_Mer$GCM <- as.factor("HadGEM2-CC")
+HadGEM_Spill_Mer 
+
+GFDL_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/GFDL-CM3_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+GFDL_Spill_Mer$GCM <- as.factor("GFDL-CM3")
+GFDL_Spill_Mer
+
+CESM1_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/CESM1-BGC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Mer$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Mer[c(2,3)])
+CESM1_Spill_Mer$GCM <- as.factor("CESM1-BGC")
+CESM1_Spill_Mer 
+
+ACCESS_Spill_Mer <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/merced/gcms/ACCESS1-0_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Mer$MIROC5 <- rowSums(MIROC5_RedFlag_Mer[c(2,3)])
+ACCESS_Spill_Mer$GCM <- as.factor("ACCESS1-0")
+ACCESS_Spill_Mer
+
+```
+
+
+```{r}
+Spill_Mer1 <- rbind(CanESM2_Spill_Mer, CNRM_Spill_Mer, 
+                 HadGEM2_Spill_Mer, MIROC5_Spill_Mer, CCMCC_Spill_Mer, 
+                 ACCESS_Spill_Mer, CCSM4_Spill_Mer, CESM1_Spill_Mer, 
+                 GFDL_Spill_Mer, HadGEM_Spill_Mer)#%>% 
+ # filter(between(as.Date(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+
+Spill_Mer1 <- rbind(Livneh_Spill_Mer, Spill_Mer1) %>%
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 8.5",
+         Basin = "Merced River")
+Spill_Mer1
+
+Spill_Mer <- melt(Spill_Mer1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) #%>%
+ # mutate(value = round(value, digits = 1))
+Spill_Mer
+```
+
+
+```{r}
+#Spill redflags
+
+Livneh_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]%>%
+  filter(between(as.Date(node), as.Date("1980-10-01"), as.Date("2010-09-30"))) %>%
+  rename(node = node)
+#CanESM2_RedFlag_Tuo$CanESM2 <- rowSums(CanESM2_RedFlag_Tuo[c(2,3)])
+Livneh_Spill_Tuo$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Tuo
+
+
+CanESM2_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CanESM2_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CanESM2_RedFlag_Tuo$CanESM2 <- rowSums(CanESM2_RedFlag_Tuo[c(2,3)])
+CanESM2_Spill_Tuo$GCM <- as.factor("CanESM2\u2020")
+CanESM2_Spill_Tuo
+
+CNRM_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CNRM-CM5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Tuo$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Tuo[c(2,3)])
+CNRM_Spill_Tuo$GCM <- as.factor("CNRM-CM5\u2020")
+CNRM_Spill_Tuo
+
+
+HadGEM2_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-ES_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Tuo$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Tuo[c(2,3)])
+HadGEM2_Spill_Tuo$GCM <- as.factor("HadGEM2-ES\u2020")
+HadGEM2_Spill_Tuo 
+
+MIROC5_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/MIROC5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Tuo$MIROC5 <- rowSums(MIROC5_RedFlag_Tuo[c(2,3)])
+MIROC5_Spill_Tuo$GCM <- as.factor("MIROC5\u2020")
+MIROC5_Spill_Tuo
+
+CCSM4_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CCSM4_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#CanESM2_RedFlag_Tuo$CanESM2 <- rowSums(CanESM2_RedFlag_Tuo[c(2,3)])
+CCSM4_Spill_Tuo$GCM <- as.factor("CCSM4")
+CCSM4_Spill_Tuo
+
+CCMCC_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CMCC-CMS_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Tuo$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Tuo[c(2,3)])
+CCMCC_Spill_Tuo$GCM <- as.factor("CMCC-CMS")
+CCMCC_Spill_Tuo
+
+
+HadGEM_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/HadGEM2-CC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Tuo$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Tuo[c(2,3)])
+HadGEM_Spill_Tuo$GCM <- as.factor("HadGEM2-CC")
+HadGEM_Spill_Tuo 
+
+GFDL_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/GFDL-CM3_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Tuo$MIROC5 <- rowSums(MIROC5_RedFlag_Tuo[c(2,3)])
+GFDL_Spill_Tuo$GCM <- as.factor("GFDL-CM3")
+GFDL_Spill_Tuo
+
+CESM1_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/CESM1-BGC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Tuo$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Tuo[c(2,3)])
+CESM1_Spill_Tuo$GCM <- as.factor("CESM1-BGC")
+CESM1_Spill_Tuo 
+
+ACCESS_Spill_Tuo <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-16/tuolumne/gcms/ACCESS1-0_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Tuo$MIROC5 <- rowSums(MIROC5_RedFlag_Tuo[c(2,3)])
+ACCESS_Spill_Tuo$GCM <- as.factor("ACCESS1-0")
+ACCESS_Spill_Tuo
+
+```
+
+
+```{r}
+Spill_Tuo1 <- rbind(CanESM2_Spill_Tuo, CNRM_Spill_Tuo, 
+                    HadGEM2_Spill_Tuo, MIROC5_Spill_Tuo, CCMCC_Spill_Tuo, 
+                    ACCESS_Spill_Tuo, CCSM4_Spill_Tuo, CESM1_Spill_Tuo, 
+                    GFDL_Spill_Tuo, HadGEM_Spill_Tuo)#%>% 
+# filter(between(as.Date(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+
+Spill_Tuo1 <- rbind(Livneh_Spill_Tuo, Spill_Tuo1) %>%
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 8.5",
+         Basin = "Tuolumne River")
+Spill_Tuo1
+
+Spill_Tuo <- melt(Spill_Tuo1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) #%>%
+# mutate(value = round(value, digits = 1))
+Spill_Tuo
+```
+
+```{r}
+#Spill redflags
+
+Livneh_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]%>%
+  filter(between(as.Date(node), as.Date("1980-10-01"), as.Date("2010-09-30"))) %>%
+  rename(node = node)
+#CanESM2_RedFlag_Stn$CanESM2 <- rowSums(CanESM2_RedFlag_Stn[c(2,3)])
+Livneh_Spill_Stn$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_Stn
+
+
+CanESM2_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CanESM2_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CanESM2_RedFlag_Stn$CanESM2 <- rowSums(CanESM2_RedFlag_Stn[c(2,3)])
+CanESM2_Spill_Stn$GCM <- as.factor("CanESM2\u2020")
+CanESM2_Spill_Stn
+
+CNRM_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CNRM-CM5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Stn$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Stn[c(2,3)])
+CNRM_Spill_Stn$GCM <- as.factor("CNRM-CM5\u2020")
+CNRM_Spill_Stn
+
+
+HadGEM2_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-ES_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Stn$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Stn[c(2,3)])
+HadGEM2_Spill_Stn$GCM <- as.factor("HadGEM2-ES\u2020")
+HadGEM2_Spill_Stn 
+
+MIROC5_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/MIROC5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Stn$MIROC5 <- rowSums(MIROC5_RedFlag_Stn[c(2,3)])
+MIROC5_Spill_Stn$GCM <- as.factor("MIROC5\u2020")
+MIROC5_Spill_Stn
+
+CCSM4_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CCSM4_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#CanESM2_RedFlag_Stn$CanESM2 <- rowSums(CanESM2_RedFlag_Stn[c(2,3)])
+CCSM4_Spill_Stn$GCM <- as.factor("CCSM4")
+CCSM4_Spill_Stn
+
+CCMCC_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CMCC-CMS_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_Stn$`CNRM-CM5` <- rowSums(CNRM_RedFlag_Stn[c(2,3)])
+CCMCC_Spill_Stn$GCM <- as.factor("CMCC-CMS")
+CCMCC_Spill_Stn
+
+
+HadGEM_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/HadGEM2-CC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Stn$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Stn[c(2,3)])
+HadGEM_Spill_Stn$GCM <- as.factor("HadGEM2-CC")
+HadGEM_Spill_Stn 
+
+GFDL_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/GFDL-CM3_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Stn$MIROC5 <- rowSums(MIROC5_RedFlag_Stn[c(2,3)])
+GFDL_Spill_Stn$GCM <- as.factor("GFDL-CM3")
+GFDL_Spill_Stn
+
+CESM1_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/CESM1-BGC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_Stn$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_Stn[c(2,3)])
+CESM1_Spill_Stn$GCM <- as.factor("CESM1-BGC")
+CESM1_Spill_Stn 
+
+ACCESS_Spill_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/stanislaus/gcms/ACCESS1-0_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_Stn$MIROC5 <- rowSums(MIROC5_RedFlag_Stn[c(2,3)])
+ACCESS_Spill_Stn$GCM <- as.factor("ACCESS1-0")
+ACCESS_Spill_Stn
+
+```
+
+
+```{r}
+Spill_Stn1 <- rbind(CanESM2_Spill_Stn, CNRM_Spill_Stn, 
+                    HadGEM2_Spill_Stn, MIROC5_Spill_Stn, CCMCC_Spill_Stn, 
+                    ACCESS_Spill_Stn, CCSM4_Spill_Stn, CESM1_Spill_Stn, 
+                    GFDL_Spill_Stn, HadGEM_Spill_Stn)#%>% 
+# filter(between(as.Date(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+
+Spill_Stn1 <- rbind(Livneh_Spill_Stn, Spill_Stn1) %>%
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 8.5",
+         Basin = "Stanislaus River")
+Spill_Stn1
+
+Spill_Stn <- melt(Spill_Stn1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) #%>%
+# mutate(value = round(value, digits = 1))
+Spill_Stn
+```
+```{r}
+#Spill redflags
+
+Livneh_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/historical/Livneh/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]%>%
+  filter(between(as.Date(node), as.Date("1980-10-01"), as.Date("2010-09-30"))) %>%
+  rename(node = node)
+#CanESM2_RedFlag_USJ$CanESM2 <- rowSums(CanESM2_RedFlag_USJ[c(2,3)])
+Livneh_Spill_USJ$GCM <- as.factor("Livneh (Historical)")
+Livneh_Spill_USJ
+
+
+CanESM2_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CanESM2_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CanESM2_RedFlag_USJ$CanESM2 <- rowSums(CanESM2_RedFlag_USJ[c(2,3)])
+CanESM2_Spill_USJ$GCM <- as.factor("CanESM2\u2020")
+CanESM2_Spill_USJ
+
+CNRM_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CNRM-CM5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_USJ$`CNRM-CM5` <- rowSums(CNRM_RedFlag_USJ[c(2,3)])
+CNRM_Spill_USJ$GCM <- as.factor("CNRM-CM5\u2020")
+CNRM_Spill_USJ
+
+
+HadGEM2_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_USJ$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_USJ[c(2,3)])
+HadGEM2_Spill_USJ$GCM <- as.factor("HadGEM2-ES\u2020")
+HadGEM2_Spill_USJ 
+
+MIROC5_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/MIROC5_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_USJ$MIROC5 <- rowSums(MIROC5_RedFlag_USJ[c(2,3)])
+MIROC5_Spill_USJ$GCM <- as.factor("MIROC5\u2020")
+MIROC5_Spill_USJ
+
+CCSM4_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CCSM4_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#CanESM2_RedFlag_USJ$CanESM2 <- rowSums(CanESM2_RedFlag_USJ[c(2,3)])
+CCSM4_Spill_USJ$GCM <- as.factor("CCSM4")
+CCSM4_Spill_USJ
+
+CCMCC_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CMCC-CMS_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#CNRM_RedFlag_USJ$`CNRM-CM5` <- rowSums(CNRM_RedFlag_USJ[c(2,3)])
+CCMCC_Spill_USJ$GCM <- as.factor("CMCC-CMS")
+CCMCC_Spill_USJ
+
+
+HadGEM_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_USJ$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_USJ[c(2,3)])
+HadGEM_Spill_USJ$GCM <- as.factor("HadGEM2-CC")
+HadGEM_Spill_USJ 
+
+GFDL_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/GFDL-CM3_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_USJ$MIROC5 <- rowSums(MIROC5_RedFlag_USJ[c(2,3)])
+GFDL_Spill_USJ$GCM <- as.factor("GFDL-CM3")
+GFDL_Spill_USJ
+
+CESM1_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/CESM1-BGC_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)]
+#HadGEM2_RedFlag_USJ$`HadGEM2-ES` <- rowSums(HadGEM2_RedFlag_USJ[c(2,3)])
+CESM1_Spill_USJ$GCM <- as.factor("CESM1-BGC")
+CESM1_Spill_USJ 
+
+ACCESS_Spill_USJ <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Binary IFRs x Prices - 2021-03-29/upper_san_joaquin/gcms/ACCESS1-0_rcp85/UncontrolledSpill_Flow_mcm.csv")[-c(1:3), c(1,2)] 
+#MIROC5_RedFlag_USJ$MIROC5 <- rowSums(MIROC5_RedFlag_USJ[c(2,3)])
+ACCESS_Spill_USJ$GCM <- as.factor("ACCESS1-0")
+ACCESS_Spill_USJ
+
+```
+
+
+```{r}
+Spill_USJ1 <- rbind(CanESM2_Spill_USJ, CNRM_Spill_USJ, 
+                    HadGEM2_Spill_USJ, MIROC5_Spill_USJ, CCMCC_Spill_USJ, 
+                    ACCESS_Spill_USJ, CCSM4_Spill_USJ, CESM1_Spill_USJ, 
+                    GFDL_Spill_USJ, HadGEM_Spill_USJ)#%>% 
+# filter(between(as.Date(node, as.Date("2030-10-01"), as.Date("2060-09-30")))
+
+Spill_USJ1 <- rbind(Livneh_Spill_USJ, Spill_USJ1) %>%
+  mutate(WaterYear = as.factor(water_year(node, origin= "usgs")),
+         Scenario = "RCP 8.5",
+         Basin = "Upper San Joaquin River")
+Spill_USJ1
+
+Spill_USJ <- melt(Spill_USJ1, id = c("node", "WaterYear", "GCM", "Scenario", "Basin")) #%>%
+# mutate(value = round(value, digits = 1))
+Spill_USJ
+```
+
+```{r}
+total_spill <- rbind(Spill_USJ, Spill_Stn, Spill_Mer, Spill_Tuo) %>%
+  mutate(value = as.numeric(value),
+         Count = ifelse(value > 0, 1,0))
+total_spill
+```
+
+```{r}
+
+spill_data <- total_spill %>%
+  group_by(Basin, GCM, WaterYear) %>%
+  summarize(Count = sum(Count))
+
+write.csv(spill_data, "spill_per_climate.csv", row.names = FALSE)
+```
+
+
+```{r}
+ggplot(total_spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1980", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(GCM~Basin, scales = "free_x", ncol = 4) +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+      subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetWrap_RCP85_2009prices_.png", units ="in", width=8, height=8, res = 300)
+```
+
+```{r}
+ggplot(total_spill) +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,NA), breaks = c(0, 40, 80, 120, 160)) +
+  scale_x_discrete(breaks = c("1981", "1991", "2001", 
+                              "2031", "2041","2051"),
+                    expand = c(0, NA))+
+
+  facet_grid(GCM~Basin, scales = "free_x") +
+  
+  labs(#title = "Storage Below One Third of Reservoir Operating Capacity",
+       subtitle = "RCP 8.5 Scenario",
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill occurrence (Days)") +
+ theme(#strip.text.x = element_blank(),
+       #legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+       # panel.spacing.y = unit(0, "lines")) +
+png("AllBasins_Spill_FacetGrid.png", units ="in", width=10, height=10, res = 300)
+```
+
+```{r}
+#Spill for each basin
+
+Spill <- function (Data, Basins, Title, Subtitle) {
+Data%>%
+  filter(Basin == Basins) %>%
+  #  filter(GCM == "Livneh (Historical)" | GCM == "ACCESS1-0" | GCM == "CNRM-CM5") %>%
+ggplot() +
+     theme_bw(base_size=12, base_family='Times New Roman') +
+  geom_bar(aes(x= WaterYear, y=Count), stat = "identity") +
+ggthemes::scale_color_colorblind() +
+   scale_y_continuous(expand = c(0, NA),
+                      limits = c(0,130), breaks = c(0, 20, 40, 60, 
+                                                   80, 100, 120, 140, 160)) +
+  scale_x_discrete(breaks = c("1981", "1986", "1991", "1996", "2001", "2006", 
+                              "2031", "2036", "2041", "2046", "2051", "2056"),
+                    expand = c(0, NA))+
+
+  facet_wrap(~GCM, scales = "free_x", ncol = 1, strip.position = "left") +
+  
+  
+  labs(title = Title,
+       subtitle = Subtitle,
+       
+  #  subtitle = "CanESM2",
+    x = element_blank(),
+       y = "Spill Occurrence (Days)") +
+ theme(#legend.title = element_blank(),
+    #legend.position = "bottom",
+     #   legend.direction = "horizontal",
+      #  legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())
+#        panel.spacing.y = unit(0, "lines")) +
+}
+```
+
+```{r}
+  Spill(total_spill, "Merced River", "Merced River", "ff - 2009 prices (RCP 8.5 Scenario)") +
+png("Mer_Spill_ff_2009prices_RCP85_10GCMs_Report_2.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(total_spill, "Upper San Joaquin River", "Upper San Joaquin River", "ff - 2009 prices (RCP 8.5 Scenario)") +
+png("USJ_Spill_ff_2009prices_RCP85_10GCMs_Report.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(total_spill, "Tuolumne River", "Tuolumne River", "ff - 2009 prices (RCP 8.5 Scenario)") +
+png("Tuo_Spill_ff_2009prices_RCP85_10GCMs_Report.png", units ="in", width=5, height=16, res = 300)
+```
+
+```{r}
+  Spill(total_spill, "Stanislaus River", "Stanislaus River", "ff - 2009 prices (RCP 8.5 Scenario)") +
+png("Stn_Spill_ff_2009prices_RCP85_10GCMs_Report.png", units ="in",width=5, height=16, res = 300)
+```
