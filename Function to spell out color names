@@ -1,0 +1,9 @@
+get_color_name <- function(color_hex) {
+    out = vector(length = length(color_hex))
+    
+    for(i in seq_along(color_hex)) {
+        out[i] <- plotrix::color.id(color_hex[i])[1]
+    }
+    out
+    
+}
