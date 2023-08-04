@@ -1,0 +1,95 @@
+
+```{r}
+
+
+CA_HP <- c("Date","Shasta", "Edward C Hyatt", "Colgate", "Pit 5", "Devil Canyon", "James B Black", "Folsom", "White Rock (Slab Creek)", "Poe", "Jaybird")
+
+CA_SN <- c("Date","Dion R Holm", "Mammoth", "R C Kirkwood", "Don Pedro", "Big Creek 1", "New Melones", "Kerckhoff 2", "Big Creek 4","Big Creek 3", "Big Creek 2A")
+
+State_HP <- read_csv("C:/Users/gusta/Downloads/monthly_hydro_1980_2018_MWh (1).csv") %>%
+  filter(Date > "2000-12-01") %>%
+  select(., c(CA_HP))%>%
+  mutate(#Total_CA = rowSums(.[2:11]),
+    Year = as.factor(format(.$Date, "%Y")))#%>%
+#  group_by(Year) %>%
+# summarise(Total_CA = mean(Total_CA))
+#State_HP_sum <- aggregate(State_HP['Total_CA'], by=State_HP['Year'], sum)
+#State_HP_sum
+
+Regional_HP <- read_csv("C:/Users/gusta/Downloads/monthly_hydro_1980_2018_MWh (1).csv") %>%
+  filter(Date > "2000-12-01") %>%
+  select(., c(CA_SN)) %>%
+  mutate(#Total_SN = rowSums(.[2:11]),
+    Year = as.factor(format(.$Date, "%Y")))#%>%
+#group_by(Year) %>%
+#summarise(Total_SN = sum(Total_SN))
+#Regional_HP_sum <- aggregate(Regional_HP['Total_SN'], by=Regional_HP['Year'], sum)
+#Regional_HP_sum      
+```
+
+```{r}
+total_sn <- reshape2::melt(Regional_HP, id= c("Date", "Year")) %>%# mutate(#Total_SN = rowSums(.[2:11]),
+  #Year = as.factor(format(.$Date, "%Y"))) %>%
+  group_by(variable) %>%
+  dplyr::summarize(value = mean(as.double(value), na.rm = T)) %>%
+  mutate(Storage = ifelse(variable == "Dion R Holm", 299600, ifelse(variable == "Mammoth", 120000, ifelse(variable == "R C Kirkwood", 360360, ifelse(variable == "Don Pedro", 2030000, ifelse(variable == "Big Creek 1", 89000, ifelse(variable == "New Melones", 2400000, ifelse(variable == "Kerckhoff 2", 4188, ifelse(variable == "Big Creek 4", 26000, ifelse(variable == "Big Creek 3", 1730, ifelse(variable == "Big Creek 2A", 136000, 0)))))))))),
+         Capacity = ifelse(variable == "Dion R Holm", 165, ifelse(variable == "Mammoth", 187, ifelse(variable == "R C Kirkwood", 118.2, ifelse(variable == "Don Pedro", 203, ifelse(variable == "Big Creek 1", 82.9, ifelse(variable == "New Melones", 300, ifelse(variable == "Kerckhoff 2", 155, ifelse(variable == "Big Creek 4", 100, ifelse(variable == "Big Creek 3", 177, ifelse(variable == "Big Creek 2A", 98.5, 0)))))))))),
+         Type = ifelse(variable == "Dion R Holm", "Impoundment", ifelse(variable == "Mammoth", "Impoundment", ifelse(variable == "R C Kirkwood", "Impoundment", ifelse(variable == "Don Pedro", "Impoundment", ifelse(variable == "Big Creek 1", "Impoundment", ifelse(variable == "New Melones", "Impoundment", ifelse(variable == "Kerckhoff 2", "Impoundment", ifelse(variable == "Big Creek 4", "Impoundment", ifelse(variable == "Big Creek 3", "Diversion", ifelse(variable == "Big Creek 2A", "Impoundment", 0)))))))))))%>%
+  mutate(MWhperACF = value/(Storage/1000),
+         MWhperCF = value/Capacity,
+         Region = "Sierra Nevada")
+total_sn
+
+total_state <- reshape2::melt(State_HP, id= c("Date", "Year")) %>% #mutate(#Total_SN = rowSums(.[2:11]),
+  #Year = as.factor(format(.$Date, "%Y"))) %>%
+  group_by(variable) %>%
+  dplyr::summarize(value = mean(as.double(value), na.rm = T)) %>%
+  mutate(Storage = ifelse(variable == "Shasta", 4552000, ifelse(variable == "Edward C Hyatt", 3537580, ifelse(variable == "Colgate", 969600, ifelse(variable == "Pit 5", 330, ifelse(variable == "Devil Canyon", 73000, ifelse(variable == "James B Black", 24300, ifelse(variable == "Folsom", 975000, ifelse(variable == "White Rock (Slab Creek)", 16600, ifelse(variable == "Poe", 1150, ifelse(variable == "Jaybird", 3250, 0)))))))))),
+         Capacity = ifelse(variable == "Shasta", 714, ifelse(variable == "Edward C Hyatt", 644.3, ifelse(variable == "Colgate", 315, ifelse(variable == "Pit 5", 160, ifelse(variable == "Devil Canyon", 276.4, ifelse(variable == "James B Black", 172, ifelse(variable == "Folsom", 207, ifelse(variable == "White Rock (Slab Creek)", 266, ifelse(variable == "Poe", 120, ifelse(variable == "Jaybird", 161.6, 0)))))))))),
+         Type = ifelse(variable == "Shasta", "Impoundment", ifelse(variable == "Edward C Hyatt", "Pumped Storage", ifelse(variable == "Colgate", "Impoundment", ifelse(variable == "Pit 5", "Run-of-river", ifelse(variable == "Devil Canyon", "Impoundment", ifelse(variable == "James B Black", "Impoundment", ifelse(variable == "Folsom", "Impoundment", ifelse(variable == "White Rock (Slab Creek)", "Impoundment", ifelse(variable == "Poe", "Impoundment", ifelse(variable == "Jaybird", "Impoundment", 0))))))))))) %>%
+  mutate(MWhperACF = value/(Storage/1000),
+         MWhperCF = value/Capacity,
+         Region = "State")
+total_state
+```
+
+
+```{r}
+
+total <- rbind(total_sn, total_state) %>% arrange(MWhperACF)
+total
+
+```
+
+
+```{r}
+ggplot(total%>% arrange(MWhperACF), aes(y = value, x = reorder(variable, value), color = Region, shape = Type))+
+  theme_bw(base_size=11, base_family='Times New Roman') + geom_point(size = 3) + ylab("MWh/year per TAF") + xlab("Powerhouse") + scale_y_log10()+ 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1), strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  png("generation3.png" , units ="in", width=10, height=6, res = 300)
+
+
+
+ggplot(total%>% arrange(MWhperACF), aes(y = MWhperACF, x = reorder(variable, MWhperACF), color = Region, shape = Type))+
+  theme_bw(base_size=11, base_family='Times New Roman') + geom_point(size = 3) + ylab("MWh/year per TAF") + xlab("Powerhouse") + scale_y_log10()+ 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1), strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  png("generation per storage3.png" , units ="in", width=10, height=6, res = 300)
+
+ggplot(total%>% arrange(MWhperCF), aes(y = MWhperCF, x = reorder(variable, MWhperCF), color = Region, shape = Type))+
+  theme_bw(base_size=11, base_family='Times New Roman') + geom_point(size = 3) + ylab("MWh/year") + xlab("Powerhouse") + scale_y_log10()+ 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1), strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  png("generation per capacity factor3.png" , units ="in", width=10, height=6, res = 300)
+
+ggplot(total%>% arrange(MWhperACF), aes(y = Capacity, x = reorder(variable, Capacity), color = Region, shape = Type))+
+  theme_bw(base_size=11, base_family='Times New Roman') + geom_point(size = 3) + ylab("MWh/year") + xlab("Powerhouse") + scale_y_log10()+ 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1), strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines")) +
+  png("capacity factor3.png" , units ="in", width=10, height=6, res = 300)
+```

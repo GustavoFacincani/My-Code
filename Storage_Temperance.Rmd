@@ -1,0 +1,170 @@
+```{r}
+Livneh_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+       `Livneh (Historical)` = `Millerton Lake`) %>%
+  filter(between(Date, as.Date("1950-10-01"), as.Date("2011-09-30")))
+Livneh_Stor_Stn
+
+CanES_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/CanESM2_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         "CanESM2\u2020" = `Millerton Lake`)
+CanES_Stor_Stn
+
+CNRM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/CNRM-CM5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         "CNRM-CM5\u2020" = `Millerton Lake`)
+CNRM_Stor_Stn
+
+
+HadGEM_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/HadGEM2-ES_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         "HadGEM2-ES\u2020" = `Millerton Lake`)
+HadGEM_Stor_Stn
+
+
+MIROC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/MIROC5_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         "MIROC5\u2020" = `Millerton Lake`)
+MIROC_Stor_Stn
+
+
+HadGEMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/HadGEM2-CC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         `HadGEM2-CC` = `Millerton Lake`)
+HadGEMCC_Stor_Stn
+
+
+CESM1_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/CESM1-BGC_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         `CESM1-BGC` = `Millerton Lake`)
+CESM1_Stor_Stn
+
+
+CCSM4_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/CCSM4_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         CCSM4 = `Millerton Lake`)
+CCSM4_Stor_Stn
+
+
+GFDL_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/GFDL-CM3_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         `GFDL-CM3` = `Millerton Lake`)
+GFDL_Stor_Stn
+
+
+ACCESS_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/ACCESS1-0_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         `ACCESS1-0` = `Millerton Lake`)
+ACCESS_Stor_Stn
+
+
+CMCC_Stor_Stn <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/GCMs test - 2021-09-16/upper_san_joaquin/gcms/CMCC-CMS_rcp85/Reservoir_Storage_mcm.csv", col_types = cols(Date = col_date(), .default = col_double()))[  c(1,4)] %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"),
+         `CMCC-CMS` = `Millerton Lake`)
+CMCC_Stor_Stn
+```
+
+```{r}
+
+Livneh_Stn_Stor <- Livneh_Stor_Stn[-c(2)] 
+Livneh_Stn_Stor <- melt(Livneh_Stn_Stor, id = "Date")
+Livneh_Stn_Stor
+
+Stor_Stn <- cbind(CanES_Stor_Stn[-c(2)], CNRM_Stor_Stn[-c(1:2)], 
+                HadGEM_Stor_Stn[-c(1:2)], MIROC_Stor_Stn[-c(1:2)],
+                HadGEMCC_Stor_Stn[-c(1:2)], CESM1_Stor_Stn[-c(1:2)], 
+                CCSM4_Stor_Stn[-c(1:2)], GFDL_Stor_Stn[-c(1:2)], 
+                CMCC_Stor_Stn[-c(1:2)], ACCESS_Stor_Stn[-c(1:2)])
+Stor_Stn
+ 
+
+Stor_Stn1 <- melt(Stor_Stn, id = "Date")
+Stor_Stn1
+```
+
+```{r}
+Stor_Stn2 <- rbind(Stor_Stn1, Livneh_Stn_Stor) %>%
+  mutate(Month = as.factor(format(as.Date(Date, format = "%B"), "%b")),
+                           Year = water_year(Date, origin = "usgs"),
+        # Scenario = as.factor("RCP 4.5"),
+         value = as.numeric(value)) %>%
+group_by(Year, Month, variable) %>%
+   dplyr::summarize(MonthlyTotal = mean(value))
+ 
+  
+
+Stor_Stn2$variable <- factor(Stor_Stn2$variable, levels = c("Livneh (Historical)", "ACCESS1-0", "CMCC-CMS", "MIROC5\u2020", "GFDL-CM3", "CCSM4", "HadGEM2-CC", "HadGEM2-ES\u2020","CESM1-BGC", "CanESM2\u2020", "CNRM-CM5\u2020"))
+
+
+Stor_Stn3 <- Stor_Stn2 %>%
+  group_by(Year, variable) %>%
+   dplyr::summarize(AnnualTotal = mean(MonthlyTotal)) 
+
+Stor_Stn3
+
+```
+
+```{r}
+Stor_Stn3 <- Stor_Stn2 %>%
+  group_by(variable) %>%
+   dplyr::summarize(MeanAnnualTotal = mean(MonthlyTotal),
+                    PercentofStorage = MeanAnnualTotal/2195.6*100)
+
+Stor_Stn3
+write.csv(Stor_Stn3, "Storage_Millerton+Temperance.csv", row.names = F)
+```
+
+
+```{r}
+ggplot(Stor_Stn2) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = MonthlyTotal, fill = variable), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = scales::comma) +
+    scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Temperance Flat + Millerton",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/month)") + #name of x axis
+  theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("USJ_storage_10GCMs_Baseline_2009prices_rcp85_Temperance.png", units ="in", width=10, height=5, res = 300)
+
+```
+
+```{r}
+#annual aggreagate
+ggplot(Stor_Stn3) + 
+  theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+    geom_violin(draw_quantiles = c(.25, .5, .75), aes( x = variable, y = AnnualTotal, fill = variable)) + #plot monthly observed data in greenish blue
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(limits = c(0, NA),
+                      expand = c(0, NA),
+                      labels = scales::comma) +
+   # scale_x_discrete(limits=c("Livneh (Historical)", "HadGEM2-ES", "CanESM2", "MIROC5", "CNRM-CM5"))+
+  scale_fill_manual(values = c("#5A5A5A","#A50026", "#D73027", "#F46D43", "chocolate1", "gold1", "cadetblue2", "deepskyblue2", "dodgerblue2", "#4575B4", "#313695")) +
+
+  labs(fill = "RCP 8.5", title = "Temperance Flat + Millerton",
+       subtitle = "Baseline (2009 prices)",
+    x = element_blank(), 
+       y = "Total Storage (mcm/year)") + #name of x axis
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+png("USJ_annual_storage_10GCMs_Baseline_2009prices_rcp85_Temperance.png", units ="in", width=11.5, height=4.5, res = 300)
+```

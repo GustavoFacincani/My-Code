@@ -1,0 +1,289 @@
+#Loading packages
+
+```{r}
+library(tidyverse, quietly = TRUE)
+library(readr, quietly = TRUE)
+library(lubridate)
+library(stringr, quietly = TRUE)
+library(readxl)
+library(readr)
+#library(plyr)
+library(dplyr)
+library(base)
+#library(utils)
+library(reshape2)
+library(reshape)
+library(raster)
+#library(rgdal)
+```
+#The montlhy data from 1980-2000 was retrieved from https://www.eia.gov/electricity/data/eia923/eia906u.php
+#Each year was in a separate XLS file
+#The montlhy data from 2001-2018 was retrieved from https://www.eia.gov/electricity/data/eia923/
+#Each year was in a separate ZIP file, within which there are 1, 2 or 3 excel files inside, with names that vary
+#So I had to go over each one manually, then saved the ones to be used
+#The tables were in 4 different formats, so I had to read it 4 times
+```{r}
+#Reading data from 1980 to 2000
+Hydro80_00 <- list.files("C:/Users/gusta/Desktop/PhD/CERCWET/ElectricityData/1980_2000", ".xls", full.names = TRUE)
+Hydro80_00 
+
+my_data <- plyr::ldply(Hydro80_00, read_excel) %>% #reading them all at once
+  filter(CENSUS == "93") %>% #filtering by the state of CA
+         
+  dplyr::rename(`Fuel Type` = FUELDESC, # == "WAT", #filtering hydroelectric power plants
+        `Facility/Fuel Type` = PMDESC # == "HY"
+         ) %>% #filtering only conventional hydropower facilities 
+  dplyr::select(PCODE, PLTNAME, UTILNAME, `Facility/Fuel Type`, `Fuel Type`, YEAR, #dplyr::selecting the columns of interest - Power Plant Code and Name, Utility name and Year
+         GEN01, GEN02, GEN03, GEN04, GEN05, GEN06, GEN07, GEN08, GEN09, GEN10, GEN11, GEN12) %>%  #electricity generation per month (in MWh)
+mutate(`Facility/Fuel Type` = ifelse(`Facility/Fuel Type` == "HY", "HYC", `Facility/Fuel Type`)) 
+#These files had an extra 0 in from the Plant Code, and some Years were 2-digit while others were 4-digit years
+#So I fixed that this way:
+my_data$PCODE <- gsub("(^|[^0-9])0+", "\\1", my_data$PCODE, perl = TRUE) #removing the leading zero in the Plant ID
+my_data$YEAR <- my_data$YEAR <- year(as.Date(format(parse_date_time(my_data$YEAR, 'y'), "%Y"), "%Y")) #making years with 4-digits (most are not)
+
+my_data
+```
+
+
+#Reading data from 2001 to 2010
+#dplyr::selecting all the files
+```{r}
+Hydro01_10 <- list.files("C:/Users/gusta/Desktop/PhD/CERCWET/ElectricityData/2001_2010", ".xls", full.names = TRUE)
+Hydro01_10 
+
+#Reading them all at once
+my_data1 <- plyr::ldply(Hydro01_10, read_excel, skip = 7) %>% #skipping first 7 empty rows
+  filter(State == "CA")%>% #filtering by the state of CA
+         dplyr::rename(`Fuel Type` = `Reported Fuel Type Code`, # == "WAT", #filtering hydroelectric power plants
+        `Facility/Fuel Type` = `AER Fuel Type Code`) %>%
+
+  dplyr::select(`Plant ID`, `Plant Name`,`Operator Name`, `Facility/Fuel Type`, `Fuel Type`,Year,#dplyr::selecting the columns of interest - Power Plant Code and Name, Utility name and Year
+         NETGEN_JAN, NETGEN_FEB, NETGEN_MAR, NETGEN_APR, NETGEN_MAY, NETGEN_JUN, NETGEN_JUL, NETGEN_AUG, NETGEN_SEP, NETGEN_OCT, NETGEN_NOV, NETGEN_DEC) #electricity generation per month (in MWh)
+
+colnames(my_data1) <- colnames(my_data) #naming the columns after my_data to bind them later
+my_data1
+```
+
+
+#Reading the data from 2011 to 2018
+```{r}
+Hydro11_18 <- list.files("C:/Users/gusta/Desktop/PhD/CERCWET/ElectricityData/2011_2020", ".xls", full.names = TRUE)
+Hydro11_18 
+
+
+#2011 and 2013 had column names in a different format, so I need to deal with them separately
+my_data2 <- plyr::ldply(Hydro11_18, read_excel, skip = 5) %>% #skipping first 5 empty rows
+  filter(State == "CA")%>%#filtering by the state of CA
+         dplyr::rename(`Fuel Type` = `Reported Fuel Type Code`, # == "WAT", #filtering hydroelectric power plants
+        `Facility/Fuel Type` = `AER Fuel Type Code`) %>%
+  #`Reported Fuel Type Code` == "WAT", `AER Fuel Type Code` == "HYC") %>% #filtering only conventional hydropower facilities 
+  dplyr::select(`Plant Id`, `Plant Name`,`Operator Name`, `Facility/Fuel Type`, `Fuel Type`, YEAR, #dplyr::selecting the columns of interest - Power Plant Code and Name, Utility name and Year
+         Netgen_Jan, Netgen_Feb, Netgen_Mar, Netgen_Apr, Netgen_May, Netgen_Jun, Netgen_Jul, Netgen_Aug, Netgen_Sep, Netgen_Oct, Netgen_Nov, Netgen_Dec) #electricity generation per month (in MWh)
+
+colnames(my_data2) <- colnames(my_data) #naming the columns after my_data to bind them later
+
+my_data2
+```
+
+#2012, 2014-2019 were in another format
+```{r}
+my_data3 <- plyr::ldply(Hydro11_18, read_excel, skip = 5) %>% #skipping the first 5 empty rows
+  filter(`Plant State` == "CA")%>% #filtering by the state of CA
+         dplyr::rename(`Facility/Fuel Type` = `Reported\r\nFuel Type Code`, # == "WAT", #filtering all hydropower
+         `Fuel Type` = `AER\r\nFuel Type Code`) %>% # == "HYC") %>% #filtering only conventional hydropower facilities 
+  dplyr::select(`Plant Id`, `Plant Name`,`Operator Name`,`Facility/Fuel Type`, `Fuel Type`, YEAR, #dplyr::selecting the columns of interest - Power Plant Code and Name, Utility name and Year
+         `Netgen\r\nJanuary`, `Netgen\r\nFebruary`, `Netgen\r\nMarch`, `Netgen\r\nApril`, `Netgen\r\nMay`, `Netgen\r\nJune`, `Netgen\r\nJuly`, `Netgen\r\nAugust`, `Netgen\r\nSeptember`, `Netgen\r\nOctober`, `Netgen\r\nNovember`, `Netgen\r\nDecember`) #dplyr::selecting the columns of interest  #order the data by year
+
+colnames(my_data3) <- colnames(my_data) #naming the columns after my_data to bind them later
+my_data3
+```
+
+
+#Reading the data, we have to check which stations were considered, based on the ones we previously had
+
+```{r}
+
+all_data <- rbind(my_data, my_data1, my_data2, my_data3) %>% #joining all the data into one dataset
+ # subset(PCODE %in% previous_data$`EIA PlantID` | `PCODE` == c("50393", "54554")) %>% #filtering the current data based on the stations of previous_data, and the Friant PH (50393) and New Spicer PH (54554) were not considered in the previous_data
+  ungroup() %>%
+  arrange(YEAR) #order data by year
+all_data
+#rename columns for ease of understanding
+names(all_data) <- c("Plant ID", "Plant Name", "Utility Name", "Facility/Fuel Type", "Fuel Type", "Year", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+all_data
+
+```
+#Reorganizing the data, setting months in one column and electricity generation in another column
+
+```{r} 
+all_data1 <- melt(all_data, id = c("Plant ID", "Plant Name", "Utility Name", "Year", "Facility/Fuel Type", "Fuel Type")) %>%
+#  filter(`Plant Name` == "BAKER DAM") %>%
+  rename(c(variable = "Month", 
+           value = "Net Generation (MWh)")) %>%
+  mutate(`Net Generation (MWh)` = ifelse(Year < 1990, as.double(`Net Generation (MWh)`)/1000, as.double(`Net Generation (MWh)`))) %>%
+  group_by(`Year`, `Plant ID`) %>%
+  dplyr::summarize(`Net Generation (GWh)/year` = sum(as.double(`Net Generation (MWh)`), na.rm=T)/1000) %>%
+  mutate(Average = mean(`Net Generation (GWh)/year`))
+
+ all_data1
+
+write_csv(all_data, "all_EIA_data_per_year_totals_asitis.csv")
+```
+
+
+```{r}
+
+total_hydro <- all_data %>% 
+  reshape2::melt(., id = c("Plant ID", "Plant Name", "Utility Name", "Year", "Facility/Fuel Type", "Fuel Type"))%>%
+#  filter(`Plant Name` == "BAKER DAM") %>%
+  rename(c(variable = "Month", 
+           value = "Net Generation (MWh)")) %>%
+  mutate(`Net Generation (MWh)` = ifelse(Year < 1990, as.double(`Net Generation (MWh)`)/1000, as.double(`Net Generation (MWh)`)))%>%
+  filter(`Facility/Fuel Type` == c("WAT") | `Fuel Type` == c( "WAT"))%>%
+  group_by(`Year`, `Facility/Fuel Type`, `Fuel Type`) %>% #`Plant ID`, `Plant Name`, `Utility Name`, `Facility/Fuel Type`, `Fuel Type`) %>%
+  dplyr::summarize(`Net Generation (GWh)/year` = sum(as.double(`Net Generation (MWh)`), na.rm=T)/1000)
+total_hydro
+
+write_csv(total_hydro, "total_hydro_CA3.csv")
+```
+
+```{r}
+all_data2 <- all_data1 %>%
+  group_by(`Plant ID`) %>%
+  dplyr::summarize(`Net Generation (GWh)/year` = mean(`Net Generation (GWh)/year`, na.rm = T)) 
+all_data2
+write_csv(all_data2, "all_EIA_data_mean_per_year2.csv")
+
+```
+
+
+```{r}
+CA_PP <- shapefile("C:/Users/gusta/Desktop/CA_PowerPlants.shp")
+#plot(CA_PP)
+
+CA_PP@data <- CA_PP@data %>%
+  dplyr::rename(`Plant ID`= EIAPlantID)
+CA_PP@data
+
+CA_PP2 <- CA_PP
+
+CA_PP2@data <- CA_PP2@data %>% merge(all_data2, by=c("Plant ID"), all.x=TRUE)# %>% filter(CECPlantID == "")
+ 
+CA_PP2@data
+
+CA_PP2@data <- CA_PP2@data[ order(match(CA_PP2@data$`CECPlantID`, CA_PP@data$`CECPlantID`)), ]
+CA_PP2@data
+```
+
+
+```{r}
+CA_SierraNevada <- shapefile("C:/Users/gusta/Documents/all_sierra_powerhouses.shp")
+CA_SierraNevada@data
+
+write_csv(CA_SierraNevada@data, "all_sierranevada_generation.csv")
+```
+
+```{r}
+CA_CentralSierraNevada <- shapefile("C:/Users/gusta/Documents/central_sierra_powerhouses.shp")
+CA_CentralSierraNevada@data
+
+write_csv(CA_CentralSierraNevada@data, "central_sierranevada_generation.csv")
+```
+
+```{r}
+RimDamsSierraNevada <- shapefile("C:/Users/gusta/Documents/PHs_at_Rim_Dams.shp")
+RimDamsSierraNevada@data
+
+```
+
+```{r}
+CA_hydro <- shapefile("C:/Users/gusta/Documents/last_hydro_all_CA.shp")
+CA_hydro@data
+
+write_csv(CA_hydro@data, "CA_Hydro_generation.csv")
+```
+
+```{r}
+CA_PP <- shapefile("C:/Users/gusta/Desktop/CA_PowerPlants.shp")
+#plot(CA_PP)
+
+CA_PP@data <- CA_PP@data %>%
+  dplyr::rename(`Plant ID`= EIAPlantID)
+CA_PP@data
+
+CA_PP2 <- CA_PP
+
+CA_PP2@data <- CA_PP2@data %>% merge(all_data2, by=c("Plant ID"), all.x=TRUE)# %>% filter(CECPlantID == "")
+ 
+CA_PP2@data
+
+```
+
+```{r}
+#names <- list(CA_CentralSierraNevada@data$PlantID)
+#names
+CA_hydro <- shapefile("C:/Users/gusta/Documents/last_hydro_all_CA.shp")
+CA_hydro@data
+
+#subset(CA_PP2@data,(names %in% CA_CentralSierraNevada@data$PlantID))
+CA_hydro@data  <- CA_hydro@data %>% 
+  mutate(PlantID = ifelse(PlantID == "MISSING", "59428", ifelse(PlantID =="Missing", "61594", as.character(PlantID)))) #matching IDs with two plants that had missing IDs
+
+CA_PP2@data %>% filter(`Plant ID` %in% c(CA_CentralSierraNevada@data$PlantID)) %>% 
+  mutate(Mean = sum(`Net Generation (GWh)/year`))
+
+CA_PP2@data %>% filter(`Plant ID` %in% c(CA_SierraNevada@data$PlantID)) %>% 
+  mutate(Mean = sum(`Net Generation (GWh)/year`))
+
+CA_hydro@data <- CA_hydro@data %>% 
+  mutate(#Mean = sum(`Net Generation (GWh)/year`),
+         Hydropower = ifelse(`PlantID` %in% c(CA_SierraNevada@data$PlantID), "High Elevation", "Other"),
+         `NG.GW..` = NULL) %>%
+  mutate(Hydropower = ifelse(`PlantID` %in% c(RimDamsSierraNevada@data$PlantID), "Rim Dam", Hydropower)) %>% 
+  rename(`Plant ID` = PlantID)
+CA_hydro@data
+
+CA_hydro@data <- CA_hydro@data %>% merge(all_data2, by=c("Plant ID"), all.x=T)# %>% filter(CECPlantID == "")
+ 
+CA_hydro@data
+```
+
+```{r}
+CA_hydro2 <- CA_hydro
+
+CA_hydro <- shapefile("C:/Users/gusta/Documents/last_hydro_all_CA.shp")
+CA_hydro@data
+
+CA_hydro2@data <- CA_hydro2@data[ order(match(CA_hydro2@data$CECPlID, CA_hydro@data$CECPlID)), ]
+CA_hydro2@data
+
+
+#CA_PP2@data <- CA_PP2@data[ order(match(CA_PP2@data$`CECPlantID`, CA_PP2@data$`CECPlantID`)), ]
+#CA_PP2@data
+
+rgdal::writeOGR(obj = CA_hydro2, ".", dsn="C:/Users/gusta/Desktop", layer="All_PowerPlants_in_CA_Classified_Final5", driver="ESRI Shapefile")
+```
+
+```{r}
+#transformed_shape <- spTransform(CA_PP2, CRS("+proj=longlat +ellps=WGS84"))
+rgdal::writeOGR(obj = CA_PP2, ".", dsn="C:/Users/gusta/Desktop", layer="All_PowerPlants_in_CA.shp", driver="ESRI Shapefile")
+#library(maptools)
+#writeSpatialShape(CA_PP2, "CA_PP2")
+
+write_csv(CA_PP2@data, "attribute_table_final.csv")
+```
+
+```{r}
+#CA_PP3 <- CA_PP2
+
+CA_PP2@data <- CA_PP2@data %>% filter(PriEnergyS == "WAT")
+
+
+rgdal::writeOGR(obj = CA_PP2, dsn="C:/Users/gusta/Desktop", layer="All_Hydro_in_CA.shp", driver="ESRI Shapefile")
+```
+
+
+```{r}
+updated_PPs <- shp <- readOGR(dsn = file.path("C:/Users/gusta/Desktop/Updated_CA_All_PowerPlants.shp"), stringsAsFactors = F)
+plot(updated_PPs)
+```
