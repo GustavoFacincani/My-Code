@@ -10,28 +10,28 @@ library(tidyverse)
 ```{r}
 #Historical deliveries
 Mer_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Mer_Hist_Deliveries
 Tuo_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Tuo_Hist_Deliveries
 Stn_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Stn_Hist_Deliveries
 USJ_Hist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Output_Flow_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 USJ_Hist_Deliveries
 Mer_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Mer_ExpHist_Deliveries
 Tuo_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Tuo_ExpHist_Deliveries
 Stn_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 Stn_ExpHist_Deliveries
 USJ_ExpHist_Deliveries <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Output_Demand_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))
+  dplyr::select(., -contains(".1"))
 USJ_ExpHist_Deliveries
   
 ```
@@ -47,7 +47,7 @@ Mer_Irrig <- Mer_Hist_Deliveries%>%
          `Volumetric Reliability` = (MID.Northside.x + MID.Main.x)/(MID.Northside.y + MID.Main.y)*100) %>%
   group_by(WaterYear) %>%
   summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
-            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Volumetric Reliability` = (1-sum(NonFailure)/365)*100,
             `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
   mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
 Mer_Irrig
@@ -66,10 +66,10 @@ Tuo_Irrig <- Tuo_Hist_Deliveries%>%
          `Urban Volumetric Reliability` = (SFPUC.x/SFPUC.y)*100) %>%
   group_by(WaterYear) %>%
   summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
-            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Volumetric Reliability` = (1-sum(NonFailure)/365)*100,
             `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0),
             `Urban Volumetric Reliability` = mean(`Urban Volumetric Reliability`),
-            `Urban Time Reliability` = (1-sum(UrbanNonFailure)/365)*100,
+            `Urban Volumetric Reliability` = (1-sum(UrbanNonFailure)/365)*100,
             `Urban Failed Year` = ifelse(`Urban Volumetric Reliability` < 100, 1, 0)) %>% 
   mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100,
          `Urban Annual Reliability` = (1-sum(`Urban Failed Year`)/length(unique(.$WaterYear)))*100)
@@ -86,7 +86,7 @@ Stn_Irrig <- Stn_Hist_Deliveries%>%
       )%>% tidyr::drop_na() %>%
   group_by(WaterYear) %>%
   summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
-            `Time Reliability` = (1-sum(NonFailure)/245)*100, #Stanislaus just has ag deliveries 245 days/year
+            `Volumetric Reliability` = (1-sum(NonFailure)/245)*100, #Stanislaus just has ag deliveries 245 days/year
             `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
   mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
 Stn_Irrig
@@ -102,26 +102,26 @@ USJ_Irrig <- USJ_Hist_Deliveries%>%
          `Volumetric Reliability` = (CVP.Friant.Kern.Canal.x + CVP.Madera.Canal.x)/(CVP.Friant.Kern.Canal.y + CVP.Madera.Canal.y)*100) %>%
   group_by(WaterYear) %>%
   summarize(`Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
-            `Time Reliability` = (1-sum(NonFailure)/365)*100,
+            `Volumetric Reliability` = (1-sum(NonFailure)/365)*100,
             `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0)) %>% 
   mutate(`Annual Reliability` = (1-sum(`Failed Year`)/length(unique(.$WaterYear)))*100)
 USJ_Irrig
 
- # select(node, `MID Northside`, `MID Main`)
+ # dplyr::select(node, `MID Northside`, `MID Main`)
 ```
 
 ```{r}
 
-All_demands <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
- # grep("D2W1", ., value = TRUE) %>%
+All_demands <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
   #grep("merced", ., value = TRUE) %>%
   grep(#"Hydropower_Energy"
     "Output_Demand_mcm.csv", ., value = TRUE)
 
 head(All_demands)
 
-All_deliveries <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
- # grep("D2W1", ., value = TRUE) %>%
+All_deliveries <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
   #grep("merced", ., value = TRUE) %>%
   grep(#"Hydropower_Energy"
     "Output_Flow_mcm.csv", ., value = TRUE)
@@ -132,13 +132,13 @@ head(All_deliveries)
 ```
 
 ```{r}
-filelist_deliveries <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_deliveries,sep=""), read.csv)
+filelist_deliveries <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/",All_deliveries,sep=""), read.csv)
 
 #if necessary, assign names to data.frames
 names(filelist_deliveries) <- paste(All_deliveries)
 
 
-filelist_demands <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_demands,sep=""), read.csv)
+filelist_demands <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/",All_demands,sep=""), read.csv)
 
 #if necessary, assign names to data.frames
 names(filelist_demands) <- paste(All_demands)
@@ -148,14 +148,18 @@ names(filelist_demands) <- paste(All_demands)
 ```{r}
 filelist_deliveries2<- invisible(lapply(names(filelist_deliveries), function(x) assign(x,filelist_deliveries[[x]][-c(1,2),]%>% 
                                                                    mutate(Sequence = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 1,5), 
-                                                                          Scenario = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 11,14),
+                                                                          Scenario = paste(substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 11,14), substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 11,12), sep=""), 
+                                                                          Scenario2 =substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 11,12),
+                                                                          Scenario3 =substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 13,14),
                                                                           Number = substr(str_split(names(filelist_deliveries[x]), "/")[[1]][3], 16,20),
                                                                           Basin = str_split(names(filelist_deliveries[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
 head(filelist_deliveries2)
 
 filelist_demands2<- invisible(lapply(names(filelist_demands), function(x) assign(x,filelist_demands[[x]][-c(1,2),]%>% 
                                                                    mutate(Sequence = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 1,5), 
-                                                                          Scenario = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 11,14),
+                                                                          Scenario = paste(substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 11,14), substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 11,12), sep=""), 
+                                                                          Scenario2 =substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 11,12),
+                                                                          Scenario3 =substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 13,14),
                                                                           Number = substr(str_split(names(filelist_demands[x]), "/")[[1]][3], 16,20),
                                                                           Basin = str_split(names(filelist_demands[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
 head(filelist_demands2)
@@ -167,8 +171,8 @@ head(filelist_demands2)
 Demand_Mer <- filelist_demands2 %>%
   lapply(., function(x) filter(x, Basin == "merced"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Demand_Mer
 
@@ -176,27 +180,27 @@ Demand_Tuo <- filelist_demands2 %>%
  # purrr::discard(~ nrow(.x) == 0) %>%
   lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(SFPUC = ifelse(SFPUC > 1.1, 1.1, SFPUC)) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Demand_Tuo
 
 Demand_Stn <- filelist_demands2 %>%
   lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Demand_Stn
 
 Demand_USJ <- filelist_demands2 %>%
   lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(CVP.Friant.Kern.Canal = ifelse(CVP.Friant.Kern.Canal > 10.57710973, 10.57710973, CVP.Friant.Kern.Canal),
          CVP.Madera.Canal = ifelse(CVP.Madera.Canal > 3.132, 3.132, CVP.Madera.Canal)) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Demand_USJ
 
@@ -204,32 +208,32 @@ Demand_USJ
 Delivery_Mer <- filelist_deliveries2 %>%
   lapply(., function(x) filter(x, Basin == "merced"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Delivery_Mer
 
 Delivery_Tuo <- filelist_deliveries2 %>%
   lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Delivery_Tuo
 
 Delivery_Stn <- filelist_deliveries2 %>%
   lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Delivery_Stn
 
 Delivery_USJ <- filelist_deliveries2 %>%
   lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
-  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
+  dplyr::select(., -contains(".1")) %>%
+  reshape2::melt(., by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin")) %>%
   mutate(node = as.Date(node, "%Y-%m-%d"))
 Delivery_USJ
 ```
@@ -248,9 +252,9 @@ Delivery
 
 ```{r}
 
-Irrigation <- Delivery %>% inner_join(., Demand, by = c("node", "Sequence", "Scenario", "Number", "Basin", "variable")) %>%
+Irrigation <- Delivery %>% inner_join(., Demand, by = c("node", "Sequence", "Scenario", "Scenario2", "Scenario3","Number", "Basin", "variable")) %>%
   mutate(Type = ifelse(variable == "SFPUC", "Urban", "Agricultural")) %>%
-  group_by(node, Sequence, Scenario, Number, Basin, Type) %>%
+  group_by(node, Sequence, Scenario, Scenario2, Scenario3, Number, Basin, Type) %>%
   summarize(Delivery = sum(Delivery),
             Demand = sum(Demand))
 Irrigation
@@ -263,14 +267,402 @@ Irrigation2 <- Irrigation %>%  mutate(WaterYear = lfstat::water_year(node, origi
 Irrigation2
 ```
 ```{r}
-Irrigation3 <- Irrigation2 %>% tidyr::drop_na() %>% group_by(Basin,Sequence, Scenario, WaterYear, Type) %>%
+Irrigation2$YearType <- ifelse(Irrigation2$Scenario == "D2W1D2" & Irrigation2$WaterYear == "2003", "Wet", 
+ifelse(Irrigation2$WaterYear == "2003" & Irrigation2$Scenario == "D2W2D2", "Wet", 
+       ifelse(Irrigation2$WaterYear == "2004" & Irrigation2$Scenario == "D2W2D2", "Wet",
+       ifelse(Irrigation2$Scenario == "D3W1D3" & Irrigation2$WaterYear == "2004", "Wet",
+ifelse(Irrigation2$WaterYear == "2004" & Irrigation2$Scenario == "D3W2D3", "Wet", 
+       ifelse(Irrigation2$WaterYear == "2005" & Irrigation2$Scenario == "D3W2D3", "Wet", 
+       ifelse(Irrigation2$Scenario == "D4W1D4" & Irrigation2$WaterYear == "2005", "Wet", 
+ifelse(Irrigation2$WaterYear == "2005" & Irrigation2$Scenario == "D4W2D4", "Wet", 
+       ifelse(Irrigation2$WaterYear == "2006" & Irrigation2$Scenario == "D4W2D4", "Wet", 
+       ifelse(Irrigation2$Scenario == "D5W1D5" & Irrigation2$WaterYear == "2006", "Wet",
+ifelse(Irrigation2$WaterYear == "2006" & Irrigation2$Scenario == "D5W2D5", "Wet",
+       ifelse(Irrigation2$WaterYear == "2007" & Irrigation2$Scenario == "D5W2D5", "Wet","Dry"))))))))))))
+
+Irrigation3 <- Irrigation2 %>% 
+  filter(Type == "Agricultural")  %>%
+  tidyr::drop_na() %>% group_by(Basin, WaterYear, Sequence, Scenario, Scenario2, Scenario3, Number, YearType) %>%
+  summarize(`Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
+         `Time Reliability` = ifelse(Basin=="stanislaus", (1-sum(NonFailure)/245)*100, (1-sum(NonFailure)/365)*100),
+         `Total Failure (days)` = sum(Failure))#/n())*100,
+         #`Length of unsatisfactory performance (days)` = (100 - `Time Reliability`)/sum(Failure),
+         #`Count of breaks` = ifelse(`Time Reliability`== 100 & lead(`Time Reliability`) < 100, 1, 0))
+         #Resilience = `Length of unsatisfactory performance (days)`/ (100 - `Time Reliability`))
+  
+
+Irrigation3
+```
+Irrigation3 %>% mutate(Count = ifelse(`Time Reliability` < 100 & lag(`Time Reliability`) == 100, 1, 0)) #%>% n_distinct()-1
+
+
+Irrigation3 <- Irrigation2 %>% tidyr::drop_na() %>% group_by(Basin,Sequence,Number, Scenario, WaterYear, Type) %>%
   summarize(`Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
             `Time Reliability` = ifelse(Basin=="stanislaus", (1-sum(NonFailure)/245)*100, (1-sum(NonFailure)/365)*100),
-            `Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0))
+            #`Failed Year` = ifelse(`Volumetric Reliability` < 100, 1, 0),
+            Resilience = (1 - `Time Reliability`)/)
            
 Irrigation3
 
+```{r}
+Irrigation_3 <- Irrigation2 %>% 
+  filter(Type == "Agricultural") %>% ungroup() %>%
+    group_by(Basin, Number, Sequence, Scenario, Scenario2, Scenario3)%>%
+
+  mutate(`Total consecutive failures` = ave(Failure,cumsum(Failure==0),FUN=cumsum)) %>%# accumulate(Failure, ~ifelse(.y == 0, .y, .x + .y))) #%>%
+   filter(!`Total consecutive failures` == 0) %>%
+ # ungroup() %>%
+  mutate(Total = lead(`Total consecutive failures`) - `Total consecutive failures`,
+         Total = ifelse(is.na(Total), -1, Total)) %>% #in case the last day (NA due to lead()) is an NA, make it negative to not be filtered out in Irrigation_)%>%
+    filter(!`Total` > 0) # %>% distinct(Sequence,Number, Delivery, `Total consecutive failures`, Demand, .keep_all = TRUE)
+
+Irrigation_3
+
+Irrigation_3 <- Irrigation_3 %>% mutate(Basin = replace(Basin, Basin == 'merced', 'MER')) %>%
+mutate(Basin = replace(Basin, Basin == 'stanislaus', 'STN')) %>%
+mutate(Basin = replace(Basin, Basin == 'tuolumne', 'TUO')) %>%
+mutate(Basin = replace(Basin, Basin == 'upper_san_joaquin', 'USJ'))%>%
+  group_by(Basin, Scenario) %>%
+    mutate(`Longest Failure` = max(`Total consecutive failures`))
+Irrigation_3
+
+Irrigation_3$Basin <- factor(Irrigation_3$Basin, levels = c("STN", "TUO", "MER", "USJ"))
 ```
+
+```{r}
+saco <- Irrigation2 %>% 
+  filter(Type == "Agricultural") %>% ungroup()%>%
+  group_by(Basin, Number, Sequence, Scenario, Scenario2, Scenario3)%>%
+  mutate(`Total consecutive failures` = ave(Failure,cumsum(Failure==0),FUN=cumsum)) %>%# accumulate(Failure, ~ifelse(.y == 0, .y, .x + .y))) #%>%
+ #  filter(!`Total consecutive failures` == 0) %>%
+ # ungroup() %>%
+  mutate(Total = lead(`Total consecutive failures`) - `Total consecutive failures`) %>%
+   # filter(`Total` == 0) %>%
+  filter(Basin == "stanislaus" & Scenario == "D5W1D5" & Sequence == "S0175") 
+saco[c(1:36),]
+```
+
+
+```{r}
+
+Irrigation_4 <- Irrigation_3 %>%
+  mutate(Total = 1) %>%
+  group_by(Basin, Number, Sequence, Scenario, Scenario2, Scenario3) %>%
+    summarize(`Longest Failure` = max(`Total consecutive failures`),
+              `Shortest Failure` = min(`Total consecutive failures`),
+      `Total Failure (A)` = sum(`Total consecutive failures`),
+              `Total Switching (B)` = sum(`Total`),
+              Resilience = `Total Switching (B)`/`Total Failure (A)`,
+      `Recovery rate` = `Total Failure (A)`/`Total Switching (B)`)
+
+Irrigation_4
+```
+
+```{r}
+
+Irrigation_fixed <- merge (Irrigation_4, resilience[c(1:6)] , all.x=T, all.y=T) %>%
+  mutate(`Total Switching (B)` = ifelse(is.na(`Total Switching (B)`), 0, as.numeric(`Total Switching (B)`)),
+      #   `Total consecutive failures` = ifelse(`Total consecutive failures` == "NA", 0, `Total consecutive failures`),
+         Resilience = ifelse(is.na(Resilience), 1, as.numeric(Resilience)))
+         
+  
+Irrigation_fixed
+
+```
+
+```{r}
+ggplot(Irrigation_fixed) +         
+  geom_bar(mapping= aes(y = factor(Scenario), x= as.numeric(Resilience)*100, fill=factor(Number)), position = position_dodge2(preserve = "single"), stat="identity") + 
+
+    facet_grid(~Basin, scales = "free")+
+  scale_fill_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  scale_y_discrete(drop = FALSE, expand = c(0, 0), limits = rev) +
+      scale_x_continuous(expand = c(0, 0), limits = c(0, 100)) +
+  #scale_y_log10(limits = c(0.01, 1), breaks = c(0.01, 0.1, 0.2, 0.4, 0.6, 1.0))+    
+  #scale_y_continuous(expand = c(0, 0), limits = c(0, 100)) +
+  
+   theme_bw(base_size=12)+
+  
+  ylab(element_blank())+
+  xlab("Resilience (%)")+
+        theme(legend.title = element_blank(),
+    legend.position = "none",
+       # legend.direction = "horizontal",
+    axis.text.x = element_text(angle = -90),
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_IRrig_Recovery_Resiliency422.png", units ="in", width=12, height=6, res = 300)
+```
+
+```{r}
+ggplot(Irrigation_fixed) +         
+ # geom_bar(mapping= aes(y = factor(Scenario), x= as.numeric(Resilience)*100, fill=factor(Number)), position = position_dodge2(preserve = "single"), stat="identity") + 
+
+  geom_violin(mapping= aes(y = as.numeric(Resilience)*100, x= Scenario, fill = Scenario), draw_quantiles = c(.25, .5, .75)) +
+  
+    facet_grid(rows = vars(Basin), scales = "free", switch = "y")+
+  scale_fill_manual(values = wes_palette("Zissou1", 8, type = "continuous"))+
+  
+      scale_y_continuous(expand = c(0, 0), limits = c(0, 101)) +
+  scale_x_discrete(position = "top") +
+  #scale_y_log10(limits = c(0.01, 1), breaks = c(0.01, 0.1, 0.2, 0.4, 0.6, 1.0))+    
+  #scale_y_continuous(expand = c(0, 0), limits = c(0, 100)) +
+  
+   theme_bw(base_size=14)+
+  
+  ylab(element_blank())+
+  xlab("Resilience (%)")+
+        theme(legend.title = element_blank(),
+    legend.position = "none",
+       # legend.direction = "horizontal",
+   # axis.text.x = element_text(angle = -90),
+    axis.text.x = element_text(angle = 25, vjust = 1, hjust=0.25),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+       plot.margin = margin(0, 0.5,0, 0, "cm"))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Irrig_Recovery_Resiliency522.png", units ="in", width=5, height=11, res = 300)
+```
+
+```{r}
+#Silence lines in Irrigation_3
+
+ggplot() +
+
+        geom_bar(Irrigation_4, mapping= aes(y = Scenario, x=`Total Switching (B)`, fill=Number), stat="identity",  position = position_dodge2(preserve = "single")) + 
+
+   #geom_violin(mapping= aes(x = `Total consecutive failures`, y = Scenario, fill = Scenario), draw_quantiles = c(.25, .5, .75)) +
+    facet_grid(~Basin, scales = "free")+
+  scale_fill_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+      scale_x_continuous(expand = c(0, 0), limits = c(0, 40)) +
+  #scale_y_log10(limits = c(0.01, 1), breaks = c(0.01, 0.1, 0.2, 0.4, 0.6, 1.0))+    
+  scale_y_discrete(expand = c(0, 0), limits = rev) +
+ # scale_fill_manual(values = wes_palette("Zissou1", 33, type = "continuous"))+
+   theme_bw(base_size=12)+
+  
+  xlab("Recovery rate (days)")+
+  ylab(element_blank())+
+        theme(legend.title = element_blank(),
+    legend.position = "none",
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Irrig_Recovery_Resiliency_1212.png", units ="in", width=12, height=6, res = 300)
+```
+
+```{r}
+ggplot(Irrigation_3) +
+
+ #       geom_bar(Eflow_4, mapping= aes(y = Scenario, x=`Total Switching (B)`, fill=Number), stat="identity", position = "dodge", color="black") + 
+
+   geom_violin(mapping= aes(y = `Total consecutive failures`, x = Scenario, fill = Scenario), draw_quantiles = c(.25, .5, .75)) +
+    facet_grid(rows = vars(Basin), scales = "fixed", switch = "y")+
+  scale_fill_manual(values = wes_palette("Zissou1", 8, type = "continuous"))+
+  geom_text(aes(y = 130, x = Scenario, label= `Longest Failure`), position=position_dodge(width=0.9), vjust=-0.25, angle = 90)+
+
+      scale_y_continuous(expand = c(0, 0), limits = c(0, 160)) +
+  #scale_y_log10(limits = c(0.01, 1), breaks = c(0.01, 0.1, 0.2, 0.4, 0.6, 1.0))+    
+  scale_x_discrete(position = "top", expand = c(0, 0)) +
+ # scale_fill_manual(values = wes_palette("Zissou1", 33, type = "continuous"))+
+   theme_bw(base_size=14)+
+  
+  xlab("Recovery rate (days)")+
+  ylab(element_blank())+
+        theme(legend.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(angle = 25, vjust = 1, hjust=0.25),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        plot.margin = margin(0, 0.5,0, 0, "cm"))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Irrig_recovery_Resiliency_1_po.png", units ="in", width=5, height=11, res = 300)
+```
+
+```{r}
+ggplot(Irrigation_fixed) +
+
+        geom_bar(Irrigation_fixed, mapping= aes(y = factor(Scenario), x=`Total Switching (B)`, fill=factor(Number)), position = position_dodge2(preserve = "single"), stat="identity") + 
+
+ #  geom_violin(mapping= aes(x = `Total consecutive failures`, y = Scenario, fill = Scenario), draw_quantiles = c(.25, .5, .75)) +
+    facet_grid(~Basin, scales = "free")+
+  scale_fill_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+      scale_x_continuous(expand = c(0, 0), limits = c(0, 40)) +
+  #scale_y_log10(limits = c(0.01, 1), breaks = c(0.01, 0.1, 0.2, 0.4, 0.6, 1.0))+    
+  scale_y_discrete(drop = FALSE, expand = c(0, 0), limits = rev) +
+ # scale_fill_manual(values = wes_palette("Zissou1", 33, type = "continuous"))+
+   theme_bw(base_size=12)+
+  
+  xlab("Occurrence of failures (n)")+
+  ylab(element_blank())+
+        theme(legend.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(angle = -90),
+        #legend.direction = "horizontal",
+        #legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank())+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Irrig_Recovery_Resiliency32.png", units ="in", width=12, height=6, res = 300)
+```
+
+
+
+```{r}
+Irrigation4 <- Irrigation3 %>%
+  mutate(Basin = replace(Basin, Basin == 'merced', 'MER')) %>%
+mutate(Basin = replace(Basin, Basin == 'stanislaus', 'STN')) %>%
+mutate(Basin = replace(Basin, Basin == 'tuolumne', 'TUO')) %>%
+mutate(Basin = replace(Basin, Basin == 'upper_san_joaquin', 'USJ')) %>%
+  group_by(Basin, WaterYear, Sequence, Scenario, Scenario2, Scenario3, Number, YearType) %>%
+  dplyr::summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
+                   `Time Reliability` = mean(`Time Reliability`))
+Irrigation4
+
+Irrigation4$Basin <- factor(Irrigation4$Basin, levels = c("STN", "TUO", "MER", "USJ"))
+```
+```{r}
+Irrigation5 <- Irrigation4 %>% 
+  group_by(Basin, WaterYear, Scenario, Scenario2, Scenario3, YearType) %>%
+  dplyr::summarize(`Volumetric Reliability` = mean(`Volumetric Reliability`),
+                   `Time Reliability` = mean(`Time Reliability`))
+Irrigation5
+```
+
+```{r}
+
+ ggplot(Irrigation4)+# aes(Month, Total)) + 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = (as.numeric(WaterYear))-0.5, xmax = (as.numeric(WaterYear))+0.5, ymin = -Inf, ymax = Inf), alpha =0.025)+
+    geom_line(aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`, color=Number), alpha = 0.65)+
+  theme_bw(base_size=12)+ #, base_family='Volumetrics New Roman') + 
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+  scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+    scale_y_continuous(expand = c(0, 0), limits = c(0,102)) +
+  scale_x_continuous(expand = c(-0.035, -0.035), breaks = c(1,3,5,7,9,11))+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="line", fun.y=mean, linetype = "dashed")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Volumetric Reliability (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free", space = "free")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Vol_Ag_July.png", units ="in", width=12, height=7, res = 300)
+```
+
+```{r}
+
+ ggplot(Irrigation4)+# aes(Month, Total)) + 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = (as.numeric(WaterYear))-0.5, xmax = (as.numeric(WaterYear))+0.5, ymin = -Inf, ymax = Inf), alpha =0.025)+
+    geom_line(aes(x=as.numeric(WaterYear), y = `Time Reliability`, color=Number), alpha = 0.65)+
+  theme_bw(base_size=12)+ #, base_family='Volumetrics New Roman') + 
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+  scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+    scale_y_continuous(expand = c(0, 0), limits = c(0,102)) +
+  scale_x_continuous(expand = c(-0.035, -0.035), breaks = c(1,3,5,7,9,11))+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Time Reliability`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Time Reliability`), geom="line", fun.y=mean, linetype = "dashed")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Time Reliability (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free", space = "free")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Time_Ag_Jul2.png", units ="in", width=12, height=7, res = 300)
+```
+
+```{r}
+
+ ggplot(Irrigation4%>% filter(Scenario == "D5W1D5" | Scenario == "D5W2D5"))+# aes(Month, Total)) + 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = (as.numeric(WaterYear))-0.5, xmax = (as.numeric(WaterYear))+0.5, ymin = -Inf, ymax = Inf), alpha =0.025)+
+    geom_line(aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`, color=Number), alpha = 0.65)+
+  theme_bw(base_size=12)+ #, base_family='Volumetrics New Roman') + 
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+  scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+    scale_y_continuous(expand = c(0, 0), limits = c(0,102)) +
+  scale_x_continuous(expand = c(-0.035, -0.035), breaks = c(1,3,5,7,9,11))+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="line", fun.y=mean, linetype = "dashed")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Volumetric Reliability (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free", space = "free")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Vol2_Ag_July.png", units ="in", width=7, height=5, res = 300)
+```
+
+```{r}
+
+ ggplot(Irrigation4 %>% filter(Scenario == "D5W1D5" | Scenario == "D5W2D5"))+# aes(Month, Total)) + 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = (as.numeric(WaterYear))-0.5, xmax = (as.numeric(WaterYear))+0.5, ymin = -Inf, ymax = Inf), alpha =0.025)+
+    geom_line(aes(x=as.numeric(WaterYear), y = `Time Reliability`, color=Number), alpha = 0.65)+
+  theme_bw(base_size=12)+ #, base_family='Volumetrics New Roman') + 
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+  scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+    scale_y_continuous(expand = c(0, 0), limits = c(0,102)) +
+  scale_x_continuous(expand = c(-0.035, -0.035), breaks = c(1,3,5,7,9,11))+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Time Reliability`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Time Reliability`), geom="line", fun.y=mean, linetype = "dashed")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Time Reliability (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free", space = "free")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Time2_Ag_Jul2.png", units ="in", width=7, height=5, res = 300)
+```
+
+
+```{r}
+
+ ggplot(Irrigation4 %>% filter(Type == "Urban"))+# aes(Month, Total)) + 
+  geom_rect(aes(color = NULL, fill = YearType, xmin = (as.numeric(WaterYear))-0.5, xmax = (as.numeric(WaterYear))+0.5, ymin = -Inf, ymax = Inf), alpha =0.025)+
+    geom_line(aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`, color=Number), alpha = 0.65)+
+  theme_bw(base_size=12)+ #, base_family='Volumetrics New Roman') + 
+  scale_fill_manual(values = c("white", "lightblue"))+
+
+    scale_y_continuous(expand = c(0, 0)) +
+  scale_x_continuous(expand = c(-0.035, -0.035), limits = c(1,NA), breaks = c(1,3,5,7,9,11))+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Volumetric Reliability`), geom="line", fun.y=mean, linetype = "dashed")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Volumetric Reliability (%)") + #name of x axis
+  facet_grid(~Scenario, scales = "free")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +#center the title
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Ag_May2023.png", units ="in", width=16, height=4, res = 300)
+```
+
 
 ```{r}
 Irrigation4 <- Irrigation3 %>%
@@ -283,29 +675,35 @@ Irrigation4 <- Irrigation3 %>%
          `Max Annual Reliability`= max(`Annual Reliability`))
 Irrigation4
 
-write_csv(Irrigation4, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_AnnualReliability2.csv")
+write_csv(Irrigation4, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_AnnualReliability_March2023.csv")
 
 ```
 
 ```{r}
-Irrigation5 <- Irrigation3 %>% group_by(Basin, Type, Scenario) %>%
+Irrigation5 <- Irrigation3 %>% group_by(Basin, Scenario, WaterYear) %>%
   summarize(`Mean Volumetric Reliability` = ifelse(mean(`Volumetric Reliability`) > 100, 100, mean(`Volumetric Reliability`)),
             `Min Volumetric Reliability` = ifelse(min(`Volumetric Reliability`) > 100, 100, min(`Volumetric Reliability`)),
             `Max Volumetric Reliability` = ifelse(max(`Volumetric Reliability`) > 100, 100, max(`Volumetric Reliability`)),
-            `Mean Time Reliability` = mean(`Time Reliability`),
-            `Min Time Reliability` = min(`Time Reliability`), #ifelse(Basin=="stanislaus", (1-max(NonFailure)/245)*100, (1-max(NonFailure)/365)*100),
-            `Max Time Reliability` = max(`Time Reliability`))#ifelse(Basin=="stanislaus", (1-min(NonFailure)/245)*100, (1-min(NonFailure)/365)*100),)
-           
+            `Mean Volumetric Reliability` = mean(`Volumetric Reliability`),
+            `Min Volumetric Reliability` = min(`Volumetric Reliability`), #ifelse(Basin=="stanislaus", (1-max(NonFailure)/245)*100, (1-max(NonFailure)/365)*100),
+            `Max Volumetric Reliability` = max(`Volumetric Reliability`)) %>%#ifelse(Basin=="stanislaus", (1-min(NonFailure)/245)*100, (1-min(NonFailure)/365)*100),)
+  group_by(Basin, Scenario) %>%
+  summarize(`Mean Volumetric Reliability` = mean(`Mean Volumetric Reliability`),
+            `Min Volumetric Reliability` = mean(`Min Volumetric Reliability`),
+            `Max Volumetric Reliability` = mean(`Max Volumetric Reliability`),
+            `Mean Volumetric Reliability` = mean(`Mean Volumetric Reliability`),
+            `Min Volumetric Reliability` = mean(`Min Volumetric Reliability`), #ifelse(Basin=="stanislaus", (1-max(NonFailure)/245)*100, (1-max(NonFailure)/365)*100),
+            `Max Volumetric Reliability` = mean(`Max Volumetric Reliability`))
 Irrigation5
 ```
 
 
-```{r}
+
 Irrigation3 %>%group_by(Basin, Type, Scenario, Sequence)   %>% count(WaterYear)
-```
+
 
 ```{r}
 #write_csv(Irrigation3 %>% filter(Basin == "upper_san_joaquin"), "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_Stats_USJ.csv")
-write_csv(Irrigation5, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_Stats.csv")
+write_csv(Irrigation5, "C:/Users/gusta/University of California Merced/WhiplashTotal_Deliveries_Stats_March2023_2.csv")
 ```
 

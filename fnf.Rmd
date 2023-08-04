@@ -1,0 +1,282 @@
+---
+title: "Streamflow_Data"
+author: "Gustavo Facincani Dourado"
+date: "2023-04-10"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(readr)
+```
+
+```{r}
+Mer_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/sequences/preprocessed/full_natural_flow_daily_mcm.csv")
+Mer_FNF
+
+Tuo_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/sequences/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
+Tuo_FNF
+
+Stn_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/sequences/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
+Stn_FNF
+
+USJ_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/sequences/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")
+USJ_FNF
+```
+
+```{r}
+FNF <- cbind(USJ_FNF, Tuo_FNF[2], Stn_FNF[2], Mer_FNF[2])
+
+colnames(FNF) <- c("Date", "Merced", "Tuolumne", "Stanislaus", "Upper San Joaquin") 
+
+FNF <- FNF %>%
+  mutate(flow = rowSums(.[2:5])) 
+FNF
+```
+
+```{r}
+write_csv(FNF[c(1,6)], "fnf_allbasins.csv")
+
+```
+
+
+```{r}
+#Get quintiles
+
+quantile(FNF$flow, probs = seq(0, 1, 1/100
+                               )) 
+```
+
+
+```{r}
+All_mer <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/sequences/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "full_natural_flow_monthly_mcm", ., value = TRUE)
+
+head(All_mer)
+
+
+All_tuo <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/sequences/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "full_natural_flow_monthly_mcm", ., value = TRUE)
+
+head(All_tuo)
+
+All_stn <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/sequences/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "full_natural_flow_monthly_mcm", ., value = TRUE)
+
+head(All_stn)
+
+All_usj <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/sequences/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
+  #grep("merced", ., value = TRUE) %>%
+  grep(#"Hydropower_Energy"
+    "full_natural_flow_monthly_mcm", ., value = TRUE)
+
+head(All_usj)
+```
+
+```{r}
+
+filelist_mer <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/sequences/",All_mer,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_mer) <- paste(All_mer)
+
+#note the invisible function keeps lapply from spitting out the data.frames to the console
+
+filelist_tuo <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/sequences/",All_tuo,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_tuo) <- paste(All_tuo)
+
+filelist_stn <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/sequences/",All_stn,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_stn) <- paste(All_stn)
+
+filelist_usj <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/sequences/",All_usj,sep=""), read.csv)
+
+#if necessary, assign names to data.frames
+names(filelist_usj) <- paste(All_usj)
+```
+
+
+```{r}
+filelist_mer2<- invisible(lapply(names(filelist_mer), function(x) assign(x,filelist_mer[[x]]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_mer[x]),"/")[[1]][1], 1,5), 
+                                                                          Scenario = paste(substr(str_split(names(filelist_mer[x]), "/")[[1]][1], 11,14), substr(str_split(names(filelist_mer[x]), "/")[[1]][1], 11,12), sep=""),
+                                                                          Scenario2 = substr(str_split(names(filelist_mer[x]),"/")[[1]][1], 11,12),
+                                                                          Scenario3 = substr(str_split(names(filelist_mer[x]),"/")[[1]][1], 13,14),
+                                                                          Number = substr(str_split(names(filelist_mer[x]),"/")[[1]][1], 16,20),
+                                                                          Basin = "MER")))) 
+head(filelist_mer2)
+#D2_W1 <- read_csv(print("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2022-12-14/",MER_Hydro, sep=""))
+#D2_W1
+
+filelist_tuo2<- invisible(lapply(names(filelist_tuo), function(x) assign(x,filelist_tuo[[x]]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_tuo[x]),"/")[[1]][1], 1,5), 
+                                                                          Scenario = paste(substr(str_split(names(filelist_tuo[x]), "/")[[1]][1], 11,14), substr(str_split(names(filelist_tuo[x]), "/")[[1]][1], 11,12), sep=""),
+                                                                          Scenario2 = substr(str_split(names(filelist_tuo[x]),"/")[[1]][1], 11,12),
+                                                                          Scenario3 = substr(str_split(names(filelist_tuo[x]),"/")[[1]][1], 13,14),
+                                                                          Number = substr(str_split(names(filelist_tuo[x]),"/")[[1]][1], 16,20),
+                                                                          Basin = "TUO"))))
+head(filelist_tuo2)
+
+filelist_stn2<- invisible(lapply(names(filelist_stn), function(x) assign(x,filelist_stn[[x]]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_stn[x]),"/")[[1]][1], 1,5), 
+                                                                          Scenario = paste(substr(str_split(names(filelist_stn[x]), "/")[[1]][1], 11,14), substr(str_split(names(filelist_stn[x]), "/")[[1]][1], 11,12), sep=""),
+                                                                          Scenario2 = substr(str_split(names(filelist_stn[x]),"/")[[1]][1], 11,12),
+                                                                          Scenario3 = substr(str_split(names(filelist_stn[x]),"/")[[1]][1], 13,14),
+                                                                          Number = substr(str_split(names(filelist_stn[x]),"/")[[1]][1], 16,20),
+                                                                          Basin = "STN"))))
+head(filelist_stn2)
+
+filelist_usj2<- invisible(lapply(names(filelist_usj), function(x) assign(x,filelist_usj[[x]]%>% 
+                                                                   mutate(Sequence = substr(str_split(names(filelist_usj[x]),"/")[[1]][1], 1,5), 
+                                                                          Scenario = paste(substr(str_split(names(filelist_usj[x]), "/")[[1]][1], 11,14), substr(str_split(names(filelist_usj[x]), "/")[[1]][1], 11,12), sep=""),
+                                                                          Scenario2 = substr(str_split(names(filelist_usj[x]),"/")[[1]][1], 11,12),
+                                                                          Scenario3 = substr(str_split(names(filelist_usj[x]),"/")[[1]][1], 13,14),
+                                                                          Number = substr(str_split(names(filelist_usj[x]),"/")[[1]][1], 16,20),
+                                                                          Basin = "USJ"))))
+head(filelist_usj2)
+```
+
+```{r}
+FNF_Mer <- filelist_mer2 %>%
+  do.call("rbind", .) %>%
+  mutate(date = as.Date(date, "%Y-%m-%d"))
+FNF_Mer
+
+FNF_Tuo <- filelist_tuo2 %>%
+  do.call("rbind", .) %>%
+  mutate(date = as.Date(date, "%Y-%m-%d"))
+FNF_Tuo
+
+FNF_Stn <- filelist_stn2 %>%
+  do.call("rbind", .) %>%
+  mutate(date = as.Date(date, "%Y-%m-%d"))
+FNF_Stn
+
+FNF_USJ <- filelist_usj2 %>%
+  do.call("rbind", .) %>%
+  mutate(date = as.Date(date, "%Y-%m-%d"))
+FNF_USJ
+```
+
+
+```{r}
+FNF_Total <- rbind(FNF_Mer, FNF_Tuo, FNF_Stn, FNF_USJ) %>%
+  mutate(Year = lfstat::water_year(date, origin = "usgs"))
+FNF_Total
+
+FNF_Total$YearType <- ifelse(FNF_Total$Scenario == "D2W1D2" & FNF_Total$Year == "2003", "Wet", 
+ifelse(FNF_Total$Year == "2003" & FNF_Total$Scenario == "D2W2D2", "Wet", 
+       ifelse(FNF_Total$Year == "2004" & FNF_Total$Scenario == "D2W2D2", "Wet",
+       ifelse(FNF_Total$Scenario == "D3W1D3" & FNF_Total$Year == "2004", "Wet",
+ifelse(FNF_Total$Year == "2004" & FNF_Total$Scenario == "D3W2D3", "Wet", 
+       ifelse(FNF_Total$Year == "2005" & FNF_Total$Scenario == "D3W2D3", "Wet", 
+       ifelse(FNF_Total$Scenario == "D4W1D4" & FNF_Total$Year == "2005", "Wet", 
+ifelse(FNF_Total$Year == "2005" & FNF_Total$Scenario == "D4W2D4", "Wet", 
+       ifelse(FNF_Total$Year == "2006" & FNF_Total$Scenario == "D4W2D4", "Wet", 
+       ifelse(FNF_Total$Scenario == "D5W1D5" & FNF_Total$Year == "2006", "Wet",
+ifelse(FNF_Total$Year == "2006" & FNF_Total$Scenario == "D5W2D5", "Wet",
+       ifelse(FNF_Total$Year == "2007" & FNF_Total$Scenario == "D5W2D5", "Wet","Dry"))))))))))))
+
+FNF_Total2 <- FNF_Total %>%
+  filter(!(date < "2000-10-01"),
+         !(Scenario == "D2W1D2" & date > "2005-09-30"), 
+         !(Scenario == "D2W2D2" & date > "2006-09-30"),
+         !(Scenario == "D3W1D3" & date > "2007-09-30"),
+         !(Scenario == "D3W2D3" & date > "2008-09-30"),
+         !(Scenario == "D4W1D4" & date > "2009-09-30"),
+         !(Scenario == "D4W2D4" & date > "2010-09-30"),
+         !(Scenario == "D5W1D5" & date > "2011-09-30"),
+         !(Scenario == "D5W2D5" & date > "2012-09-30"))
+  
+FNF_Total2  
+
+FNF_Total2$Basin <- factor(FNF_Total2$Basin, levels = c("STN", "TUO", "MER", "USJ"))
+```
+```{r}
+FNF_Total3 <- FNF_Total2 %>% filter(Scenario == "D5W2D5") %>%
+  mutate(Year2 = ifelse(Year == "2001" | Year == "2008" | Year == "2002" | Year == "2009", "D5", ifelse(Year == "2003" | Year == "2010", "D4", ifelse(Year == "2004" | Year == "2011", "D3", ifelse(Year == "2005" | Year == "2012", "D2", ifelse(Year == "2006", "W1", "W2"))))))
+  
+
+FNF_Total3
+
+```
+
+```{r}
+
+ ggplot(FNF_Total3, aes(x = date, y = flow))+# aes(Month, Total)) + 
+
+#geom_rect(aes(color = NULL, fill = YearType, xmin = date-180, xmax = date+180, ymin = -Inf, ymax = Inf), alpha =0.02)+
+ geom_rect(aes(color = NULL, fill = Year2, xmin = date-31, xmax = date+31, ymin = -Inf, ymax = Inf), alpha =0.015)+
+  scale_fill_manual(values = c("white", "white", "white", "white", "lightblue","lightblue"))+
+ # scale_fill_manual(values = c("yellow", "darkorange", "red",  "darkred", "skyblue3",  "skyblue4"))+
+  
+  
+  geom_line(aes(x=date, y = flow, color=Number, group=Number ), alpha = 0.45)+
+  
+   scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+ # scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+ #   stat_summary(geom="ribbon", fun.data=mean_cl_normal, width=0.1, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+#  stat_summary(geom="line", fun.y=mean, linetype="dashed")+
+ 
+    theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+
+      scale_y_continuous(labels = scales::comma,limits = c(0, NA), expand = c(0, 0))+
+  # scale_x_date(date_labels = "%b/%Y")+
+  scale_x_date(expand = c(0, 0))+#, breaks = c(1,3,5,7,9,11))+
+
+    labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Full Natural Flow (mcm/month)") + #name of x axis
+  facet_wrap(~Basin, scales = "fixed")+
+  theme(legend.position = "none",
+        strip.background = element_blank())+ #center the title
+ # guides(colour = guide_legend(nrow = 1))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Hydrology2.png", units ="in", width=10, height=6, res = 300)
+
+```
+
+```{r}
+
+   ggplot(FNF_Total2)+# aes(Month, Total)) + 
+
+  #geom_rect(aes(color = NULL, fill = YearType, xmin = as.numeric(Year)-0.5, xmax = as.numeric(Year)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.020)+ scale_fill_manual(values = c("white", "lightblue"))+
+  
+  geom_density(aes(x = flow, color=Number, group=Number ), alpha = 0.45) + 
+ # scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+  
+ #   stat_summary(geom="ribbon", fun.data=mean_cl_normal, width=0.1, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+#  stat_summary(geom="line", fun.y=mean, linetype="dashed")+
+ 
+    theme_bw(base_size=12, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+
+#      scale_y_continuous(limits = c(0, NA), expand = c(0, 0))+
+  # scale_x_date(date_labels = "%b/%Y")+
+ # scale_x_continuous(expand = c(0, 0), breaks = c(1,3,5,7,9,11))+
+
+    labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Full Natural Flow (mcm)") + #name of x axis
+#  facet_grid(~Basin, scales = "free", space = "free")+
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        axis.text.x = element_text(angle = -45, vjust=-0.4),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+ # guides(colour = guide_legend(nrow = 1))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Hydrology2.png", units ="in", width=12, height=7, res = 300)
+
+```

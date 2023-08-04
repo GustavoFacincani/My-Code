@@ -7,40 +7,59 @@ output: html_document
 
 ```{r}
 Mer_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/merced/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))  %>%
-  mutate(Merced = rowSums(.[c(2,3)])) %>%  select(1,4)
+  dplyr::select(., -contains(".1"))  %>%
+  mutate(Total = rowSums(.[c(2,3)])) #%>%  dplyr::select(1,4)
 Mer_Tot_Storage
 
 Tuo_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/tuolumne/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))  %>%
-  mutate(Tuolumne = rowSums(.[c(2:5)])) %>%  select(1,6)
+  dplyr::select(., -contains(".1"))  %>%
+  mutate(Total = rowSums(.[c(2:5)])) #%>%  dplyr::select(1,6)
 Tuo_Tot_Storage
 
 Stn_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/stanislaus/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))  %>%
-  mutate(Stanislaus = rowSums(.[c(2:11)])) %>%  select(1,12)
+  dplyr::select(., -contains(".1"))  %>%
+  mutate(Total = rowSums(.[c(2:11)]))# %>%  dplyr::select(1,12)
 Stn_Tot_Storage
 
 USJ_Tot_Storage <- read.csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Energy Prices - 2023-02-07/upper_san_joaquin/historical/Livneh/Reservoir_Storage_mcm.csv")[-c(1,2),] %>%
-  select(., -contains(".1"))  %>%
-  mutate(`Upper San Joaquin` = rowSums(.[c(2:10)]))%>%  select(1,11)
+  dplyr::select(., -contains(".1"))  %>%
+  mutate(Total = rowSums(.[c(2:10)]))#%>%  dplyr::select(1,11)
 USJ_Tot_Storage
 ```
-
-
+```{r}
+totstorage <- rbind(Mer_Tot_Storage[c(1,4)] %>% mutate(Basin = "MER"), 
+                    Tuo_Tot_Storage[c(1,6)]  %>% mutate(Basin = "TUO"), 
+                    Stn_Tot_Storage[c(1,12)]  %>% mutate(Basin = "STN"), 
+                    USJ_Tot_Storage[c(1,11)]  %>% mutate(Basin = "USJ")) %>%
+  mutate(Month = format(as.Date(node), "%b"),
+          WaterYear = as.numeric(lfstat::water_year(node, origin = "usgs"))) %>%
+  group_by(Basin, WaterYear, Month) %>%
+  summarize(Storage = mean(Total)) %>%
+  mutate(Sequence = "whatever",
+         Scenario = "whatever",
+         Scenario2 = "whatever",
+         Scenario3 = "whatever",
+         YearType = "Historical (Livneh)")
+totstorage
+```
 
 ```{r}
-mer <-mean(Mer_Tot_Storage$Merced)
-tuo <- mean(Tuo_Tot_Storage$Tuolumne)
-stn <- mean(Stn_Tot_Storage$Stanislaus)
-usj <- mean(USJ_Tot_Storage$`Upper San Joaquin`) 
+mer <-mean(Mer_Tot_Storage$Total)
+tuo <- mean(Tuo_Tot_Storage$Total)
+stn <- mean(Stn_Tot_Storage$Total)
+usj <- mean(USJ_Tot_Storage$Total) 
+
+mer2 <-lapply(Mer_Tot_Storage[-c(1)], mean, na.rm = T)
+tuo2 <- lapply(Tuo_Tot_Storage[-c(1)], mean, na.rm = T)
+stn2 <- lapply(Stn_Tot_Storage[-c(1)], mean, na.rm = T)
+usj2 <- lapply(USJ_Tot_Storage[-c(1)], mean, na.rm = T) 
 
 ```
 
 
 ```{r}
-All_storage <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/", recursive=TRUE) %>%
- # grep("D2W1", ., value = TRUE) %>%
+All_storage <- list.files("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/", recursive=TRUE) %>%
+ # grep("D2W1D2", ., value = TRUE) %>%
   #grep("merced", ., value = TRUE) %>%
   grep(#"Hydropower_Energy"
     "Reservoir_Storage_mcm.csv", ., value = TRUE)
@@ -49,7 +68,7 @@ head(All_storage)
 ```
 
 ```{r}
-filelist_storage <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-02-07/",All_storage,sep=""), read.csv)
+filelist_storage <- lapply(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/Whiplash - 2023-03-13/",All_storage,sep=""), read.csv)
 
 #if necessary, assign names to data.frames
 names(filelist_storage) <- paste(All_storage)
@@ -59,7 +78,9 @@ names(filelist_storage) <- paste(All_storage)
 ```{r}
 filelist_storage2<- invisible(lapply(names(filelist_storage), function(x) assign(x,filelist_storage[[x]][-c(1,2),]%>% 
                                                                    mutate(Sequence = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 1,5), 
-                                                                          Scenario = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 11,14),
+                                                                          Scenario = paste(substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 11,14), substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 11,12), sep=""),
+                                                                          Scenario2 =substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 11,12),
+                                                                          Scenario3 =substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 13,14),
                                                                           Number = substr(str_split(names(filelist_storage[x]), "/")[[1]][3], 16,20),
                                                                           Basin = str_split(names(filelist_storage[x]),"/")[[1]][1]),envir=.GlobalEnv))) 
 head(filelist_storage2)
@@ -70,60 +91,303 @@ head(filelist_storage2)
 Storage_Mer <- filelist_storage2 %>%
   lapply(., function(x) filter(x, Basin == "merced"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(Total = rowSums(.[c(2:3)]))%>%
-  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  dplyr::select(node, Sequence, Scenario, Scenario2, Scenario3, Number,  Basin, Total) %>%
   reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
-  mutate(node = as.Date(node, "%Y-%m-%d"))
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Basin = "MER")
 Storage_Mer
+
 
 Storage_Tuo <- filelist_storage2 %>%
   lapply(., function(x) filter(x, Basin == "tuolumne"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(Total = rowSums(.[c(2:5)]))%>%
-  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+ dplyr::select(node, Sequence, Scenario, Scenario2, Scenario3, Number,  Basin, Total) %>%
   reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
-  mutate(node = as.Date(node, "%Y-%m-%d"))
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Basin = "TUO")
 Storage_Tuo
 
 Storage_Stn <- filelist_storage2 %>%
   lapply(., function(x) filter(x, Basin == "stanislaus"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(Total = rowSums(.[c(2:11)]))%>%
-  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  dplyr::select(node, Sequence, Scenario, Scenario2, Scenario3, Number,  Basin, Total) %>%
   reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
-  mutate(node = as.Date(node, "%Y-%m-%d"))
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Basin = "STN")
 Storage_Stn
 
 Storage_USJ <- filelist_storage2 %>%
   lapply(., function(x) filter(x, Basin == "upper_san_joaquin"))%>%
   do.call("rbind", .) %>%
-  select(., -contains(".1")) %>%
+  dplyr::select(., -contains(".1")) %>%
   mutate(Total = rowSums(.[c(2:10)]))%>%
-  select(node, Sequence, Scenario, Number,  Basin, Total) %>%
+  dplyr::select(node, Sequence, Scenario, Scenario2, Scenario3, Number,  Basin, Total) %>%
   reshape2::melt(., by = c("node", "Sequence", "Scenario", "Number", "Basin")) %>%
-  mutate(node = as.Date(node, "%Y-%m-%d"))
+  mutate(node = as.Date(node, "%Y-%m-%d"),
+         Basin = "USJ")
 Storage_USJ
+```
+
+```{r}
+storage <- rbind(Storage_Mer, Storage_Tuo, Storage_Stn, Storage_USJ) %>%
+  rename(Storage = value) %>%
+  mutate(Rel_Difference = 100*ifelse(Basin == "MER", (Storage - mer)/mer, ifelse(Basin == "STN", (Storage - stn)/stn, ifelse(Basin == "TUO", (Storage - tuo)/tuo, (Storage - usj)/usj))),
+         Month = format(as.Date(node), "%b"),
+         WaterYear = as.numeric(lfstat::water_year(node, origin = "usgs"))) %>%
+  group_by(Basin, Sequence, Scenario, Scenario2, Scenario3, Month, WaterYear) %>%
+  summarize(Storage = mean(Storage)) 
+storage
+
+
+storage$YearType <- ifelse(storage$Scenario == "D2W1D2" & storage$WaterYear == "3", "1st Wet Year", 
+ifelse(storage$WaterYear == "3" & storage$Scenario == "D2W2D2", "1st Wet Year", 
+       ifelse(storage$WaterYear == "4" & storage$Scenario == "D2W2D2", "2nd Wet Year",
+       ifelse(storage$Scenario == "D3W1D3" & storage$WaterYear == "4", "1st Wet Year",
+ifelse(storage$WaterYear == "4" & storage$Scenario == "D3W2D3", "1st Wet Year", 
+       ifelse(storage$WaterYear == "5" & storage$Scenario == "D3W2D3", "2nd Wet Year", 
+       ifelse(storage$Scenario == "D4W1D4" & storage$WaterYear == "5", "1st Wet Year", 
+ifelse(storage$WaterYear == "5" & storage$Scenario == "D4W2D4", "1st Wet Year", 
+       ifelse(storage$WaterYear == "6" & storage$Scenario == "D4W2D4", "2nd Wet Year", 
+       ifelse(storage$Scenario == "D5W1D5" & storage$WaterYear == "6", "1st Wet Year",
+ifelse(storage$WaterYear == "6" & storage$Scenario == "D5W2D5", "1st Wet Year",
+       ifelse(storage$WaterYear == "7" & storage$Scenario == "D5W2D5", "2nd Wet Year",
+              
+              ifelse(storage$Scenario == "D2W1D2" & storage$WaterYear > "3", "2nd Drought", 
+ifelse(storage$WaterYear > "3" & storage$Scenario == "D2W2D2", "2nd Drought", 
+       ifelse(storage$WaterYear > "4" & storage$Scenario > "D2W2D2", "2nd Drought",
+       ifelse(storage$Scenario == "D3W1D3" & storage$WaterYear > "4", "2nd Drought",
+ifelse(storage$WaterYear > "4" & storage$Scenario == "D3W2D3", "2nd Drought", 
+       ifelse(storage$WaterYear > "5" & storage$Scenario == "D3W2D3", "2nd Drought", 
+       ifelse(storage$Scenario == "D4W1D4" & storage$WaterYear > "5", "2nd Drought", 
+ifelse(storage$WaterYear > "5" & storage$Scenario == "D4W2D4", "2nd Drought", 
+       ifelse(storage$WaterYear > "6" & storage$Scenario == "D4W2D4", "2nd Drought", 
+       ifelse(storage$Scenario == "D5W1D5" & storage$WaterYear > "6", "2nd Drought",
+ifelse(storage$WaterYear > "6" & storage$Scenario == "D5W2D5", "2nd Drought",
+       ifelse(storage$WaterYear > "7" & storage$Scenario == "D5W2D5", "2nd Drought",
+              "1st Drought"))))))))))))))))))))))))
+storage
+
+storage <- rbind(totstorage, storage)
+
+storage$Scenario <- factor(storage$YearType, levels = c("D2W1D2", "D3W1D3", "D4W1D4", "D5W1D5", "D2W2D2", "D3W2D3", "D4W2D4", "D5W2D5"))
+
+
+storage$Basin <- factor(storage$Basin, levels = c("STN", "TUO", "MER", "USJ"))
+
+storage$YearType <- factor(storage$YearType, levels = c("Historical (Livneh)", "1st Drought", "2nd Drought", "1st Wet Year", "2nd Wet Year"))
+```
+
+```{r}
+ggplot(storage) + 
+  theme_bw(base_size=12) + #change font to Times New Roman, 12pt, Bold
+    geom_boxplot(aes( x = Month, y = Storage, fill = YearType), outlier.alpha = 0.3) + #plot monthly observed data in greenish blue
+  scale_fill_manual(values = c("darkgray","#F46D43","orange","cadetblue2", "dodgerblue2"))+
+   #geom_line(aes(x = node, y = value)) +
+    scale_y_continuous(labels = scales::comma, limits = c(0, NA),
+                      expand = c(0, NA)) +
+  scale_x_discrete(limits=c("Oct","Nov","Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")) +
+  
+    facet_wrap(~Basin, scales = "free_y", nrow = 2)+
+
+  labs(x = element_blank(),
+       y = "Storage (mcm/month)") + #name of x axis
+  theme(legend.title = element_blank(),
+    legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box.margin = margin(t = -17),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        strip.placement = "outside",
+        strip.background = element_blank(),
+        panel.spacing.y = unit(0, "lines"))+
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Storage_Boxplots.png", units ="in", width=12, height=8, res = 300)
+
 ```
 
 ```{r}
 Storage <- rbind(Storage_Mer, Storage_Tuo, Storage_Stn, Storage_USJ) %>%
   rename(Storage = value) %>%
-  mutate(Rel_Difference = 100*ifelse(Basin == "merced", (Storage - mer)/mer, ifelse(Basin == "stanislaus", (Storage - stn)/stn, ifelse(Basin == "tuolumne", (Storage - tuo)/tuo, (Storage - usj)/usj)))) %>%
-  group_by(Basin, Sequence, Scenario) %>%
+  mutate(Rel_Difference = 100*ifelse(Basin == "MER", (Storage - mer)/mer, ifelse(Basin == "STN", (Storage - stn)/stn, ifelse(Basin == "TUO", (Storage - tuo)/tuo, (Storage - usj)/usj))),
+         WaterYear = lfstat::water_year(node, origin = "usgs")) %>%
+  group_by(Basin, Sequence, Scenario, Scenario2, Scenario3) %>%
   summarize(Storage = mean(Storage),
-            Rel_Difference = mean(Rel_Difference)) %>%
+          #  Min_Storage = min(Rel_Difference),
+         #Max_Storage = max(Rel_Difference),
+         Rel_Difference = mean(Rel_Difference)) %>%
                 group_by(Basin, Scenario) %>%
-            summarize(Mean_Rel_Difference = mean(Rel_Difference),
-            Min_Storage = min(Rel_Difference),
-            Max_Storage = max(Rel_Difference))
+            summarize(Min_Storage = min(Rel_Difference),#mean(Min_Storage),
+                      Mean_Rel_Difference = mean(Rel_Difference),
+            Max_Storage = max(Rel_Difference))#mean(Max_Storage))
 Storage
 
 ```
+
 ```{r}
-write_csv(Storage, "C:/Users/gusta/University of California Merced/WhiplashTotal_Storage.csv")
+Storage_Year <- rbind(Storage_Mer, Storage_Tuo, Storage_Stn, Storage_USJ) %>%
+  rename(Storage = value) %>%
+  mutate(Rel_Difference = 100*ifelse(Basin == "MER", (Storage - mer)/mer, ifelse(Basin == "STN", (Storage - stn)/stn, ifelse(Basin == "TUO", (Storage - tuo)/tuo, (Storage - usj)/usj))),
+         WaterYear = lfstat::water_year(node, origin = "usgs"))%>%
+group_by(Basin, WaterYear, Number, Scenario, Scenario2, Scenario3) %>%
+dplyr::summarize(`Annual Total` = mean(Storage),
+`Relative Difference` = mean(`Rel_Difference`),
+Change = ifelse(`Relative Difference` < 0, "Negative", "Positive")) 
+Storage_Year
+
+Storage_Year$YearType <- ifelse(Storage_Year$Scenario == "D2W1D2" & Storage_Year$WaterYear == "2003", "Wet", 
+ifelse(Storage_Year$WaterYear == "2003" & Storage_Year$Scenario == "D2W2D2", "Wet", 
+       ifelse(Storage_Year$WaterYear == "2004" & Storage_Year$Scenario == "D2W2D2", "Wet",
+       ifelse(Storage_Year$Scenario == "D3W1D3" & Storage_Year$WaterYear == "2004", "Wet",
+ifelse(Storage_Year$WaterYear == "2004" & Storage_Year$Scenario == "D3W2D3", "Wet", 
+       ifelse(Storage_Year$WaterYear == "2005" & Storage_Year$Scenario == "D3W2D3", "Wet", 
+       ifelse(Storage_Year$Scenario == "D4W1D4" & Storage_Year$WaterYear == "2005", "Wet", 
+ifelse(Storage_Year$WaterYear == "2005" & Storage_Year$Scenario == "D4W2D4", "Wet", 
+       ifelse(Storage_Year$WaterYear == "2006" & Storage_Year$Scenario == "D4W2D4", "Wet", 
+       ifelse(Storage_Year$Scenario == "D5W1D5" & Storage_Year$WaterYear == "2006", "Wet",
+ifelse(Storage_Year$WaterYear == "2006" & Storage_Year$Scenario == "D5W2D5", "Wet",
+       ifelse(Storage_Year$WaterYear == "2007" & Storage_Year$Scenario == "D5W2D5", "Wet","Dry"))))))))))))
+Storage_Year
+
+Storage_Year$Basin <- factor(Storage_Year$Basin, levels = c("STN", "TUO", "MER", "USJ"))
+Storage_Year$Scenario <- factor(Storage_Year$Scenario, levels = c("D2W1D2", "D3W1D3", "D4W1D4", "D5W1D5", "D2W2D2", "D3W2D3", "D4W2D4", "D5W2D5"))
+
+```
+
+```{r}
+
+ ggplot(Storage_Year)+
+  
+ geom_rect(aes(color = NULL, fill = `YearType`, xmin = as.numeric(WaterYear)-0.5, xmax = as.numeric(WaterYear)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.025)+
+    scale_color_manual(values = wes_palette("Zissou1", 25, type = "continuous"))+
+
+  geom_line(aes(x = as.numeric(WaterYear), y = `Relative Difference`, color = Number), alpha = 0.65) +
+  
+  geom_hline(yintercept=0, linetype="dashed", color = "red")+
+  
+      scale_fill_manual(values = c("white", "lightblue"))+
+
+    theme_bw(base_size=12, base_family='Helvetica') +
+    stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Relative Difference`), geom="ribbon", fun.data=mean_cl_normal, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.8)+
+  
+  stat_summary(mapping = aes(x=as.numeric(WaterYear), y = `Relative Difference`), geom="line", fun.y=mean, linetype = "dashed")+
+
+  
+    scale_y_continuous(expand = c(0, 0), breaks = c(-100,-80, -60, -40,-20,0,20,40,60,80,100,120))+
+   scale_x_continuous(expand = c(-0.035, -0.035), breaks = c(1,3,5,7,9,11))+
+  #scale_x_date(date_labels = "%b/%Y",
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #dplyr::select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #dplyr::select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Relative Difference in Total Storage (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free_x",space = "free_x")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Storage_Line_May2.png", units ="in", width=12, height=7, res = 300)
+
+```
+
+
+```{r}
+Storage_Year_Mean <- Storage_Year %>% group_by(Basin, WaterYear, Scenario, Scenario2, Scenario3) %>%
+  dplyr::summarize(`Relative Difference` = mean(`Relative Difference`),
+                   Change = ifelse(`Relative Difference` < 0, "Negative", "Positive"),
+`Annual Total` = mean(`Annual Total`),
+YearType = YearType)
+Storage_Year_Mean
+```
+
+```{r}
+
+ ggplot(Storage_Year_Mean)+
+  
+ geom_rect(aes(color = NULL, fill = `YearType`, xmin = as.numeric(Storage_Year$WaterYear)-0.5, xmax = as.numeric(Storage_Year$WaterYear)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.025)+
+  
+  geom_bar(aes(x = as.numeric(Storage_Year$WaterYear), y = `Relative Difference`, fill = Change), 
+           stat="identity", position="identity") + #plot monthly observed data in greenish blue
+  
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  
+      scale_fill_manual(values = c("white", "#DD8D29", "#46ACC8", "lightblue"))+
+
+     #   geom_line(aes(color=Number, x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), alpha = 0.45)+
+  
+    #stat_summary( mapping =aes(x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), geom="ribbon", fun.data=mean_cl_normal, width=0.1, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+  
+  #stat_summary( mapping =aes(x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), geom="line", fun.y=mean, linetype = "dashed")+
+
+    theme_bw(base_size=12, base_family='Times New Roman') +
+  
+    scale_y_continuous(expand = c(0, 0), breaks = c(-100,-80, -60, -40,-20,0,20,40,60,80,100,120))+
+   scale_x_continuous(expand = c(0, 0), breaks = c(1,3,5,7,9,11))+
+  #scale_x_date(date_labels = "%b/%Y",
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #dplyr::select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #dplyr::select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Relative Difference in Total Storage (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free_x", space = "free_x")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Storage_May.png", units ="in", width=12, height=7, res = 300)
+
+```
+
+```{r}
+
+ ggplot(Storage_Year_Mean%>% filter(Scenario == "D5W1D5" | Scenario == "D5W2D5"))+
+  
+ geom_rect(aes(color = NULL, fill = `YearType`, xmin = as.numeric(WaterYear)-0.5, xmax = as.numeric(WaterYear)+0.5, ymin = -Inf, ymax = Inf), alpha = 0.025)+
+  
+  geom_bar(aes(x = as.numeric(WaterYear), y = `Relative Difference`, fill = Change), 
+           stat="identity", position="identity") + #plot monthly observed data in greenish blue
+  
+  geom_hline(yintercept=0, linetype="dashed", color = "black")+
+  
+      scale_fill_manual(values = c("white", "#DD8D29", "#46ACC8", "lightblue"))+
+
+     #   geom_line(aes(color=Number, x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), alpha = 0.45)+
+  
+    #stat_summary( mapping =aes(x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), geom="ribbon", fun.data=mean_cl_normal, width=0.1, fun.args=list(conf.int=0.95), fill="darkgray", alpha = 0.65)+
+  
+  #stat_summary( mapping =aes(x=as.numeric(format(Year, "%Y"))-2000, y = `Relative Difference`), geom="line", fun.y=mean, linetype = "dashed")+
+
+    theme_bw(base_size=12, base_family='Times New Roman') +
+  
+    scale_y_continuous(expand = c(0, 0), breaks = c(-100,-80, -60, -40,-20,0,20,40,60,80,100,120))+
+   scale_x_continuous(expand = c(0, 0), breaks = c(1,3,5,7,9,11))+
+  #scale_x_date(date_labels = "%b/%Y",
+                     #    breaks = c("#000000", "#56B4E9", "#F0E442"), #dplyr::select the color
+                      #    labels = c("New Exchequer PH","McSwain PH", "Merced Falls PH"), #dplyr::select the variables
+                        #  guide = "legend")+
+  labs(title = element_blank(),
+    x = element_blank(), 
+       y = "Relative Difference in Total Storage (%)") + #name of x axis
+  facet_grid(Basin~Scenario3+Scenario2, scales = "free_x", space = "free_x")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = -45),
+        strip.background = element_blank(),
+        plot.title = element_text(hjust = 0.5)) + #center the title
+  png("C:/Users/gusta/Desktop/PhD/Classes/ES207/Sequences_Storage_May3.png", units ="in", width=7, height=5, res = 300)
+
+```
+
+
+```{r}
+write_csv(Storage_Year_Mean, "C:/Users/gusta/University of California Merced/WhiplashTotal_AvgStorage_May2023.csv")
+
+write_csv(Storage_Year, "C:/Users/gusta/University of California Merced/WhiplashTotal_Storage_May2023.csv")
 
 
 ```

@@ -1,0 +1,318 @@
+```{r}
+library(dismo)
+library(sdmpredictors)
+library(raster)
+library(dplyr)
+library(rgdal)
+```
+
+
+myraster=raster("C:/Users/gusta/Downloads/hydgrp_int.tif")
+projection(myraster)
+
+ca <- readOGR("C:/Users/gusta/Documents/CA_State_TIGER2016.shp") %>% #ca boundary.shp")%>%
+  spTransform(CRS(projection(myraster)))
+
+
+
+myraster2 <- crop(myraster, ca) 
+myraster2 <- mask(myraster2, ca)  
+plot(myraster2)
+
+
+
+
+hydro_poly <- rasterToPolygons(myraster2)
+#Range of variables is here: hydro_poly@data$hydgrp_int
+
+
+
+
+```{r}
+ca_crops <- readOGR("C:/Users/gusta/Documents/i15_Crop_Mapping_2021_Provisional.shp")%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+ca_crops
+
+ca_crops2 <- readOGR("C:/Users/gusta/Documents/i15_Crop_Mapping_2020.shp")%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+ca_crops2
+```
+
+ca_crops3 <- readOGR("C:/Users/gusta/Documents/i15_Crop_Mapping_2019.shp")%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+ca_crops3
+
+ca_crops4 <- readOGR("C:/Users/gusta/Documents/i15_Crop_Mapping_2018.shp")%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+ca_crops4
+
+ca_crops5 <- readOGR("C:/Users/gusta/Documents/i15_Crop_Mapping_2016.shp")%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+ca_crops5
+
+```{r}
+wine_grapes <- subset(ca_crops, CROPTYP2 == "V")
+
+plot(wine_grapes)
+
+wine_grapes2 <- subset(ca_crops2, CROPTYP2 == "V")
+
+plot(wine_grapes2)
+```
+
+wine_grapes3 <- subset(ca_crops3, CROPTYP2 == "V2")
+
+plot(wine_grapes3)
+
+wine_grapes3 <- subset(ca_crops4, CROPTYP2 == "V2")
+
+plot(wine_grapes3)
+
+wine_grapes3 <- subset(ca_crops5, CROPTYP2 == "V2")
+
+plot(wine_grapes3)
+
+
+```{r}
+vinifera <- gbif("Vitis", "vinifera", download = T, geo = T, sp = F)
+vinifera
+
+class(vinifera)
+
+is.na(vinifera$lon)
+
+head(vinifera)
+```
+
+```{r}
+vinhas <- vinifera %>% filter(country == "United States") 
+vinhas
+
+
+WA <- sf::st_read("C:/Users/gusta/Downloads/WA.gdb")
+CA <- sf::st_read("C:/Users/gusta/Downloads/CA.gdb")
+OR <- sf::st_read("C:/Users/gusta/Downloads/OR.gdb")
+
+
+
+pacific <- readOGR("C:/Users/gusta/Documents/PacificCoast.shp")
+
+AVAs <- readOGR("C:/Users/gusta/Documents/All_AVAs.shp")
+
+w <- which(is.na(vinhas$lon))
+sp <- vinhas[-w,]
+sp$species <- 1
+sp <- sp[,c('lon', 'lat', 'species')]
+coordinates(sp) <- ~lon + lat
+
+class(sp)
+projection(sp) <- projection(AVAs)
+
+vine <- crop(sp, AVAs, inverse = F) 
+
+plot(vine)
+
+writeOGR(vine, ".", "AVAs_vines", 
+          driver = "ESRI Shapefile") #also you were missing the driver argument
+
+#x <- SpatialPointsDataFrame(samplepoints, data.frame(row.names=row.names(samplepoints),
+#                                          ID=1:length(samplepoints)))
+#class(x)
+
+#writeOGR(x, ".", "Sample_US", 
+#          driver = "ESRI Shapefile") #also you were missing the driver argument
+```
+
+```{r}
+bio <- raster::getData('worldclim', var = 'bio', res = 2.5)#,  lon=-129, lat=37)
+bio
+
+alt <- raster::getData('alt', country='USA', res = 0.5)#,  lon=-119, lat=37)
+alt
+
+alt2 <- alt$`C:/Users/gusta/Desktop/PhD/Classes/ES207/USA1_msk_alt.grd`
+
+SlopeAspect <- raster::terrain(alt2, opt=c('slope', 'aspect'), unit='degrees')
+
+terrain <- addLayer(SlopeAspect,alt2)
+#BIO1 = Annual Mean Temperature
+#BIO2 = Mean Diurnal Range (Mean of monthly (max temp - min temp))
+#BIO3 = Isothermality (BIO2/BIO7) (×100)
+#BIO4 = Temperature Seasonality (standard deviation ×100)
+#BIO5 = Max Temperature of Warmest Month
+#BIO6 = Min Temperature of Coldest Month
+#IO7 = Temperature Annual Range (BIO5-BIO6)
+#BIO8 = Mean Temperature of Wettest Quarter
+#BIO9 = Mean Temperature of Driest Quarter
+#BIO10 = Mean Temperature of Warmest Quarter
+#BIO11 = Mean Temperature of Coldest Quarter
+#BIO12 = Annual Precipitation
+#BIO13 = Precipitation of Wettest Month
+#BIO14 = Precipitation of Driest Month
+#BIO15 = Precipitation Seasonality (Coefficient of Variation)
+#BIO16 = Precipitation of Wettest Quarter
+#BIO17 = Precipitation of Driest Quarter
+#BIO18 = Precipitation of Warmest Quarter
+#BIO19 = Precipitation of Coldest Quarter
+```
+
+```{r}
+library(usdm)
+
+#variance inflation factor (VIF) to test multi-collinearity
+v1 <- vifstep(bio)
+
+v2 <- vifcor(bio, th = 0.7) #th = Pearson’s correlation coefficient (r) threshold
+
+v1
+v2
+```
+
+```{r}
+
+biom <- exclude(bio, v1) #removing collinear variables 
+biom
+
+plot(biom[[1]])
+points(vine, cex = 0.5, pch = 16)
+
+```
+```{r}
+#read in soil data from Davis
+
+#first import all files in a single folder as a list 
+rastlist <- list.files(path = "C:/Users/gusta/University of California Merced/Winegrapes/SoilData", pattern='.tif$', all.files=TRUE, full.names=TRUE)
+rastlist
+#library(raster)
+
+# Open your reference Raster
+
+#Reference_Raster <- raster("C:/Users/gusta/University of California Merced/Winegrapes/SoilData/ph.tif")
+
+
+allrasters <- stack(rastlist)
+
+```
+```{r}
+allrasters2 <- allrasters
+
+allrasters2 <- raster::projectRaster(allrasters2, 
+                                       crs=crs(biom))
+
+d2 <- sdm::sdmData(species~., vine, predictors = allrasters2, bg = list(n=1000))
+d2
+
+m3 <- sdm(species~., d2, methods = 'rf', replication = c('boot'), n = 100)
+#), replication = c('boot'), n = 2)
+m3
+
+d3 <- sdm::sdmData(species~., vine, predictors = terrain, bg = list(n=1000))
+d3
+
+m4 <- sdm(species~., d3, methods = 'rf', replication = c('boot'), n = 100)
+#), replication = c('boot'), n = 2)
+m4
+
+```
+
+
+```{r}
+library(sdm)
+
+samplepoints <- sp::spsample(AVAs,n=1000,"random", iter=10)
+
+
+
+#d2 <- sdm::sdmData(species~., AVAs, predictors = biom, bg = list(n=1000))
+
+
+d <- sdm::sdmData(species~., vine, predictors = biom, bg = list(n=1000))
+d
+
+
+m2 <- sdm(species~., d, methods = c('fda','bioclim', 'bioclim.dismo', 'brt', 'CART', 'domainDismo', 'mahal.dismo', 'mars', 'rbf', 'rf', 'svm', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'), replication = c('boot'), n = 100)
+#), replication = c('boot'), n = 2)
+m2
+sdm::gui(m2)
+```
+
+
+```{r}
+p <- sdm:: predict(m, biom, 'predictions.img',overwrite=TRUE)
+
+en <- ensemble(m, biom, setting = list(method= 'weighted', stat = "TSS", opt = 2))
+writeRaster(en, filename="ensemble.tif", format="GTiff", overwrite=TRUE) 
+
+```
+
+```{r}
+biof <- raster::getData('CMIP5', var = "bio", res = 10, rcp = 85, year = 50, model = c("MC"))#"AC", "CC", "CN", "GF", "HG", "HE", "MC"))
+biof
+
+v3 <- vifstep(biof)
+v3
+
+biomf <- exclude(biof, v3)
+biomf
+
+
+soil_filtered <- vifstep(allrasters2)
+soil_filtered
+
+names(biomf)
+names(biomf)
+
+names(biomf) <- names(biomf)
+
+pf <- raster::predict(m, biomf)
+
+writeRaster(pf[[3]], filename="predictionsf.tif", format="GTiff", overwrite=TRUE) 
+
+
+#enf <- calc(pf, mean) #unweighted average
+
+enf <- ensemble(m, biomf, setting = list(method= 'weighted', stat = "TSS", opt = 2))
+writeRaster(enf, filename="ensemblef.tif", format="GTiff", overwrite=TRUE) 
+
+
+```
+```{r}
+library(mapview)
+library(proj4)
+
+
+plot(stack(en,enf))
+mapview::mapView(stack(en,enf))
+```
+
+
+```{r}
+#probability of occurrence to show extinction or colonization (based on absence/presence)
+ev <- getEvaluation(m, stat = c('AUC', 'TSS', 'threshold'), opt = 2)
+mean <- mean(ev$threshol)
+
+pa <- raster(en)
+pa[] <- ifelse(en[] >= mean, 1, 0)
+
+plot(pa)
+
+paf <- raster(enf)
+paf[] <- ifelse(enf[] >= mean, 1, 0)
+
+plot(paf)
+
+pac <- paf - pa 
+cl <- colorRampPalette(c('chocolate2', 'gray90','springgreen3'))
+plot(pac, col = cl(3))
+```
+
+
+```{r}
+#response curve
+#The output of rcurve shows species response to different values of environmental conditions, so they can show the range suitable for species.
+
+rcurve(m)
+
+
+
+```

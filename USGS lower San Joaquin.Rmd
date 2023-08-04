@@ -1,0 +1,59 @@
+
+```{r}
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(dataRetrieval)
+
+```
+
+```{r}
+siteNo <- c("11303500","11302000","11289650","11271290","11251000")
+pCode <- "00060"
+start.date <- "1970-10-01"
+end.date <- "2019-09-30"
+USGS <- readNWISdv(siteNumbers = siteNo,
+                     parameterCd = pCode,
+                     startDate = start.date,
+                     endDate = end.date)
+head(USGS)
+```
+
+```{r}
+siteInfo <- attr(USGS, "siteInfo")
+siteInfo
+```
+
+```{r}
+library(dplyr)
+common_column_names <- intersect(names(USGS), names(siteInfo))
+#2. Use this character vector as your by parameters in the merge function.
+USGS2 <- merge(USGS, siteInfo, by="site_no", all.dataframe_1=TRUE) %>%
+  dplyr::select(Date, site_no, agency_cd.x, station_nm, X_00060_00003) %>%
+  mutate(ID = paste(agency_cd.x, site_no, station_nm, sep = " "),
+         station_nm = NULL,
+         site_no = NULL,
+         agency_cd.x = NULL) %>%
+  rename(flow = X_00060_00003)
+USGS2
+```
+
+```{r}
+USGS3 <- tidyr::spread(USGS2, ID, flow, fill = "")
+USGS3
+```
+
+```{r}
+readr::write_csv(USGS3, "Lower_San_Joaquin_Outflow.csv", na = "")
+```
+
+
+
+```{r}
+lsj <- read_csv("C:/Users/gusta/Documents/Lower_San_Joaquin_Outflow.csv")
+
+
+lsj2 <- lsj[complete.cases(lsj), ] #drop all NAs
+readr::write_csv(lsj2, "Lower_San_Joaquin_Outflow_NoNAs.csv", na = "")
+
+```
