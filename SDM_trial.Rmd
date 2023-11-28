@@ -1,0 +1,147 @@
+```{r}
+library(dismo)
+library(sdm)
+library(sdmpredictors)
+library(raster)
+library(dplyr)
+library(rgdal)
+library(usdm)
+```
+
+```{r}
+valle_vines <- readOGR("C:/Users/gusta/Documents/valle_mexico_wines.shp")
+valle_vines
+```
+
+
+```{r}
+
+points_vines <- readOGR("C:/Users/gusta/Desktop/PhD/Classes/ES207/CA_vines_points.shp")
+points_vines$species <- 1
+points_vines$ID <- NULL
+
+```
+
+```{r}
+global_bioc_elev_soil <- stack("D:/Winegrapes/Historical/all_data2_30s.tif")
+
+pacific <- readOGR("C:/Users/gusta/Documents/Dissolved_Pacific.shp")
+
+
+pacific_data <- crop(global_bioc_elev_soil, pacific)
+pacific_data2 <- mask(pacific_data, pacific)
+
+```
+```{r}
+soil_global <- list.files("D:/Winegrapes/Historical/soil_world/selected/",pattern='\\.tif', full.names= T)
+soil_global
+soil_global_stack <- stack(soil_global) #raster::getData('worldclim', var = 'bio', res = 0.5)#,  lon=-129, lat=37)
+soil_global_stack
+
+
+```
+
+```{r}
+d_pacific <- sdmData(formula = species~., train = points_vines, predictors=pacific_data2, bg = list(method="gRandom", n=10000))
+
+Pacific_US <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'rf', 'maxent', 'gbm', 'svm', 'maxlike'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+
+p <- predict(Pacific_US, pacific_data2, nc = x)
+
+```
+
+```{r}
+future_bioc1 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CanESM5-CanOE_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+future_gdd0 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_AWI-CM-1-1-MR_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific)
+future_bioc1 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CanESM5-CanOE_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+future_gdd1 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_CanESM5-CanOE_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific)
+future_bioc2 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CNRM-CM6-1-HR_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+future_gdd2 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_CNRM-CM6-1-HR_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific)
+future_bioc3 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_HadGEM3-GC31-LL_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+future_gdd3 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_HadGEM3-GC31-LL_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific)
+future_bioc4 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CMCC-ESM2_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+testing <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CMCC-ESM2_ssp585_2041-2060.tif"))
+names(testing)
+testing <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_CMCC-ESM2_ssp585_2041-2060.tif"))
+future_bioc4 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_ACCESS-CM2_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific) %>%
+dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+future_gdd4 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_ACCESS-CM2_ssp585_2041-2060.tif"))%>%
+crop(., pacific) %>%
+mask(., pacific)
+MIROC <- stack(future_bioc0, future_gdd0)
+MIROC
+names(MIROC)
+MIROC <- stack(future_bioc0, future_gdd0)
+writeRaster(MIROC, "MIROC6_ssp585_2041-2060.tif")
+```
+
+
+```{r}
+ca <- readOGR("C:/Users/gusta/Documents/ca boundary.shp")
+  
+future_bioc <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_AWI-CM-1-1-MR_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca) %>%
+  dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+
+future_gdd <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_AWI-CM-1-1-MR_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca)
+
+
+AWI <- stack(future_bioc, future_gdd)
+writeRaster(AWI, "AWI-CM-1-1-MR_ssp585_2041-2060.tif")
+
+future_bioc1 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_GISS-E2-1-H_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca) %>%
+  dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+
+future_gdd1 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_GISS-E2-1-H_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca)
+
+
+GISS <- stack(future_bioc1, future_gdd1)
+writeRaster(GISS, "GISS-E2-1-H_ssp585_2041-2060.tif")
+
+
+future_bioc2 <- stack(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_bioc_IPSL-CM6A-LR_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca) %>%
+  dropLayer(., c(2, 8, 9, 14, 15, 18, 19))
+
+future_gdd2 <- raster(paste("D:/Winegrapes/Future/wc2.1_30s/wc2.1_30s_gdd_IPSL-CM6A-LR_ssp585_2041-2060.tif"))%>%
+  crop(., ca) %>%
+  mask(., ca)
+
+
+IPSL <- stack(future_bioc2, future_gdd2)
+writeRaster(IPSL, "IPSL-CM6A-LR_ssp585_2041-2060.tif")
+
+```

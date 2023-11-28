@@ -1,0 +1,725 @@
+```{r}
+library(raster)
+library(sdm)
+library(sdmpredictors)
+library(dplyr)
+library(rgdal)
+```
+
+```{r}
+all_data <- stack("D:/Winegrapes/Historical/bio_elev_soil_fixed_global_30s.tif")
+california_data2 <- stack("California_alldata.tif")
+names(california_data2) <- names(all_data)
+
+points_vines <- readOGR("C:/Users/gusta/Desktop/PhD/Classes/ES207/CA_vines_points.shp")
+ #<- readOGR("C:/Users/gusta/Documents/VallleyRegion2.shp")
+
+#points_s <- raster::intersect(points_vines, )
+
+points_vines$species <- 1
+points_vines$ID <- NULL
+```
+
+```{r}
+
+Napa_US_mlp2 <- readRDS("mlp3_winegrapes_Napa.sdm")
+
+Napa_US_rpart2 <- readRDS("rpart3_winegrapes_Napa.sdm")
+
+Napa_US_maxlike2 <- readRDS('maxlike3_winegrapes_Napa.sdm')
+
+Napa_US_mars2 <- readRDS('mars3_winegrapes_Napa.sdm')
+
+Napa_US_rbf2 <- readRDS("rbf3_winegrapes_Napa.sdm")
+
+Napa_US_brt2 <- readRDS("brt3_winegrapes_Napa.sdm")
+
+Napa_US_cart2 <- readRDS('cart4_winegrapes_Napa.sdm')
+
+Napa_US_svm2 <- readRDS('svm3_winegrapes_Napa.sdm')
+
+allmodels_napa2 <- Napa_US_rpart2 + Napa_US_maxlike2 + Napa_US_mars2 + Napa_US_brt2 + Napa_US_rbf2 + Napa_US_mlp2+ Napa_US_cart2 + Napa_US_svm2
+```
+
+```{r}
+Napa_ensembled_svm2 <- sdm::ensemble(Napa_US_svm2, california_data2, filename = "Napa_ensembled_svm2.grd", setting=list(method='weighted', stat='tss', opt = 2), overwrite=TRUE) 
+
+Napa_ensembled_mlp2 <- sdm::ensemble(Napa_US_mlp2, california_data2, filename = "Napa_ensembled_mlp2.grd", setting=list(method='weighted', stat='tss', opt = 2), overwrite=TRUE) 
+
+Napa_ensembled_maxlike2 <- sdm::ensemble(Napa_US_maxlike2, california_data2, filename = "Napa_ensembled_maxlike2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_mars2 <- sdm::ensemble(Napa_US_mars2, california_data2, filename = "Napa_ensembled_mars2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_rbf2 <- sdm::ensemble(Napa_US_rbf2, california_data2, filename = "Napa_ensembled_rbf2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_rpart2 <- sdm::ensemble(Napa_US_rpart2, california_data2, filename = "Napa_ensembled_rpart2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_brt2 <- sdm::ensemble(Napa_US_brt2, california_data2, filename = "Napa_ensembled_brt2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_cart2 <- sdm::ensemble(Napa_US_cart2, california_data2, filename = "Napa_ensembled_cart2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+
+Napa_ensembled_all_entropy2 <- sdm::ensemble(allmodels_napa2, california_data2, filename = "Napa_ensembled_all_entropy2.grd", setting=list(method='entropy'))
+
+
+Napa_ensembled_all3 <- sdm::ensemble(allmodels_napa2, california_data2, filename = "Napa_ensembled_historical.grd", setting=list(method='pa'))
+
+```
+
+```{r}
+AVAs <- readOGR("C:/Users/gusta/Documents/All_AVAs3.shp")
+ensemble_answers <- stack(1-Napa_ensembled_all_entropy2/2,1-Napa_future_mean_ensemble_entropy2/2)
+
+names(ensemble_answers) <- c("ML Agreement", "GCM Agreement")
+coords_ensemble <- xyFromCell(ensemble_answers, seq_len(ncell(ensemble_answers)))
+ensemble_answers_layers <- stack(as.data.frame(getValues(ensemble_answers)))
+names(ensemble_answers_layers) <- c('Suitability', 'variable')
+
+mycolors3 <- colorRampPalette(c("deeppink", "white", "darkgray"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "MARS", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+ensemble_answers_layers2 <- cbind(coords_ensemble, ensemble_answers_layers)
+
+#allhistoricallayers3$Suitability[allhistoricallayers3$Suitability>=1] <- 1
+#allhistoricallayers3$Suitability[allhistoricallayers3$Suitability<=0] <- 0
+
+```
+
+```{r}
+ggplot(ensemble_answers_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors3(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_entropy_mars.png", units ="in", width=40*0.7, height=23*0.7, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+
+```{r}
+change <- future_mean_ensemble_napa2-Napa_ensembled_all3
+
+ensemble_totals_answers <- stack(Napa_ensembled_all3, future_mean_ensemble_napa2, change)
+
+names(ensemble_totals_answers) <- c("Historical (Ensemble)", "Future (Ensemble)", "Change")
+coords_totalensemble <- xyFromCell(ensemble_totals_answers, seq_len(ncell(ensemble_totals_answers)))
+ensemble_total_answers_layers <- stack(as.data.frame(getValues(ensemble_totals_answers)))
+names(ensemble_total_answers_layers) <- c('Suitability', 'variable')
+
+mycolors3 <- colorRampPalette(c("deeppink", "white", "darkgray"))
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "MARS", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+ensemble_total_answers_layers2 <- cbind(coords_totalensemble, ensemble_total_answers_layers)
+
+ensemble_total_answers_layers2$Suitability[ensemble_total_answers_layers2$Suitability>=1] <- 1
+ensemble_total_answers_layers2$Suitability[ensemble_total_answers_layers2$Suitability<=0] <- 0
+
+```
+
+```{r}
+ggplot(ensemble_total_answers_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_agreement_3.png", units ="in", width=40/1.2, height=23/1.2, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+```{r}
+ensemble_GCM <- stack(Napa_ensembled_access, Napa_ensembled_awi, Napa_ensembled_cnrm, Napa_ensembled_cnrm, Napa_ensembled_giss, Napa_ensembled_hadgem, Napa_ensembled_ipsl, Napa_ensembled_miroc)
+
+names(ensemble_GCM) <- c("ACCESS-CM2", "AWI-CM-1-1-MR", "CanESM5-CanOE", "CNRM-CM6", "GISS-E2-1H", "HadGEM3-GC31-LL", "IPSL-CM6A-LR", "MIROC6")
+coords_gcm <- xyFromCell(ensemble_GCM, seq_len(ncell(ensemble_GCM)))
+ensemble_GCM_layers <- stack(as.data.frame(getValues(ensemble_GCM)))
+names(ensemble_GCM_layers) <- c('Suitability', 'variable')
+
+mycolors2 <- colorRampPalette(c("red", "orange", "yellow", "gray", "cyan2", "deepskyblue", "dodgerblue3"))
+mycolors22 <- colorRampPalette(c("red", "gray", "blue"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "MARS", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+ensemble_GCM_layers2 <- cbind(coords, ensemble_GCM_layers)
+
+ensemble_GCM_layers2$Suitability[ensemble_GCM_layers2$Suitability>=1] <- 1
+ensemble_GCM_layers2$Suitability[ensemble_GCM_layers2$Suitability<=0] <- 0
+
+```
+
+
+```{r}
+ggplot(ensemble_GCM_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+
+    geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_GCM.png", units ="in", width=40, height=23, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+```{r}
+Mars_ensemble_GCM <- stack(Napa_mars_gcm_access, Napa_mars_gcm_awi, Napa_mars_gcm_cnrm, Napa_mars_gcm_cnrm, Napa_mars_gcm_giss, Napa_mars_gcm_hadgem, Napa_mars_gcm_ipsl, Napa_mars_gcm_miroc)
+
+names(Mars_ensemble_GCM) <- c("ACCESS-CM2", "AWI-CM-1-1-MR", "CanESM5-CanOE", "CNRM-CM6", "GISS-E2-1H", "HadGEM3-GC31-LL", "IPSL-CM6A-LR", "MIROC6")
+coords_gcm_mars <- xyFromCell(Mars_ensemble_GCM, seq_len(ncell(Mars_ensemble_GCM)))
+Mars_ensemble_GCM_layers <- stack(as.data.frame(getValues(Mars_ensemble_GCM)))
+names(Mars_ensemble_GCM_layers) <- c('Suitability', 'variable')
+
+mycolors2 <- colorRampPalette(c("red", "orange", "yellow", "gray", "cyan2", "deepskyblue", "dodgerblue3"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "MARS", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+Mars_ensemble_GCM_layers2 <- cbind(coords_gcm_mars, Mars_ensemble_GCM_layers)
+
+Mars_ensemble_GCM_layers2$Suitability[Mars_ensemble_GCM_layers2$Suitability>=1] <- 1
+Mars_ensemble_GCM_layers2$Suitability[Mars_ensemble_GCM_layers2$Suitability<=0] <- 0
+
+```
+
+
+```{r}
+ggplot(Mars_ensemble_GCM_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+
+    geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_Mars_GCM.png", units ="in", width=40, height=23, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+```{r}
+mlp_ensemble_GCM <- stack(Napa_mlp_gcm_access, Napa_mlp_gcm_awi, Napa_mlp_gcm_cnrm, Napa_mlp_gcm_cnrm, Napa_mlp_gcm_giss, Napa_mlp_gcm_hadgem, Napa_mlp_gcm_ipsl, Napa_mlp_gcm_miroc)
+
+names(mlp_ensemble_GCM) <- c("ACCESS-CM2", "AWI-CM-1-1-MR", "CanESM5-CanOE", "CNRM-CM6", "GISS-E2-1H", "HadGEM3-GC31-LL", "IPSL-CM6A-LR", "MIROC6")
+coords_gcm_mlp <- xyFromCell(mlp_ensemble_GCM, seq_len(ncell(mlp_ensemble_GCM)))
+mlp_ensemble_GCM_layers <- stack(as.data.frame(getValues(mlp_ensemble_GCM)))
+names(mlp_ensemble_GCM_layers) <- c('Suitability', 'variable')
+
+mycolors2 <- colorRampPalette(c("red", "orange", "yellow", "gray", "cyan2", "deepskyblue", "dodgerblue3"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "mlp", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "mlp"))))))))
+  
+
+mlp_ensemble_GCM_layers2 <- cbind(coords_gcm_mlp, mlp_ensemble_GCM_layers)
+
+mlp_ensemble_GCM_layers2$Suitability[mlp_ensemble_GCM_layers2$Suitability>=1] <- 1
+mlp_ensemble_GCM_layers2$Suitability[mlp_ensemble_GCM_layers2$Suitability<=0] <- 0
+
+```
+
+
+```{r}
+ggplot(mlp_ensemble_GCM_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+
+    geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_Mlp_GCM.png", units ="in", width=40, height=23, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+
+```{r}
+Mlp_ensemble_GCM <- stack(Napa_Mlp_gcm_access, Napa_Mlp_gcm_awi, Napa_Mlp_gcm_cnrm, Napa_Mlp_gcm_cnrm, Napa_Mlp_gcm_giss, Napa_Mlp_gcm_hadgem, Napa_Mlp_gcm_ipsl, Napa_Mlp_gcm_miroc)
+
+names(Mlp_ensemble_GCM) <- c("ACCESS-CM2", "AWI-CM-1-1-MR", "CanESM5-CanOE", "CNRM-CM6", "GISS-E2-1H", "HadGEM3-GC31-LL", "IPSL-CM6A-LR", "MIROC6")
+coords_gcm_Mlp <- xyFromCell(Mlp_ensemble_GCM, seq_len(ncell(Mlp_ensemble_GCM)))
+Mlp_ensemble_GCM_layers <- stack(as.data.frame(getValues(Mlp_ensemble_GCM)))
+names(Mlp_ensemble_GCM_layers) <- c('Suitability', 'variable')
+
+mycolors2 <- colorRampPalette(c("red", "orange", "yellow", "gray", "cyan2", "deepskyblue", "dodgerblue3"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "Mlp", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+Mlp_ensemble_GCM_layers2 <- cbind(coords_gcm_Mlp, Mlp_ensemble_GCM_layers)
+
+Mlp_ensemble_GCM_layers2$Suitability[Mlp_ensemble_GCM_layers2$Suitability>=1] <- 1
+Mlp_ensemble_GCM_layers2$Suitability[Mlp_ensemble_GCM_layers2$Suitability<=0] <- 0
+
+```
+
+
+```{r}
+ggplot(Mlp_ensemble_GCM_layers2) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+
+    geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+ 
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_Mlp_GCM.png", units ="in", width=40, height=23, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+
+```{r}
+names(all_historical) <- c("CART", "BRT", "RPART", "RBF", "MARS", "MaxLike", "SVM", "MLP")
+coords <- xyFromCell(all_historical, seq_len(ncell(all_historical)))
+allhistoricallayers <- stack(as.data.frame(getValues(all_historical)))
+names(allhistoricallayers) <- c('Suitability', 'variable')
+
+mycolors <- colorRampPalette(c("red", "orange", "yellow", "green", "cyan2", "deepskyblue", "dodgerblue3"))
+
+
+#allhistoricallayers2 <- allhistoricallayers %>%
+#  mutate(variable = ifelse(variable == "layer.1", "CART", ifelse(variable == "layer.2", "BRT", ifelse(variable == "layer.3", "RPART", ifelse(variable == "layer.4", "RBF", ifelse(variable == "layer.5", "MARS", ifelse(variable == "layer.6", "MaxLike", ifelse(variable == "layer.7", "SVM", "MLP"))))))))
+  
+
+allhistoricallayers3 <- cbind(coords, allhistoricallayers)
+
+allhistoricallayers3$Suitability[allhistoricallayers3$Suitability>=1] <- 1
+allhistoricallayers3$Suitability[allhistoricallayers3$Suitability<=0] <- 0
+
+```
+
+```{r}
+ggplot(allhistoricallayers3) + 
+    theme_bw(base_size=40, base_family='Times New Roman') + #change font to Times New Roman, 12pt, Bold
+  geom_tile(aes(x, y, fill = Suitability)) +
+  facet_wrap(~ variable, ncol = 4) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_gradientn(colours =mycolors(200), limits = c(0,1), na.value = 'white') +
+  coord_equal() +
+  labs(title = element_blank(),
+    x = element_blank(),
+    y = element_blank())+ 
+  geom_polygon(AVAs, mapping = aes(x = long, y = lat, group = group),color = 'black', alpha = 0)+
+  theme(strip.background = element_blank(),
+        #legend.position = "right",
+        #legend.direction = "vertical",
+        legend.box.margin = margin(t = -25),
+        plot.title = element_text(hjust = 0.5),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+panel.background = element_blank(), axis.line = element_line(colour = "black"),
+legend.position = "bottom", legend.key.width = unit(5, "cm")) +
+  guides(fill = guide_legend(title.position="top", title.hjust = 0.5))+
+png("C:/Users/gusta/Desktop/PhD/Classes/ES207/ML_winegrapes_ML.png", units ="in", width=40, height=23, res = 300)
+#ggplot2::ggplot(all_historical) + geom_tile(aes())
+```
+
+```{r}
+plot(Napa_ensembled_rbf2)
+```
+
+```{r}
+Napa_ensembled_entropy_access2 <- sdm::ensemble(allmodels_napa2, california_data2, filename = "Napa_ensembled_entropy_access2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_canes2 <- sdm::ensemble(allmodels_napa2, california_data_CANES, filename = "Napa_ensembled_entropy_canes2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_cnrm2 <- sdm::ensemble(allmodels_napa2, california_data_CNRM, filename = "Napa_ensembled_entropy_cnrm2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_hadgem2 <- sdm::ensemble(allmodels_napa2, california_data_HadGEM, filename = "Napa_ensembled_entropy_hadgem2 2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_awi2 <- sdm::ensemble(allmodels_napa2, california_data_AWI, filename = "Napa_ensembled_entropy_awi2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_giss2 <- sdm::ensemble(allmodels_napa2, california_data_GISS, filename = "Napa_ensembled_entropy_giss2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_ipsl2 <- sdm::ensemble(allmodels_napa2, california_data_IPSL, filename = "Napa_ensembled_entropy_ipsl2.grd", setting=list(method='entropy'))
+
+Napa_ensembled_entropy_miroc2 <- sdm::ensemble(allmodels_napa2, california_data_MIROC, filename = "Napa_ensembled_entropy_miroc.grd", setting=list(method='entropy'))
+
+Napa_future_mean_ensemble_entropy <- stack(Napa_ensembled_entropy_access2, Napa_ensembled_entropy_canes2, Napa_ensembled_entropy_cnrm2, Napa_ensembled_entropy_hadgem2, Napa_ensembled_entropy_awi2, Napa_ensembled_entropy_giss2, Napa_ensembled_entropy_ipsl2, Napa_ensembled_entropy_miroc2)
+Napa_future_mean_ensemble_entropy2 <- calc(Napa_future_mean_ensemble_entropy, fun = mean)
+```
+
+
+
+```{r}
+
+Napa_mars_gcm_access <- ensemble(Napa_US_mars2, california_data_ACCESS, filename = "Napa_mars_gcm_access.grd", setting=list(method='pa'),overwrite=TRUE)
+
+Napa_mars_gcm_canes <- sdm::ensemble(Napa_US_mars2, california_data_CANES, filename = "Napa_mars_gcm_canes.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_cnrm <- sdm::ensemble(Napa_US_mars2, california_data_CNRM, filename = "Napa_mars_gcm_cnrm.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_hadgem <- sdm::ensemble(Napa_US_mars2, california_data_HadGEM, filename = "Napa_mars_gcm_hadgem.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_awi <- sdm::ensemble(Napa_US_mars2, california_data_AWI, filename = "Napa_mars_gcm_awi.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_giss <- sdm::ensemble(Napa_US_mars2, california_data_GISS, filename = "Napa_mars_gcm_giss.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_ipsl <- sdm::ensemble(Napa_US_mars2, california_data_IPSL, filename = "Napa_mars_gcm_ipsl.grd", setting=list(method='pa')) 
+
+Napa_mars_gcm_miroc <- sdm::ensemble(Napa_US_mars2, california_data_MIROC, filename = "Napa_mars_gcm_miroc.grd", setting=list(method='pa')) 
+
+future_mean_mars_napa <- stack(Napa_mars_gcm_access, Napa_mars_gcm_canes, Napa_mars_gcm_cnrm, Napa_mars_gcm_hadgem, Napa_mars_gcm_awi, Napa_mars_gcm_giss, Napa_mars_gcm_ipsl, Napa_mars_gcm_miroc)
+future_mean_mars_napa2 <- calc(future_mean_mars_napa, fun = mean)
+
+future_max_mars_napa <- calc(future_mean_mars_napa, function(x){max(x)})
+
+```
+
+```{r}
+
+Napa_mlp_gcm_access <- ensemble(Napa_US_mlp2, california_data_ACCESS, filename = "Napa_mlp_gcm_access.grd", setting=list(method='pa'),overwrite=TRUE)
+
+Napa_mlp_gcm_canes <- sdm::ensemble(Napa_US_mlp2, california_data_CANES, filename = "Napa_mlp_gcm_canes.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_cnrm <- sdm::ensemble(Napa_US_mlp2, california_data_CNRM, filename = "Napa_mlp_gcm_cnrm.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_hadgem <- sdm::ensemble(Napa_US_mlp2, california_data_HadGEM, filename = "Napa_mlp_gcm_hadgem.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_awi <- sdm::ensemble(Napa_US_mlp2, california_data_AWI, filename = "Napa_mlp_gcm_awi.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_giss <- sdm::ensemble(Napa_US_mlp2, california_data_GISS, filename = "Napa_mlp_gcm_giss.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_ipsl <- sdm::ensemble(Napa_US_mlp2, california_data_IPSL, filename = "Napa_mlp_gcm_ipsl.grd", setting=list(method='pa')) 
+
+Napa_mlp_gcm_miroc <- sdm::ensemble(Napa_US_mlp2, california_data_MIROC, filename = "Napa_mlp_gcm_miroc.grd", setting=list(method='pa')) 
+
+future_mean_mlp_napa <- stack(Napa_mlp_gcm_access, Napa_mlp_gcm_canes, Napa_mlp_gcm_cnrm, Napa_mlp_gcm_hadgem, Napa_mlp_gcm_awi, Napa_mlp_gcm_giss, Napa_mlp_gcm_ipsl, Napa_mlp_gcm_miroc)
+future_mean_mlp_napa2 <- calc(future_mean_mlp_napa, fun = mean)
+```
+
+
+```{r}
+
+Napa_ensembled_access <- ensemble(allmodels_napa2, california_data_ACCESS, filename = "Napa_ensembled_access.grd", setting=list(method='pa'),overwrite=TRUE)
+
+Napa_ensembled_canes <- sdm::ensemble(allmodels_napa2, california_data_CANES, filename = "Napa_ensembled_canes.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_cnrm <- sdm::ensemble(allmodels_napa2, california_data_CNRM, filename = "Napa_ensembled_cnrm.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_hadgem <- sdm::ensemble(allmodels_napa2, california_data_HadGEM, filename = "Napa_ensembled_hadgem.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_awi <- sdm::ensemble(allmodels_napa2, california_data_AWI, filename = "Napa_ensembled_awi.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_giss <- sdm::ensemble(allmodels_napa2, california_data_GISS, filename = "Napa_ensembled_giss.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_ipsl <- sdm::ensemble(allmodels_napa2, california_data_IPSL, filename = "Napa_ensembled_ipsl.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+Napa_ensembled_miroc <- sdm::ensemble(allmodels_napa2, california_data_MIROC, filename = "Napa_ensembled_miroc.grd", setting=list(method='pa'),overwrite=TRUE) 
+
+future_mean_ensemble_napa <- stack(Napa_ensembled_access, Napa_ensembled_canes, Napa_ensembled_cnrm, Napa_ensembled_hadgem, Napa_ensembled_awi, Napa_ensembled_giss, Napa_ensembled_ipsl, Napa_ensembled_miroc)
+future_mean_ensemble_napa2 <- calc(future_mean_ensemble_napa, fun = mean)
+```
+
+
+```{r}
+MIROC <- stack("MIROC6_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_MIROC <- california_data2
+
+california_data_MIROC[[1]] <- MIROC[[13]]
+california_data_MIROC[[2]] <- MIROC[[1]]
+california_data_MIROC[[3]] <- MIROC[[7]]
+california_data_MIROC[[4]] <- MIROC[[8]]
+california_data_MIROC[[5]] <- MIROC[[9]]
+california_data_MIROC[[6]] <- MIROC[[10]]
+california_data_MIROC[[7]] <- MIROC[[11]]
+california_data_MIROC[[8]] <- MIROC[[12]]
+california_data_MIROC[[9]] <- MIROC[[2]]
+california_data_MIROC[[10]] <- MIROC[[3]]
+california_data_MIROC[[11]] <- MIROC[[4]]
+california_data_MIROC[[12]] <- MIROC[[5]]
+california_data_MIROC[[13]] <- MIROC[[6]]
+
+
+names(california_data_MIROC) <- names(california_data2)
+
+```
+
+```{r}
+IPSL <- stack("IPSL-CM6A-LR_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_IPSL <- california_data2
+
+california_data_IPSL[[1]] <- IPSL[[13]]
+california_data_IPSL[[2]] <- IPSL[[1]]
+california_data_IPSL[[3]] <- IPSL[[7]]
+california_data_IPSL[[4]] <- IPSL[[8]]
+california_data_IPSL[[5]] <- IPSL[[9]]
+california_data_IPSL[[6]] <- IPSL[[10]]
+california_data_IPSL[[7]] <- IPSL[[11]]
+california_data_IPSL[[8]] <- IPSL[[12]]
+california_data_IPSL[[9]] <- IPSL[[2]]
+california_data_IPSL[[10]] <- IPSL[[3]]
+california_data_IPSL[[11]] <- IPSL[[4]]
+california_data_IPSL[[12]] <- IPSL[[5]]
+california_data_IPSL[[13]] <- IPSL[[6]]
+
+names(california_data_IPSL) <- names(california_data2)
+
+```
+
+
+```{r}
+GISS <- stack("GISS-E2-1-H_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_GISS <- california_data2
+
+california_data_GISS[[1]] <- GISS[[13]]
+california_data_GISS[[2]] <- GISS[[1]]
+california_data_GISS[[3]] <- GISS[[7]]
+california_data_GISS[[4]] <- GISS[[8]]
+california_data_GISS[[5]] <- GISS[[9]]
+california_data_GISS[[6]] <- GISS[[10]]
+california_data_GISS[[7]] <- GISS[[11]]
+california_data_GISS[[8]] <- GISS[[12]]
+california_data_GISS[[9]] <- GISS[[2]]
+california_data_GISS[[10]] <- GISS[[3]]
+california_data_GISS[[11]] <- GISS[[4]]
+california_data_GISS[[12]] <- GISS[[5]]
+california_data_GISS[[13]] <- GISS[[6]]
+
+names(california_data_GISS) <- names(california_data2)
+
+```
+writeRaster(AWI, "")
+
+```{r}
+AWI <- stack("AWI-CM-1-1-MR_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_AWI <- california_data2
+
+california_data_AWI[[1]] <- AWI[[13]]
+california_data_AWI[[2]] <- AWI[[1]]
+california_data_AWI[[3]] <- AWI[[7]]
+california_data_AWI[[4]] <- AWI[[8]]
+california_data_AWI[[5]] <- AWI[[9]]
+california_data_AWI[[6]] <- AWI[[10]]
+california_data_AWI[[7]] <- AWI[[11]]
+california_data_AWI[[8]] <- AWI[[12]]
+california_data_AWI[[9]] <- AWI[[2]]
+california_data_AWI[[10]] <- AWI[[3]]
+california_data_AWI[[11]] <- AWI[[4]]
+california_data_AWI[[12]] <- AWI[[5]]
+california_data_AWI[[13]] <- AWI[[6]]
+
+names(california_data_AWI) <- names(california_data2)
+
+```
+
+```{r}
+HadGEM <- stack("HadGEM3-GC31-LL_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_HadGEM <- california_data2
+
+california_data_HadGEM[[1]] <- HadGEM[[13]]
+california_data_HadGEM[[2]] <- HadGEM[[1]]
+california_data_HadGEM[[3]] <- HadGEM[[7]]
+california_data_HadGEM[[4]] <- HadGEM[[8]]
+california_data_HadGEM[[5]] <- HadGEM[[9]]
+california_data_HadGEM[[6]] <- HadGEM[[10]]
+california_data_HadGEM[[7]] <- HadGEM[[11]]
+california_data_HadGEM[[8]] <- HadGEM[[12]]
+california_data_HadGEM[[9]] <- HadGEM[[2]]
+california_data_HadGEM[[10]] <- HadGEM[[3]]
+california_data_HadGEM[[11]] <- HadGEM[[4]]
+california_data_HadGEM[[12]] <- HadGEM[[5]]
+california_data_HadGEM[[13]] <- HadGEM[[6]]
+
+names(california_data_HadGEM) <- names(california_data2)
+
+```
+
+```{r}
+CNRM <- stack("CNRM-CM6_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_CNRM <- california_data2
+
+california_data_CNRM[[1]] <- CNRM[[13]]
+california_data_CNRM[[2]] <- CNRM[[1]]
+california_data_CNRM[[3]] <- CNRM[[7]]
+california_data_CNRM[[4]] <- CNRM[[8]]
+california_data_CNRM[[5]] <- CNRM[[9]]
+california_data_CNRM[[6]] <- CNRM[[10]]
+california_data_CNRM[[7]] <- CNRM[[11]]
+california_data_CNRM[[8]] <- CNRM[[12]]
+california_data_CNRM[[9]] <- CNRM[[2]]
+california_data_CNRM[[10]] <- CNRM[[3]]
+california_data_CNRM[[11]] <- CNRM[[4]]
+california_data_CNRM[[12]] <- CNRM[[5]]
+california_data_CNRM[[13]] <- CNRM[[6]]
+
+names(california_data_CNRM) <- names(california_data2)
+
+```
+
+```{r}
+ACCESS <- stack("ACCESS-CM2_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_ACCESS <- california_data2
+
+california_data_ACCESS[[1]] <- ACCESS[[13]]
+california_data_ACCESS[[2]] <- ACCESS[[1]]
+california_data_ACCESS[[3]] <- ACCESS[[7]]
+california_data_ACCESS[[4]] <- ACCESS[[8]]
+california_data_ACCESS[[5]] <- ACCESS[[9]]
+california_data_ACCESS[[6]] <- ACCESS[[10]]
+california_data_ACCESS[[7]] <- ACCESS[[11]]
+california_data_ACCESS[[8]] <- ACCESS[[12]]
+california_data_ACCESS[[9]] <- ACCESS[[2]]
+california_data_ACCESS[[10]] <- ACCESS[[3]]
+california_data_ACCESS[[11]] <- ACCESS[[4]]
+california_data_ACCESS[[12]] <- ACCESS[[5]]
+california_data_ACCESS[[13]] <- ACCESS[[6]]
+
+names(california_data_ACCESS) <- names(california_data2)
+
+```
+
+```{r}
+CANES <- stack("CanESM5-CanOE_ssp585_2041-2060.tif") %>%
+  resample(., california_data2)
+
+california_data_CANES <- california_data2
+
+california_data_CANES[[1]] <- CANES[[13]]
+california_data_CANES[[2]] <- CANES[[1]]
+california_data_CANES[[3]] <- CANES[[7]]
+california_data_CANES[[4]] <- CANES[[8]]
+california_data_CANES[[5]] <- CANES[[9]]
+california_data_CANES[[6]] <- CANES[[10]]
+california_data_CANES[[7]] <- CANES[[11]]
+california_data_CANES[[8]] <- CANES[[12]]
+california_data_CANES[[9]] <- CANES[[2]]
+california_data_CANES[[10]] <- CANES[[3]]
+california_data_CANES[[11]] <- CANES[[4]]
+california_data_CANES[[12]] <- CANES[[5]]
+california_data_CANES[[13]] <- CANES[[6]]
+
+names(california_data_CANES) <- names(california_data2)
+
+```
+
+
+
+```{r}
+Napa_ensembled_entropy_maxlike <- sdm::ensemble(Napa_US_maxlike, california_data2, filename = "Napa_ensemble_entropy_maxlike.grd", setting=list(method='entropy')) 
+
+Napa_ensembled_entropy <- sdm::ensemble(allmodels, california_data2, filename = "Napa_ensemble_entropy2.grd", setting=list(method='entropy'))
+
+```
+
+```{r}
+
+
+Napa_ensembled_maxlike <- sdm::ensemble(Napa_US_maxlike, california_data2, filename = "Napa_ensembled_maxlike.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_entropy_maxlike <- sdm::ensemble(Napa_US_maxlike, california_data2, filename = "Napa_ensemble_entropy_maxlike.grd", setting=list(method='entropy')) 
+
+Napa_ensembled <- sdm::ensemble(allmodels, california_data2, filename = "Napa_ensembled2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+Napa_ensembled_entropy <- sdm::ensemble(allmodels, california_data2, filename = "Napa_ensemble_entropy2.grd", setting=list(method='entropy'))
+```

@@ -1,0 +1,72 @@
+```{r}
+library(dismo)
+library(sdm)
+library(sdmpredictors)
+library(raster)
+library(dplyr)
+library(rgdal)
+```
+
+```{r}
+#all_data <- stack("D:/Winegrapes/Historical/bio_elev_soil_fixed_global_30s.tif")
+#california_data2 <- stack("California_alldata.tif")
+#names(california_data2) <- names(all_data)
+
+#napa <- readOGR("C:/Users/gusta/Documents/NapaVallleyRegion2.shp")
+
+#points_napas <- raster::intersect(points_vines_napa, napa)
+
+
+
+#points_napas$species <- 1
+#points_napas$ID <- NULL
+
+#points_napas2 <- points_napas[,-c(1:22)]
+#points_napas2$ID <- NULL
+
+#head(points_napas2)
+head(points_nariz)
+```
+
+
+```{r}
+
+#d_Nariz <- sdm::sdmData(formula = species~., train = points_nariz, predictors=california_data2, bg = list(method="gRandom", n=5000))
+
+#Napa_US_cart2 <- sdm(species~., d_Nariz, methods=c('cart'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+#saveRDS(Napa_US_cart2, "cart4_winegrapes_Napa.sdm")
+
+Napa_US_rbf2 <- sdm(species~., d_Nariz, methods=c('rbf'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_rbf2, "rbf3_winegrapes_Napa.sdm")
+
+Napa_US_maxlike2 <- sdm(species~., d_Nariz, methods=c('maxlike'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_maxlike2, "maxlike3_winegrapes_Napa.sdm")
+
+Napa_US_svm2 <- sdm(species~., d_Nariz, methods=c('svm'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_svm2, "svm3_winegrapes_Napa.sdm")
+
+Napa_US_rpart2 <- sdm(species~., d_Nariz, methods=c('rpart'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_rpart2, "rpart3_winegrapes_Napa.sdm")
+
+Napa_US_mars2 <- sdm(species~., d_Nariz, methods=c('mars'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_mars2, "mars3_winegrapes_Napa.sdm")
+
+Napa_US_brt2 <- sdm(species~., d_Nariz, methods=c('brt'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_brt2, "brt3_winegrapes_Napa.sdm")
+
+Napa_US_mlp2 <- sdm(species~., d_Nariz, methods=c('mlp'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Napa_US_mlp2, "mlp3_winegrapes_Napa.sdm")
+
+```
+
+```{r}
+
+
+ensembled_maxlike <- sdm::ensemble(Napa_US_maxlike, california_data2, filename = "ensembled_maxlike.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_maxlike <- sdm::ensemble(Napa_US_maxlike, california_data2, filename = "ensemble_entropy_maxlike.grd", setting=list(method='entropy')) 
+
+ensembled <- sdm::ensemble(allmodels, california_data2, filename = "ensembled2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy <- sdm::ensemble(allmodels, california_data2, filename = "ensemble_entropy2.grd", setting=list(method='entropy'))
+```

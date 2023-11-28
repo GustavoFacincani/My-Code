@@ -1,0 +1,56 @@
+```{r}
+library(raster)
+library(dplyr)
+library(rgdal)
+```
+
+```{r}
+mypath <- "C:/Users/gusta/box/Winegrapes/AVAs/"
+
+CA <- as(raster(paste(mypath, "clipped.TIF", sep="")),"SpatRaster")#%>%
+#  projectRaster(., crs = CRS("+init=epsg:4326"))
+  
+
+OR <- as(raster(paste(mypath, "clipped2.TIF", sep="")),"SpatRaster")
+
+WA <- as(raster(paste(mypath, "clipped3.TIF", sep="")),"SpatRaster")
+
+
+```
+
+
+
+```{r}
+CA2 <- terra::as.polygons(CA)
+CA2
+
+OR2 <- terra::as.polygons(OR)
+OR2
+
+WA2 <- terra::as.polygons(WA)
+WA2
+
+terra::writeVector(CA2, filename= "CA_allgrapes3.shp", filetype="ESRI Shapefile")
+terra::writeVector(OR2, filename= "OR_allgrapes3.shp", filetype="ESRI Shapefile")
+terra::writeVector(WA2, filename= "WA_allgrapes3.shp", filetype="ESRI Shapefile")
+```
+
+```{r}
+AVAs <- readOGR(paste(mypath,"All_AVAs.shp", sep=""))%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+plot(AVAs)
+
+CA_grapes <- readOGR(paste(mypath,"CA_allgrapes3.shp", sep=""))%>%
+    spTransform(shp, crs(rst))
+plot(CA_grapes)
+
+OR_grapes <- readOGR(paste(mypath,"OR_allgrapes3.shp", sep=""))%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+plot(OR_grapes)
+
+WA_grapes <- readOGR(paste(mypath,"WA_allgrapes3.shp", sep=""))%>%
+    spTransform(CRS("+proj=longlat +datum=WGS84"))
+plot(WA_grapes)
+
+
+```

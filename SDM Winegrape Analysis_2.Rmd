@@ -1,0 +1,118 @@
+---
+title: "SDM Winegrape Analysis"
+author: "Gustavo Facincani Dourado"
+date: "2023-09-18"
+output: html_document
+---
+
+```{r}
+# Package names
+packages <- c("ggplot2", "dplyr", "sdm", "raster", "rgdal")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+#If you're doing species modeling, the dismo package has global datasets showing the occurrence of all kinds of animal and plant species
+```
+
+```{r}
+#READING IN DATA POINTS
+
+#Set path to where the data is
+setwd("D:/Winegrapes/")
+
+
+points_napa <- readOGR("Shapefiles/Napa_Valley_vineyards.shp") #shapefile of points of the vineyards, in this case, centroids of properties within the Napa Valley region, would be better to extract more random points within properties, according to the rural property size
+                       
+#Create "species" column in the attribute table, showing 1 occurrence per point (REQUIRED FOR SDM)
+points_napa$species <- 1
+#Remove "ID" column that comes with this shapefile
+points_napa$ID <- NULL
+
+#Check if we just have the "species" column
+head(points_napa)
+```
+
+```{r}
+#GETTING DATA
+
+#The geodata R package has global datasets on bioclimatic variables for the past and future, and elevation and soils properties
+
+#Here's an example of how to download max temperature for "ACCESS-CM2", SSP5-8.5 scenario, for 2041-2060, in a resolution of 0.5 degrees (30 seconds or ~1 km)
+ACCESSCM2 <- geodata::cmip6_world("ACCESS-CM2", "585", "2041-2060", var= "tmax", res=0.5)
+#But I already downloaded all data needed, also available at the worldclim website
+
+#Another example is elevation (altitude), that can be downloaded and then processed, as follow:
+
+#read altitude tif file
+alt <- raster("Altitude/wc2.1_30s_elev.tif")
+alt
+#calculate slope and aspect
+SlopeAspect <- raster::terrain(alt, opt=c('slope', 'aspect'), unit='degrees')
+#stack them together
+terrain <- addLayer(SlopeAspect,alt)
+
+writeRaster(terrain, "Global_Elevation_Slope_Aspect.tif", format = "GTiff")
+#Global soils data can be download through soil_world(). such as the example below, for bulk density at 60 cm (bdod 60)
+bdod <- geodata::soil_world(var = 'bdod', res = 0.5, depth = 60)
+
+```
+
+
+```{r}
+###########################READM ME###################################
+
+# I saved all bioclimatic data historical data under "Historical/bioc" folder
+# All GCM data is under "Future/wc2.1_30s"
+# Soils were saved under "Global Soils", the folder "US_Soils" has fine resolution soils data for the conterminous US which could be used for alternative US studies
+# Altitude was saved under "Altitude" folder, 
+# Shapefiles folder has the shapefiles for borders of study areas (like, AVAs or the Pacific Coast) to filter/crop spatial data, or data points of winegrapes
+#Then tested all for multicollinearity
+
+
+```
+
+```{r}
+global_bioc_elev_soil <- stack("D:/Winegrapes/Historical/Winegrapes_GlobalFilteredData.tif")
+
+#Use this shafile to do the Pacific Coast (WA, OR and CA)
+#pacific <- readOGR("Dissolved_Pacific.shp")
+
+
+pacific_data <- crop(global_bioc_elev_soil, pacific)
+pacific_data2 <- mask(pacific_data, pacific)
+
+```
+
+
+```{r}
+
+d_Nariz <- sdm::sdmData(formula = species~., train = points_nariz, predictors=california_data2, bg = list(method="gRandom", n=5000))
+
+```
+
+
+```{r}
+#Use getmethodNames() to check which methods are available
+
+#Here I selected these ML models
+ml_method <- c("rpart", "rbf", "maxlike", "svm", "mars", "brt", "mlp", "cart")
+
+#creating loop to run each one
+for (method in ml_method) {
+
+paste("Napa_",method, sep="") <- sdm(species~., d_Nariz, methods=c(ml_method), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel")) #each model will have 10 replication: 5 through subsampling 30%, 5 through bootstraping, add more for greater confidence
+#Added ncore = 6 argument, to use the 6 cores available in my pc to run this
+
+saveRDS(paste("Napa_",method, sep=""), paste(method,"_Napa_suitability.sdm", sp="")) #this saves the results in .sdm format, in case R crashes after the run or we continue working some other day
+#they can be read by using readRDS()
+
+}
+
+```

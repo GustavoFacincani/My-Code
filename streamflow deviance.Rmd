@@ -1,0 +1,327 @@
+---
+title: "Streamflow_Data"
+author: "Gustavo Facincani Dourado"
+date: "2023-04-10"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(readr)
+library(lubridate)
+```
+
+```{r}
+Mer_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>% mutate(Basin = "Merced")
+Mer_FNF
+
+Tuo_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>% mutate(Basin = "Tuolumne")
+Tuo_FNF
+
+Stn_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv")%>% mutate(Basin = "Stanislaus")
+Stn_FNF
+
+USJ_FNF <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/full_natural_flow_daily_mcm.csv") %>% mutate(Basin = "Upper San Joaquin")
+USJ_FNF
+```
+
+```{r}
+FNF <- rbind(USJ_FNF, Tuo_FNF, Stn_FNF, Mer_FNF) 
+
+#colnames(FNF) <- c("Date", "Merced", "Tuolumne", "Stanislaus", "Upper San Joaquin") 
+FNF
+```
+
+
+```{r}
+FNF2 <- FNF %>%  filter(between(date, as.Date("1950-10-01"), as.Date("2010-09-30"))) %>%
+  mutate(Week = week(date), Month = month(date), Year = lfstat::water_year(date, origin = 10),
+         `average daily flow` = mean(`flow`),
+         `daily difference` = (`flow` - `average daily flow`)/sd(`flow`)) %>%
+  
+      group_by(Week, Month, Year, Basin) %>%
+  mutate(`weekly flow` = sum(`flow`)) %>%
+           ungroup() %>%
+  group_by(Basin) %>%
+  mutate(`average weekly flow` = mean(`weekly flow`)) %>%
+  
+  mutate(`weekly difference` = (`weekly flow` - `average weekly flow`)/sd(`weekly flow`))%>%
+  
+      group_by(Month, Year, Basin) %>%
+  mutate(`monthly flow` = sum(`weekly flow`)) %>%
+           ungroup() %>%
+  group_by(Basin) %>%
+  mutate(`average monthly flow` = mean(`monthly flow`)) %>%
+  
+  mutate(`monthly difference` = (`monthly flow` - `average monthly flow`)/sd(`monthly flow`))%>%
+  
+      group_by(Year, Basin) %>%
+  mutate(`annual flow` = sum(`monthly flow`)) %>%
+  ungroup() %>%
+  group_by(Basin) %>%
+  mutate(`average annual flow` = mean(`annual flow`)) %>%
+  
+  mutate(`annual difference` = (`annual flow` - `average annual flow`)/sd(`annual flow`))
+  
+  
+FNF2
+
+FNF2$Basin <- factor(FNF2$Basin, levels = c("Stanislaus", "Tuolumne", "Merced", "Upper San Joaquin"))
+```
+```{r}
+library(scales)
+
+# transform function
+lal_trans_transform <- function(x) case_when(
+  x < -1 ~ -log10(abs(x)) - 1,
+  x > 1 ~ log10(x) + 1,
+  TRUE ~ x
+)
+
+# inverse transform
+lal_trans_inverse <- function(x) case_when(
+  x < -1 ~ -10^(abs(x+1)),
+  x > 1 ~ 10^(x-1),
+  TRUE ~ x
+)
+
+lal_trans = trans_new(
+  'lal',
+  transform = lal_trans_transform,
+  inverse = lal_trans_inverse,
+  breaks = function(x) {
+    x = x[is.finite(x)]
+
+    rng = range(x)
+    if (rng[1] < -1){
+      min_val = -ceiling(log10(abs(rng[1])+1)) - 1
+    } else if (rng[1] < 0){
+      min_val = -1
+    } else if (rng[1] < 1){
+      min_val = 0
+    } else {
+      min_val = ceiling(log10(rng[1])-1) - 1
+    }
+
+    if (rng[2] > 1){
+      max_val = floor(log10(abs(rng[2]) + 1)) + 1
+    } else if (rng[2] > 0){
+      max_val = 1
+    } else if (rng[2] > -1){
+      max_val = 0
+    } else {
+      max_val = -floor(log10(abs(rng[1]))-1) + 1
+    }
+
+    breaks = lal_trans_inverse(as.numeric(seq.int(min_val, max_val)))
+    return(breaks)
+  }
+)
+
+
+```
+
+```{r}
+theme_black = function(base_size = 12, base_family = "") {
+theme_grey(base_size = base_size, base_family = base_family) %+replace%
+theme(
+# Specify axis options
+axis.line = element_blank(),
+axis.text.x = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),
+axis.text.y = element_text(size = base_size*0.8, color = "white", lineheight = 0.9),
+axis.ticks = element_line(color = "white", size  =  0.2),
+axis.title.x = element_text(size = base_size, color = "white", margin = margin(0, 10, 0, 0)),
+axis.title.y = element_text(size = base_size, color = "white", angle = 90, margin = margin(0, 10, 0, 0)),
+axis.ticks.length = unit(0.3, "lines"),
+# Specify legend options
+legend.background = element_rect(color = NA, fill = "black"),
+legend.key = element_rect(color = "white",  fill = "black"),
+legend.key.size = unit(1.2, "lines"),
+legend.key.height = NULL,
+legend.key.width = NULL,
+legend.text = element_text(size = base_size*0.8, color = "white"),
+legend.title = element_text(size = base_size*0.8, face = "bold", hjust = 0, color = "white"),
+legend.position = "right",
+legend.text.align = NULL,
+legend.title.align = NULL,
+legend.direction = "vertical",
+legend.box = NULL,
+# Specify panel options
+panel.background = element_rect(fill = "black", color  =  NA),
+panel.border = element_rect(fill = NA, color = "white"),
+panel.grid.major = element_line(color = "grey2"),
+panel.grid.minor = element_line(color = "grey1"),
+panel.margin = unit(0.5, "lines"),
+# Specify facetting options
+strip.background = element_blank(),#element_rect(fill = "grey2", color = "grey1"),
+strip.text.x = element_text(size = base_size*0.8, color = "white"),
+strip.text.y = element_text(size = base_size*0.8, color = "white",angle = -90),
+# Specify plot options
+plot.background = element_rect(color = "black", fill = "black"),
+plot.title = element_text(size = base_size*1.2, color = "white"),
+plot.margin = unit(rep(1, 4), "lines")
+)
+}
+```
+```{r}
+ggplot(FNF2) +
+     # geom_line(mapping = aes(y = `average daily flow`, x = Date))+
+  theme_bw()+
+      geom_col(mapping = aes(y = `daily difference`*100, x = date, colour = after_stat(y < 0)))+ #+ ylab ("Deviance of weekly flows (mcm)")
+  #  geom_line(mapping = aes(y = `average weekly flow`, x = Date))+
+    #  geom_col(mapping = aes(y = `weekly difference`, x = date, colour = after_stat(y < 0)))+
+   #   geom_line(mapping = aes(y = `average monthly flow`, x = Date))
+   #  geom_col(mapping = aes(y = `monthly difference`, x = date, colour = after_stat(y < 0))) 
+  ylab ("Daily streamflow deviance (%)")+
+    xlab(element_blank())+
+ #   geom_col(mapping = aes(y = `annual difference`, x = date, colour = after_stat(y < 0))) +
+  #     scale_y_log10()+
+  scale_colour_manual(
+    values = c("skyblue3", "darkorange")
+  )+
+  scale_x_date(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),trans=lal_trans)+
+ # scale_y_continuous(labels = scales::percent)+
+       facet_wrap(~Basin)+
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        strip.background = element_blank()) + #center the title
+
+  png("timesseries_deviance_from_dailymean.png", units ="in", width=10, height=6, res = 300)
+
+
+```
+
+```{r}
+"#e41a1c"
+"#377eb8"
+"#4daf4a"
+"#984ea3"
+"#ff7f00"
+"#ffff33"
+"#a65628"
+"#f781bf"
+
+# Reduce the opacity of the grid lines: Default is 255
+c("#FF5733", "#3498DB", "#2ECC71", "#9B59B6")
+
+ggplot(FNF2) +
+     # geom_line(mapping = aes(y = `average daily flow`, x = Date))+
+  theme_bw()+
+          geom_line(mapping = aes(y = `daily difference`, x = date), size = 1.1, colour = "white", alpha = 1)+ #+ ylab ("Deviance of weekly flows (mcm)")
+  #  geom_line(mapping = aes(y = `average weekly flow`, x = Date))+
+  geom_line(mapping = aes(y = `weekly difference`, x = date), size = 1.1, colour = "red4", alpha = 0.75)+
+  
+  geom_line(mapping = aes(y = `monthly difference`, x = date), size = 1.1, colour = "orchid1", alpha = 0.75)+ 
+  #   geom_line(mapping = aes(y = `average monthly flow`, x = Date))
+      geom_line(mapping = aes(y = `annual difference`, x = date), size = 1.1, colour = "yellow", alpha = 0.9) +
+
+     
+
+
+  ylab ("Streamflow standardized by deviation")+
+    xlab(element_blank())+
+  #     scale_y_log10()+
+
+  scale_x_date(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),trans=lal_trans, breaks = c(-1, 0, 1, 10, 30))+ #, limits = c(NA, 10)
+ # scale_y_continuous(labels = scales::percent)+
+       facet_wrap(~Basin)+
+  theme(legend.position = "none",
+        legend.direction = "horizontal",
+        strip.background = element_blank()) + #center the title
+      theme(legend.position = "none",
+        legend.direction = "horizontal",
+        strip.background = element_blank()) + #center the title
+theme_black()+
+  png("timesseries_deviance_from_all3.png", units ="in", width=10, height=6, res = 450)
+
+
+```
+
+```{r}
+ggplot(FNF2) +
+  theme_bw()+
+     # geom_line(mapping = aes(y = `average daily flow`, x = Date))+
+      #geom_col(mapping = aes(y = `daily difference`, x = date, colour = after_stat(y < 0)))+ #+ ylab ("Deviance of weekly flows (mcm)")
+  #  geom_line(mapping = aes(y = `average weekly flow`, x = Date))+
+      geom_col(mapping = aes(y = `weekly difference`*100, x = date, colour = after_stat(y < 0)))+
+   #   geom_line(mapping = aes(y = `average monthly flow`, x = Date))
+     #geom_col(mapping = aes(y = `monthly difference`, x = date, colour = after_stat(y < 0))) + ylab ("Weekly streamflow deviance (%)")+
+ #   geom_col(mapping = aes(y = `annual difference`, x = date, colour = after_stat(y < 0))) +
+  #     scale_y_log10()+
+    ylab ("Weekly streamflow deviance (%)")+
+    xlab(element_blank())+
+  scale_colour_manual(
+    values = c("skyblue3", "darkorange")
+  )+
+  scale_x_date(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),trans=reverselog_trans(base=10),
+                     labels=trans_format("identity", function(x) -x))+
+
+ # scale_y_continuous(labels = scales::percent)+
+       facet_wrap(~Basin)+
+  theme(legend.position = "none",
+    plot.title = element_text(hjust = 0.5),
+        strip.background = element_blank()) + #center the title
+
+  png("timesseries_deviance_from_weeklymean2.png", units ="in", width=10, height=6, res = 300)
+
+
+```
+
+```{r}
+ggplot(FNF2) +
+    theme_bw()+
+     # geom_line(mapping = aes(y = `average daily flow`, x = Date))+
+  #    geom_col(mapping = aes(y = `daily difference`, x = date, colour = after_stat(y < 0)))+ #+ ylab ("Deviance of weekly flows (mcm)")
+  #  geom_line(mapping = aes(y = `average weekly flow`, x = Date))+
+   #   geom_col(mapping = aes(y = `weekly difference`, x = date, colour = after_stat(y < 0)))+
+   #   geom_line(mapping = aes(y = `average monthly flow`, x = Date))
+     geom_col(mapping = aes(y = `monthly difference`*100, x = date, colour = after_stat(y < 0))) + 
+  ylab ("Monthly streamflow deviance (%)")+
+    xlab(element_blank())+
+ #   geom_col(mapping = aes(y = `annual difference`, x = date, colour = after_stat(y < 0))) +
+  #     scale_y_log10()+
+  scale_colour_manual(
+    values = c("skyblue3", "darkorange")
+  )+
+  scale_x_date(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))+
+ # scale_y_continuous(labels = scales::percent)+
+       facet_wrap(~Basin)+
+  theme(legend.position = "none",
+        legend.direction = "horizontal",strip.background = element_blank()) + #center the title
+
+  png("timesseries_deviance_from_monthlymean.png", units ="in", width=10, height=6, res = 300)
+
+
+```
+
+```{r}
+ggplot(FNF2) +
+  theme_bw()+
+     # geom_line(mapping = aes(y = `average daily flow`, x = Date))+
+  #    geom_col(mapping = aes(y = `daily difference`, x = date, colour = after_stat(y < 0)))+ #+ ylab ("Deviance of weekly flows (mcm)")
+  #  geom_line(mapping = aes(y = `average weekly flow`, x = Date))+
+   #   geom_col(mapping = aes(y = `weekly difference`, x = date, colour = after_stat(y < 0)))+
+   #   geom_line(mapping = aes(y = `average monthly flow`, x = Date))
+    # geom_col(mapping = aes(y = `monthly difference`, x = date, colour = after_stat(y < 0))) + 
+  ylab ("Annual streamflow deviance (%)")+
+  xlab(element_blank())+
+    geom_col(mapping = aes(y = `annual difference`*100, x = date, colour = after_stat(y < 0))) +
+  #     scale_y_log10()+
+  scale_colour_manual(
+    values = c("skyblue3", "darkorange")
+  )+
+    scale_x_date(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0))+
+       facet_wrap(~Basin)+
+  theme(legend.position = "none",
+        strip.background = element_blank()) + #center the title
+
+  png("timesseries_deviance_from_annualmean.png", units ="in", width=10, height=6, res = 300)
+
+
+```

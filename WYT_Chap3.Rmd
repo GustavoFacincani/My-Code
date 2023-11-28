@@ -1,0 +1,434 @@
+
+```{r}
+library(readr)
+library(networkD3)
+library(dplyr)
+library(data.table)
+```
+
+```{r}
+WYT_P2005_P2130 <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/WYT_P2005_P2130.csv", sep="")) #%>%
+#  filter(WY >2029 & WY <2060) %>%
+#  mutate(Scenario = "RCP 8.5") %>%
+ # mutate(GCM = gcm)
+
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap` <- NA
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap`[WYT_P2005_P2130$WYT == 1] <- paste("Critically Dry") #'Driest WY'
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap`[WYT_P2005_P2130$WYT == 2] <- paste("Dry")#'2nd Driest WY'
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap`[WYT_P2005_P2130$WYT == 3] <- paste("Normal-Dry")#'3rd Driest WY'
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap`[WYT_P2005_P2130$WYT == 4] <- paste("Normal-Wet")#'4th Driest WY'
+WYT_P2005_P2130$`Beardsley-Donnells and Spring Gap`[WYT_P2005_P2130$WYT == 5] <- paste("Wet")#'Normal/Wet WY'
+#WY_Type$Type[WY_Type$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
+WYT_P2005_P2130
+
+#write_csv(WYT_P2005_P2130, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/WYT_P2005_P2130/", gcm, "_rcp85_WYT_P2005_P2130.csv", sep=""))
+#}
+```
+```{r}
+#function for getting water year
+wtr_yr <- function(dates, start_month=10) {
+  # Convert dates into POSIXlt
+  dates.posix = as.POSIXlt(dates)
+  # Year offset
+  offset = ifelse(dates.posix$mon >= start_month - 1, 1, 0)
+  # Water year
+  adj.year = dates.posix$year + 1900 + offset
+  # Return the water year
+  adj.year
+}
+```
+
+```{r}
+WYT_NM <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline - 2023-10-27/stanislaus/historical/Livneh/Reservoir_Water Year Type_mcm.csv", sep=""))%>%
+#  filter(WY >2029 & WY <2060)
+  rename(WYT = `New Melones Lake`) %>%
+  mutate(WY = wtr_yr(Date, 10)) %>%  select(-Date) %>% unique()
+
+WYT_NM$`New Melones` <- NA
+WYT_NM$`New Melones`[WYT_NM$WYT == 1] <- paste("Very Critical") #'Driest WY'
+WYT_NM$`New Melones`[WYT_NM$WYT == 2] <- paste("Critically Dry")#'2nd Driest WY'
+WYT_NM$`New Melones`[WYT_NM$WYT == 3] <- paste("Dry")#'3rd Driest WY'
+WYT_NM$`New Melones`[WYT_NM$WYT == 4] <- paste("Below Normal")#'3rd Driest WY'
+WYT_NM$`New Melones`[WYT_NM$WYT == 5] <- paste("Above Normal")#'3rd Driest WY'
+WYT_NM$`New Melones`[WYT_NM$WYT == 6] <- paste("Wet")#'3rd Driest WY'
+WYT_NM
+```
+
+```{r}
+WYT_HH <- read_csv(paste("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/results/baseline - 2023-10-25/tuolumne/historical/Livneh/InstreamFlowRequirement_Water Year Type_mcm.csv", sep=""))[,-3] %>%
+  rename(WYT = `IFR bl Hetch Hetchy Reservoir`) %>%
+  mutate(WY = wtr_yr(Date, 10), Occurrence = 1) %>%
+  group_by(WY) %>% mutate(sum = sum(Occurrence)) %>%
+  group_by(WY, WYT) %>% summarize(Percentage = sum(Occurrence)/sum) %>% unique()
+WYT_HH
+
+WYT_HH$`Hetch Hetchy` <- NA
+WYT_HH$`Hetch Hetchy`[WYT_HH$WYT == 1] <- paste("C (Dry)") #'Driest WY'
+WYT_HH$`Hetch Hetchy`[WYT_HH$WYT == 2] <- paste("B (Normal)")#'2nd Driest WY'
+WYT_HH$`Hetch Hetchy`[WYT_HH$WYT == 3] <- paste("A (Wet)")#'3rd Driest WY'
+WYT_HH
+```
+
+```{r}
+#for(gcm in gcms){
+
+WYT_P2019 <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Stanislaus River/hydrology/historical/Livneh/preprocessed/WYT_P2019.csv")# %>%
+  #mutate(Scenario = "RCP 8.5") %>%
+#  mutate(GCM = "Livneh (Historical)")
+
+WYT_P2019$Utica <- NA
+WYT_P2019$Utica[WYT_P2019$WYT == 1] <- paste('Driest')
+WYT_P2019$Utica[WYT_P2019$WYT == 2] <- paste('2nd Driest')
+WYT_P2019$Utica[WYT_P2019$WYT == 3] <- paste('3rd Driest')
+WYT_P2019$Utica[WYT_P2019$WYT == 4] <- paste('4th Driest')
+WYT_P2019$Utica[WYT_P2019$WYT == 5] <- paste('Normal/Wet')
+#WY_Type2$Type[WY_Type2$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
+WYT_P2019#}
+
+#write_csv(WY_Type2, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/Livneh_Exchequer_WYT.csv", sep=""))
+
+```
+
+```{r}
+#for(gcm in gcms){
+
+WYT_SJRR <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/SJ restoration flows.csv") %>%
+  select(-c(`Annual allocation mcm`, `Allocation adjustment`))
+#  mutate(Scenario = "RCP 8.5") %>%
+ # mutate(GCM = "Livneh (Historical)") 
+
+WYT_SJRR$Friant <- NA
+WYT_SJRR$Friant[WYT_SJRR$WYT == 1] <- paste('Critically-Low')
+WYT_SJRR$Friant[WYT_SJRR$WYT == 2] <- paste('Critically-High')
+WYT_SJRR$Friant[WYT_SJRR$WYT == 3] <- paste('Dry')
+WYT_SJRR$Friant[WYT_SJRR$WYT == 4] <- paste('Normal-Dry')
+WYT_SJRR$Friant[WYT_SJRR$WYT == 5] <- paste('Normal-Wet')
+WYT_SJRR$Friant[WYT_SJRR$WYT == 6] <- paste('Wet')
+WYT_SJRR
+
+```
+```{r}
+#for(gcm in gcms){
+
+WYT_BigCreek <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Upper San Joaquin River/hydrology/historical/Livneh/preprocessed/inflow_MillertonLake_AprToJul_AF.csv") %>%
+ # mutate(Scenario = "RCP 8.5") %>%
+  #mutate(GCM = "Livneh (Historical)")  %>%
+  rename(WYT = flow,
+         WY = year)
+
+WYT_BigCreek$`Big Creek` <- NA
+WYT_BigCreek$`Big Creek`[WYT_BigCreek$WYT <= 900000] <- paste('Dry')
+WYT_BigCreek$`Big Creek`[WYT_BigCreek$WYT >900000] <- paste('Normal')
+WYT_BigCreek
+
+```
+
+
+```{r}
+#for(gcm in gcms){
+
+Exchequer_WYT <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Merced River/hydrology/historical/Livneh/preprocessed/Exchequer_WYT.csv") #%>%
+#  mutate(Scenario = "RCP 8.5") %>%
+#  mutate(GCM = "Livneh (Historical)")
+
+Exchequer_WYT$`New Exchequer` <- NA
+Exchequer_WYT$`New Exchequer`[Exchequer_WYT$WYT == 1] <- paste('Wet')
+Exchequer_WYT$`New Exchequer`[Exchequer_WYT$WYT == 2] <- paste('Dry')
+#WY_Type2$Type[WY_Type2$WYT == 3] <- paste('3rd Driest WY')
+#WY_Type2$Type[WY_Type2$WYT == 4] <- paste('4th Driest WY')
+#WY_Type2$Type[WY_Type2$WYT == 5] <- paste('Normal/Wet WY')
+#WY_Type2$Type[WY_Type2$WYT == 6] <- paste("Wet") #"Wet")#'Normal/Wet WY'
+Exchequer_WYT#}
+
+#write_csv(WY_Type2, paste("C:/Users/gusta/Desktop/PhD/CERCWET/Hydropower/Exchequer_WYT/Livneh_Exchequer_WYT.csv", sep=""))
+
+```
+
+```{r}
+path <- "C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/common/hydrology/"
+
+#Historical SJVI
+SJVI_Livneh <- read_csv(paste(path,"historical/Livneh/SJVI.csv", sep="")) %>%
+  mutate(WYT = ifelse(`SJVI (maf)` >= 3.8, "Wet", ifelse(`SJVI (maf)` < 3.8 & `SJVI (maf)` > 3.1, "Above Normal", ifelse(`SJVI (maf)` <= 3.1 & `SJVI (maf)` > 2.5, "Below Normal", ifelse(`SJVI (maf)` <= 2.5 & `SJVI (maf)` > 2.1, "Dry", "Critical")))))  %>%
+  rename(WY = `Water Year`, WYT=`SJVI (maf)`, `La Grange (SJVI)`=WYT)
+
+SJVI_Livneh
+
+#write_csv(SJVI_Livneh, paste("C:/Users/gusta/Desktop/PhD/Classes/ES207/SJVI_Historical_Livneh_March.csv",sep=""))
+
+```
+
+```{r}
+library(tidyverse)
+list_wys <- list(SJVI_Livneh %>% select(-WYT), 
+                 WYT_BigCreek %>% select(-WYT), 
+                # WYT_ML %>% select(-WYT), 
+                 WYT_P2005_P2130%>% select(-WYT), 
+                 WYT_P2019%>% select(-WYT), 
+                 WYT_SJRR%>% select(-WYT), 
+                 Exchequer_WYT%>% select(-WYT),
+                 WYT_HH %>% select(-WYT),
+                 WYT_NM  %>% select(-WYT))
+```
+
+```{r}
+#merge all data frames in list
+final_wyt <- list_wys %>% reduce(full_join, by='WY') %>%
+  filter(., !WY < 1951 & !WY > 2010) %>% unique() %>% select(Utica, `Beardsley-Donnells and Spring Gap`, `New Melones`,`Hetch Hetchy`, `La Grange (SJVI)`, `New Exchequer`,`Big Creek`, `Friant`) %>% unique()
+final_wyt
+
+final_wyt$Utica <- factor(final_wyt$Utica, levels = c("Driest", "2nd Driest", "3rd Driest", "4th Driest", "Normal/Wet"))
+final_wyt$`Beardsley-Donnells and Spring Gap` <- factor(final_wyt$`Beardsley-Donnells and Spring Gap`, levels = c("Critically Dry", "Dry", "Normal-Dry", "Normal-Wet", "Wet"))
+
+final_wyt$`New Melones` <- factor(final_wyt$`New Melones`, levels = c("Very Critical", "Critically Dry", "Dry", "Below Normal", "Above Normal", "Wet"))
+
+final_wyt$`Hetch Hetchy` <- factor(final_wyt$`Hetch Hetchy`, levels = c("C (Dry)", "B (Normal)", "A (Wet)"))
+
+final_wyt$`La Grange (SJVI)` <- factor(final_wyt$`La Grange (SJVI)`, levels = c("Critical", "Dry", "Below Normal", "Above Normal", "Wet"))
+
+final_wyt$`New Exchequer` <- factor(final_wyt$`New Exchequer`, levels = c("Dry", "Wet"))
+final_wyt$`Big Creek` <- factor(final_wyt$`Big Creek`, levels = c("Dry", "Normal"))
+#final_wyt <- factor(final_wyt$`Big Creek 2`, levels = c("4th Driest", "3rd Driest", "2nd Driest", "Driest", "Normal/Wet"))
+
+final_wyt$Friant <- factor(final_wyt$Friant, levels = c("Critically-High", "Dry", "Normal-Dry", "Normal-Wet", "Wet"))
+
+#write.csv(final_wyt, "total_wyt_differences_10272023_4.csv")
+```
+
+
+```{r}
+# put your df in two columns, and preserve the ordering in many levels (columns) with paste0
+links3 <- data.frame(source = c(paste0(final_wyt$Utica,'_1'),paste0(final_wyt$`Beardsley-Donnells and Spring Gap`,'_2'),paste0(final_wyt$`New Melones`,'_3'), paste0(final_wyt$`Hetch Hetchy`,'_4'), paste0(final_wyt$`La Grange (SJVI)`,'_5'), paste0(final_wyt$`New Exchequer`,'_6'), paste0(final_wyt$`Big Creek`,'_7')),
+                  target   = c(paste0(final_wyt$`Beardsley-Donnells and Spring Gap`,'_2'),paste0(final_wyt$`New Melones`,'_3'), paste0(final_wyt$`Hetch Hetchy`,'_4'), paste0(final_wyt$`La Grange (SJVI)`,'_5'), paste0(final_wyt$`New Exchequer`,'_6'), paste0(final_wyt$`Big Creek`,'_7'), paste0(final_wyt$Friant,'_8')))
+
+# now convert as character
+links3$source <- as.character(links3$source)
+links3$target<- as.character(links3$target)
+#Now the nodes are each element in the link in a unique() way:
+nodes3 <- data.frame(id = unique(c(links3$source, links3$target)),
+                    stringsAsFactors = FALSE)
+
+nodes3$name <- sub('_[0-9]*$', '', nodes3$id)
+#Now we need that each nodes has a link (or vice-versa), so we match them and transform in numbers. Note the -1 at the end, because networkD3 is 0 indexes, it means that the numbers (indexes) starts from 0.
+# create node ids in links data to the 0-based index of the nodes in the nodes data frame
+links3$source_id <- match(links3$source, nodes3$id) - 1
+links3$target_id <- match(links3$target, nodes3$id) - 1
+
+links3$value <- 1 # add also a value
+"#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626","#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626", "#00cdcd", "#ffd700", "#800000", "#0084E9","#ffd700", "#CD2626", "#CD2626", "#ffd700", "#CD2626""
+```
+
+```{r}
+
+
+#my_color2  <- JS('d3.scaleOrdinal().domain(["Normal/Wet", "4th Driest", "3rd Driest", "2nd Driest", "Driest", "Wet", "Normal-Wet", "Normal-Dry", "Dry", "Critically Dry", "Above Normal", "Below Normal", "Very Critical", "A (Wet)", "B (Normal)", "C (Dry)", "Critical", "Normal", "Critically-High"])
+#                 .range(["#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626","#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626", "#00cdcd", "#ffd700", "#800000", "#0084E9","#ffd700", "#CD2626", "#CD2626", "#ffd700", "#CD2626"])')
+
+my_color3  <- JS('d3.scaleOrdinal().range(["#0084E9", "#00cdcd", "#ff8c00", "#ffd700", "#CD2626","#0084E9", "#ffd700","#ff8c00", "#CD2626","#00cdcd", "#00cdcd", "#ffd700", "#800000", "#CD2626","#ffd700", "#0084E9", "#CD2626", "#ffd700", "#CD2626"])')
+```
+
+```{r}
+#Sankey 3D
+
+library(networkD3)
+
+#my_color  <- JS('d3.scaleOrdinal().domain(["Normal/Wet", "4th Driest", "3rd Driest", "2nd Driest", "Driest", "Wet", "Normal-Wet", "Normal-Dry", "Dry", "Critically Dry", "Wet", "Above Normal", "Below Normal", "Dry", "Critically Dry", "Very Critical", "A (Wet)", "B (Normal)", "C (Dry)", "Wet", "Above Normal", "Below Normal", "Dry", "Critical", "Wet", "Dry", "Normal", "Dry", "Wet", "Normal-Wet", "Normal-Dry", "Dry", "Critically-High"]).range(["#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626","#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626", "#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626",  "#800000", "#0084E9","#ffd700", "#CD2626", "#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626", "#0084E9", "#CD2626", "#0084E9", "#CD2626", "#0084E9", "#00cdcd", "#ffd700","#ff8c00", "#CD2626"])')
+
+
+wyts <- sankeyNetwork(Links = links3, Nodes = nodes3, Source = 'source_id',
+              Target = 'target_id', Value = 'value', NodeID = 'name', iterations = 0, fontSize = 13, nodeWidth = 20, colourScale=my_color3)
+saveNetwork(wyts, "sankey_plot_WYT2.html")
+```
+
+
+```{r}
+wyt_info <- readxl::read_xlsx("C:/Users/gusta/Desktop/PhD/WYT_info.xlsx") %>%
+  mutate_if(is.character,as.factor)%>%
+  mutate_if(is.numeric,as.factor) %>%
+  mutate(Freq = 1)
+
+wyt_info$`Number of seasonal variations` <- factor(wyt_info$`Number of seasonal variations`, levels = c("0", "0-1", "0-2", "0-4", "1", "1-2", "2", "2-3", "3", "4", "4-8", "4-10","5-10", "6", "19-48"))
+
+#season <- c("0", "0-1", "0-2", "0-4", "1", "1-2", "2", "2-3", "3", "4", "4-8", "4-10","5-10", "6", "19-48")
+#flow <- c( "0", "1", "2", "3", "5", "6")
+  
+wyt_info$`Different flow prescriptions` <- factor(wyt_info$`Different flow prescriptions`, levels = c("0", "1", "2", "3", "5", "6"))
+wyt_info
+```
+
+```{r}
+#Using alluvial
+alluvial( wyt_info[,4:7], freq=wyt_info$Freq, border=NA )
+```
+
+```{r}
+# put your df in two columns, and preserve the ordering in many levels (columns) with paste0
+links <- data.frame(source = c(paste0(wyt_info$`Different WYTs`,'_1'),paste0(wyt_info$`Different flow prescriptions`,'_2'),paste0(wyt_info$`Number of seasonal variations`,'_3')),
+                  target   = c(paste0(wyt_info$`Different flow prescriptions`,'_2'),paste0(wyt_info$`Number of seasonal variations`,'_3'),paste0(wyt_info$`Temperature management`,'_4')))
+
+# now convert as character
+links$source <- as.character(links$source)
+links$target<- as.character(links$target)
+#Now the nodes are each element in the link in a unique() way:
+nodes <- data.frame(id = unique(c(links$source, links$target)),
+                    stringsAsFactors = FALSE)
+
+nodes$name <- sub('_[0-9]*$', '', nodes$id)
+#Now we need that each nodes has a link (or vice-versa), so we match them and transform in numbers. Note the -1 at the end, because networkD3 is 0 indexes, it means that the numbers (indexes) starts from 0.
+# create node ids in links data to the 0-based index of the nodes in the nodes data frame
+links$source_id <- match(links$source, nodes$id) - 1
+links$target_id <- match(links$target, nodes$id) - 1
+
+links$value <- 1 # add also a value
+
+```
+
+```{r}
+#Sankey 3D
+
+library(networkD3)
+
+sankeyNetwork(Links = links, Nodes = nodes, Source = 'source_id',
+              Target = 'target_id', Value = 'value', NodeID = 'name', fontSize = 11, nodeWidth = 15)
+```
+
+
+```{r}
+
+links2 <- wyt_info[,4:8]%>% 
+  mutate(row = row_number()) %>%  # add a row id
+  pivot_longer(-row, names_to = "col", values_to = "source") %>%  # gather all columns
+  mutate(col = match(col, names(wyt_info))) %>%  # convert col names to col ids
+  mutate(source = paste0(source, '_', col)) %>%  # add col id to node names
+  group_by(row) %>%
+  mutate(target = lead(source, order_by = col)) %>%  # get target from following node in row
+  ungroup() %>% 
+#  filter(!is.na(target)) %>%  # remove links from last column in original data
+  group_by(source, target) %>% 
+  summarise(value = n(), .groups = "drop")  # aggregate and count similar links
+
+# create nodes data frame from unque nodes found in links data frame
+nodes2 <- data.frame(id = unique(c(links2$source, links2$target)),
+                    stringsAsFactors = FALSE)
+# remove column id from node names
+nodes2$name <- sub('_[0-9]*$', '', nodes2$id)
+
+# create node ids in links data to the 0-based index of the nodes in the nodes data frame
+links2$source_id <- match(links2$source, nodes2$id) - 1
+links2$target_id <- match(links2$target, nodes2$id) - 1
+
+sankeyNetwork(Links = links2, Nodes = nodes2, Source = 'source_id',
+              Target = 'target_id', Value = 'value', NodeID = 'name')
+
+```
+
+
+```{r}
+library(ggalluvial)
+# Create the Sankey plot:
+skeypl2 <- ggplot(data = wyt_info,
+       aes(#axis1 = `Hydropower Project`,   # First variable on the X-axis
+           axis1 = `Different WYTs`, # Second variable on the X-axis
+           axis3 = `Different flow prescriptions`,   # Third variable on the X-axis,
+           axis4 = `Number of seasonal variations`,
+           axis5 = `Temperature management`,
+         #  axis6 = `Who/how uses`,
+           y = n)) +
+  stat_alluvium(aes(fill = `Different WYTs`), aes.bind=TRUE)+#aes(fill = `Different WYTs`)) +
+  geom_stratum() +
+#  geom_text(stat="alluvia", label.strata= TRUE)+#
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+#  scale_fill_manual(values = c("#D73027", "chocolate1", "gold1","deepskyblue2", "dodgerblue4"))+
+  theme_void()
+skeypl2
+```
+
+```{r}
+library(ggalluvial)
+# Create the Sankey plot:
+skeypl2 <- ggplot(data = final_wyt,
+       aes(axis1 = Utica,   # First variable on the X-axis
+           axis2 = `Beardsley-Donnells and Spring Gap`, # Second variable on the X-axis
+           axis3 = `New Melones`,   # Third variable on the X-axis,
+           axis4 = `Hetch Hetchy`,
+           axis5 = `La Grange (SJVI)`,
+           axis6 = `New Exchequer`,
+           axis7 = `Big Creek`,
+           axis8 = Friant,
+           y = n)) +
+  geom_alluvium(aes(fill = `La Grange (SJVI)`)) +
+  geom_stratum() +
+  geom_text(stat = "stratum",
+            aes(label = after_stat(stratum))) +
+  scale_fill_manual(values = c("#D73027", "chocolate1", "gold1","deepskyblue2", "dodgerblue4"))+
+  theme_void()
+skeypl2
+```
+
+```{r}
+# create a table of frequencies
+freq_table <- final_wyt %>% group_by(Utica, `Beardsley-Donnells and Spring Gap`, `New Melones`, `Hetch Hetchy`, `La Grange (SJVI)`, `New Exchequer`, `Big Creek`, Friant) %>% 
+  summarise(n = n())
+
+# create a nodes data frame
+nodes <- data.frame(name = unique(c(as.character(freq_table$Utica),
+                                    as.character(freq_table$`Beardsley-Donnells and Spring Gap`),
+                                    as.character(freq_table$`New Melones`),
+                                    as.character(freq_table$`Hetch Hetchy`),
+                                    as.character(freq_table$`La Grange (SJVI)`),
+                                    as.character(freq_table$`New Exchequer`),
+                                    as.character(freq_table$`Big Creek`),
+                                  #  as.character(freq_table$`Big Creek 2`),
+                                    as.character(freq_table$Friant))))
+
+# create links dataframe
+links <- data.frame(source = match(freq_table$Utica, nodes$name) - 1,
+                    target = match(freq_table$`Beardsley-Donnells and Spring Gap`, nodes$name) - 1,
+                    value = freq_table$n,
+                    stringsAsFactors = FALSE)
+
+links <- rbind(links,
+               data.frame(source = match(freq_table$`Beardsley-Donnells and Spring Gap`, nodes$name) - 1,
+                          target = match(freq_table$`New Melones`, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+
+links <- rbind(links,
+               data.frame(source = match(freq_table$`New Melones`, nodes$name) - 1,
+                          target = match(freq_table$`Hetch Hetchy`, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+links <- rbind(links,
+               data.frame(source = match(freq_table$`Hetch Hetchy`, nodes$name) - 1,
+                          target = match(freq_table$`La Grange (SJVI)`, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+links <- rbind(links,
+               data.frame(source = match(freq_table$`La Grange (SJVI)`, nodes$name) - 1,
+                          target = match(freq_table$`New Exchequer`, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+links <- rbind(links,
+               data.frame(source = match(freq_table$`New Exchequer`, nodes$name) - 1,
+                          target = match(freq_table$`Big Creek`, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+links <- rbind(links,
+               data.frame(source = match(freq_table$`Big Creek`, nodes$name) - 1,
+                          target = match(freq_table$Friant, nodes$name) - 1,
+                          value = freq_table$n,
+                          stringsAsFactors = FALSE))
+```
+
+```{r}
+library(networkD3)
+# create Sankey plot using networkD3
+sankeyplot <- sankeyNetwork(Links = links, Nodes = nodes, Source = "source",
+              Target = "target", Value = "value", NodeID = "name",
+              sinksRight = FALSE)
+
+saveNetwork(sankeyplot, "sankey_plot_WYT.html")
+library(webshot)
+# you convert it as png
+webshot("sankey_plot_WYT.html","sankey_plot_WYT.png", vwidth = 1000, vheight = 900)
+```

@@ -1,0 +1,249 @@
+
+```{r}
+Pacific_US_rpart <- readRDS("rpart_winegrapes_WA.sdm")
+
+Pacific_US_gbm <- readRDS('gbm_winegrapes_WA.sdm')
+
+Pacific_US_svm <- readRDS('svm_winegrapes_WA.sdm')
+
+Pacific_US_maxlike <- readRDS('maxlike_winegrapes_WA.sdm')
+
+Pacific_US_mars <- readRDS('mars_winegrapes_WA.sdm')
+
+Pacific_US_brt <- readRDS("brt_winegrapes_WA.sdm")
+
+Pacific_US_rbf <- readRDS("rbf_winegrapes_WA.sdm")
+
+
+allmodels <- Pacific_US_rpart + Pacific_US_gbm + Pacific_US_svm + Pacific_US_maxlike + Pacific_US_mars + Pacific_US_brt + Pacific_US_rbf
+```
+
+```{r}
+#map_maxent <- raster(maxent, pacific_data2"maxent.grd")
+
+map_maxlike <- raster("maxlike2.grd")
+
+map_svm <- raster("svm2.grd")
+  
+map_gbm <- raster("gbm2.grd")
+  
+map_rpart <- raster("rpart2.grd")
+
+map_rbf <- raster("rbf2.grd")
+
+map_mars <- raster("mars2.grd")
+
+#map_fda <- raster("fda2.grd")
+
+map_brt <- raster("brt2.grd")
+
+
+
+```
+
+```{r}
+#map_maxent <- raster(maxent, pacific_data2"maxent.grd")
+
+map_maxlike_CANES <- raster("maxlike2_canes.grd")
+
+map_svm_CANES <- raster("svm2_canes.grd")
+  
+map_gbm_CANES <- raster("gbm2_canes.grd")
+  
+map_rpart_CANES <- raster("rpart2_canes.grd")
+
+map_rbf_CANES <- raster("rbf2_canes.grd")
+
+map_mars_CANES <- raster("mars2_CANES.grd")
+
+map_brt_CANES <- raster("brt2_CANES.grd")
+
+map_maxlike_CNRM <- raster("maxlike2_CNRM.grd")
+
+map_svm_CNRM <- raster("svm2_CNRM.grd")
+  
+map_gbm_CNRM <- raster("gbm2_CNRM.grd")
+  
+map_rpart_CNRM <- raster("rpart2_CNRM.grd")
+
+map_rbf_CNRM <- raster("rbf2_CNRM.grd")
+
+map_mars_CNRM <- raster("mars2_CNRM.grd")
+
+map_brt_CNRM <- raster("brt2_CNRM.grd")
+
+map_maxlike_MIROC <- raster("maxlike2_MIROC.grd")
+
+map_svm_MIROC <- raster("svm2_MIROC.grd")
+  
+map_gbm_MIROC <- raster("gbm2_MIROC.grd")
+  
+map_rpart_MIROC <- raster("rpart2_MIROC.grd")
+
+map_mars_MIROC <- raster("mars2_MIROC.grd")
+
+map_brt_MIROC <- raster("brt2_MIROC.grd")
+
+map_rbf_MIROC <- raster("rbf2_MIROC.grd")
+
+map_maxlike_ACCESS <- raster("maxlike2_ACCESS.grd")
+
+map_svm_ACCESS <- raster("svm2_ACCESS.grd")
+  
+map_gbm_ACCESS <- raster("gbm2_ACCESS.grd")
+  
+map_rpart_ACCESS <- raster("rpart2_ACCESS.grd")
+
+map_rbf_ACCESS <- raster("rbf2_ACCESS.grd")
+
+map_mars_ACCESS <- raster("mars2_ACCESS.grd")
+
+map_brt_ACCESS <- raster("brt2_ACCESS.grd")
+
+map_maxlike_HadGEM <- raster("maxlike2_HadGEM.grd")
+
+map_svm_HadGEM <- raster("svm2_HadGEM.grd")
+  
+map_gbm_HadGEM <- raster("gbm2_HadGEM.grd")
+  
+map_rpart_HadGEM <- raster("rpart2_HadGEM.grd")
+
+map_rbf_HadGEM <- raster("rbf2_HadGEM.grd")
+
+map_mars_HadGEM <- raster("mars2_HadGEM.grd")
+
+map_brt_HadGEM <- raster("brt2_HadGEM.grd")
+```
+
+
+```{r}
+all_data <- stack("D:/Winegrapes/Historical/bio_elev_soil_fixed_global_30s.tif")
+
+california_data2 <- stack("California_alldata.tif")
+
+names(california_data2) <- names(all_data)
+```
+
+
+```{r}
+#mycolors <- colorRampPalette(c("gray", "gray", "green", "yellow", "orange", "red3"))
+mycolors <- colorRampPalette(c("red", "orange", "yellow", "green", "cyan2", "deepskyblue", "dodgerblue3"))
+mycolors2 <- colorRampPalette(c("red", "orange", "yellow", "darkgray", "cyan2", "deepskyblue", "dodgerblue3"))
+mycolors3 <- colorRampPalette(c("deeppink", "white", "darkgray"))
+
+plot(ensembled_all, col = mycolors(200), zlim = c(0,1))
+plot(AVAs, lwd = 1.5, add=TRUE)
+
+
+plot(future_mean_ensemble2, col = mycolors(200), zlim = c(0,1))
+plot(AVAs, lwd = 1.5, add=TRUE)
+
+
+plot(future_mean_ensemble2 - ensembled_all, col = mycolors2(200), zlim = c(-1,1))
+plot(AVAs, lwd = 1.5, add=TRUE)
+
+
+plot(1-ensembled_entropy_all/2, col = mycolors3(200), zlim = c(0,1))
+plot(AVAs, lwd = 1.5, add=TRUE)
+
+
+
+plot(1-future_mean_entropy2/2, col = mycolors3(200), zlim = c(0,1))
+plot(AVAs, lwd = 1.5, add=TRUE)
+```
+ensembled_maxlike <- sdm::ensemble(Pacific_US_maxlike, california_data2, filename = "ensembled_maxlike.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_maxlike <- sdm::ensemble(Pacific_US_maxlike, california_data2, filename = "ensemble_entropy_maxlike.grd", setting=list(method='entropy')) 
+
+ensembled <- sdm::ensemble(allmodels, california_data2, filename = "ensembled2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy <- sdm::ensemble(allmodels, california_data2, filename = "ensemble_entropy2.grd", setting=list(method='entropy')) 
+
+
+
+ensembled_MIROC <- sdm::ensemble(allmodels, california_data_MIROC2, filename = "ensembled2_MIROC.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_MIROC <- sdm::ensemble(allmodels, california_data_MIROC2, filename = "ensemble_entropy2_MIROC.grd", setting=list(method='entropy')) 
+
+
+ensembled_ACCESS <- sdm::ensemble(allmodels, california_data_ACCESS, filename = "ensembled2_ACCESS.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_ACCESS <- sdm::ensemble(allmodels, california_data_ACCESS, filename = "ensemble_entropy2_ACCESS.grd", setting=list(method='entropy')) 
+
+
+ensembled_CNRM <- sdm::ensemble(allmodels, california_data_CNRM, filename = "ensembled2_CNRM.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_CNRM <- sdm::ensemble(allmodels, california_data_CNRM, filename = "ensemble_entropy2_CNRM.grd", setting=list(method='entropy')) 
+
+
+ensembled_HadGEM <- sdm::ensemble(allmodels, california_data_HadGEM, filename = "ensembled2_HadGEM.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_HadGEM <- sdm::ensemble(allmodels, california_data_HadGEM, filename = "ensemble_entropy2_HadGEM.grd", setting=list(method='entropy')) 
+
+
+ensembled_CANES <- sdm::ensemble(allmodels, california_data_CANES, filename = "ensembled2_CANES.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_CANES <- sdm::ensemble(allmodels, california_data_CANES, filename = "ensemble_entropy2_CANES.grd", setting=list(method='entropy')) 
+
+
+ensembled_all <- sdm::ensemble(allmodels, california_data2, filename = "ensembled2_historical.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy_all <- sdm::ensemble(allmodels, california_data2, filename = "ensemble_entropy2_historical.grd", setting=list(method='entropy')) 
+
+```{r}
+
+d_california <- sdmData(formula = species~., train = points_vines, predictors=california_data2, bg = list(method="gRandom", n=5000))
+
+Pacific_US_gbm <- sdm(species~., d_california, methods=c('gbm'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_gbm, "gbn_winegrapes_WA.sdm")
+
+Pacific_US_rbf <- sdm(species~., d_california, methods=c('rbf'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_rbf, "rbf_winegrapes_WA.sdm")
+
+ensembled_brt <- sdm::ensemble(Pacific_US_brt, california_data2, filename = "brt3.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+ensembled_mars <- sdm::ensemble(Pacific_US_mars, california_data2, filename = "mars3.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+```
+
+```{r}
+
+
+ensembled_MIROC <- raster("ensembled2_MIROC.grd") 
+
+ensembled_entropy_MIROC <- raster("ensemble_entropy2_MIROC.grd") 
+
+
+ensembled_ACCESS <- raster("ensembled2_ACCESS.grd") 
+
+ensembled_entropy_ACCESS <- raster("ensemble_entropy2_ACCESS.grd") 
+
+
+ensembled_CNRM <- raster("ensembled2_CNRM.grd") 
+
+ensembled_entropy_CNRM <- raster("ensemble_entropy2_CNRM.grd") 
+
+
+ensembled_HadGEM <- raster("ensembled2_HadGEM.grd") 
+
+ensembled_entropy_HadGEM <- raster("ensemble_entropy2_HadGEM.grd") 
+
+
+ensembled_CANES <- raster("ensembled2_CANES.grd") 
+
+ensembled_entropy_CANES <- raster("ensemble_entropy2_CANES.grd") 
+
+
+ensembled_all <-raster("ensembled2_historical.grd") 
+
+ensembled_entropy_all <- raster("ensemble_entropy2_historical.grd") 
+
+
+future_mean_ensemble <- stack(ensembled_HadGEM, ensembled_MIROC, ensembled_CANES, ensembled_CNRM, ensembled_ACCESS)
+
+future_mean_entropy <- stack(ensembled_entropy_HadGEM, ensembled_entropy_MIROC, ensembled_entropy_CANES, ensembled_entropy_CNRM, ensembled_entropy_ACCESS)
+  "darkblue"
+future_mean_ensemble2 <- calc(future_mean_ensemble, fun = mean)
+future_mean_entropy2 <- calc(future_mean_entropy, fun = mean)
+
+```

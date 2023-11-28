@@ -1,0 +1,334 @@
+```{r}
+library(dismo)
+library(sdmpredictors)
+library(raster)
+library(sdm)
+library(dplyr)
+library(rgdal)
+library(usdm)
+```
+
+```{r}
+valle_vines <- readOGR("C:/Users/gusta/Documents/valle_mexico_wines.shp")
+valle_vines
+
+pacific2 <- readOGR("C:/Users/gusta/Documents/Californias_shp.shp")
+```
+
+
+```{r}
+global_bioc_elev_soil <- stack("D:/Winegrapes/Historical/bio_elev_soil_fixed_global_30s.tif")
+
+pacific <- readOGR("C:/Users/gusta/Documents/Dissolved_Pacific.shp")
+#californias <- readOGR("C:/Users/gusta/Documents/Californias_shp.shp")
+california <- readOGR("C:/Users/gusta/Documents/ca boundary.shp")
+
+pacific_data <- crop(global_bioc_elev_soil, pacific)
+pacific_data2 <- mask(pacific_data, pacific)
+
+
+california_data <- crop(pacific_data, california)
+california_data2 <- mask(california_data, california)
+extent(california_data2) <- extent(california)
+
+#californias_data <- crop(global_bioc_elev_soil, californias)
+#californias_data2 <- mask(californias_data, californias)
+
+
+points_vines <- readOGR("C:/Users/gusta/Desktop/PhD/Classes/ES207/CA_vines_points.shp")
+points_vines$species <- 1
+points_vines$ID <- NULL
+
+writeRaster(california_data2, "all_data_California.tif")
+#valle_vines$species <- 1
+#valle_vines$id <- NULL
+#coordinates(points_vines) <- ~lon + lat
+
+#sp <- points_vines[,c('lon', 'lat', 'species')]
+#class(valle_vines)
+
+```
+
+```{r}
+MIROC <- stack("MEXUS_MIROC6_ssp585_2041-2060.tif")
+names(MIROC)
+
+CANES <- stack("CanESM5-CanOE_ssp585_2041-2060.tif")
+names(californias_data2)
+
+  "wc2.1_30s_bio_1"  "wc2.1_30s_bio_10" "wc2.1_30s_bio_11" "wc2.1_30s_bio_12" "wc2.1_30s_bio_13"
+ [7] "wc2.1_30s_bio_16" "wc2.1_30s_bio_17" "wc2.1_30s_bio_3"  "wc2.1_30s_bio_4"  "wc2.1_30s_bio_5"  "wc2.1_30s_bio_6" 
+[13] "wc2.1_30s_bio_7" 
+```
+
+```{r}
+
+#pacific_data <- crop(global_bioc_elev_soil, pacific)
+#pacific_data2 <- mask(pacific_data, pacific)
+
+
+d_pacific <- sdmData(formula = species~., train = points_vines, predictors=pacific_data2, bg = list(method="gRandom", n=5000))
+d_pacific
+5
+Pacific_US_rpart <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'rpart'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+
+Pacific_US_gbm <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+ 'gbm'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+
+Pacific_US_svm <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'svm'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+
+Pacific_US_maxlike <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'maxlike'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+
+#Pacific_US_maxent <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'), replication=c("sub","boot"), test.p=30, n=5, parallelSettings=list(ncore=6,method="parallel"))
+
+Pacific_US_fda <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'fda'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_fda, "fda_winegrapes_WA.sdm")
+
+Pacific_US_mars <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'mars'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_mars, "mars_winegrapes_WA.sdm")
+
+Pacific_US_brt <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'brt'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_brt, "brt_winegrapes_WA.sdm")
+
+Pacific_US_rbf <- sdm(species~., d_pacific, methods=c(#'rbf', 'rf', 'svm', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'
+'rbf'), replication=c("sub","boot"), test.p=30, n=10, parallelSettings=list(ncore=6,method="parallel"))
+saveRDS(Pacific_US_brt, "rbf_winegrapes_WA.sdm")
+
+allmodels <- Pacific_US_rbf + Pacific_US_brt + Pacific_US_mars + Pacific_US_fda + Pacific_US_maxlike + Pacific_US_svm + Pacific_US_gbm + Pacific_US_rpart 
+beep()
+```
+
+```{r}
+#map_maxent <- sdm::ensemble(Pacific_US_maxent, pacific_data2, filename = "maxent.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_maxlike <- sdm::ensemble(Pacific_US_maxlike, california_data2, filename = "maxlike2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_svm <- sdm::ensemble(Pacific_US_svm, california_data2, filename = "svm2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+  
+map_gbm <- sdm::ensemble(Pacific_US_gbm, california_data2, filename = "gbm2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+  
+map_rpart <- sdm::ensemble(Pacific_US_rpart, california_data2, filename = "rpart2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_rbf <- sdm::ensemble(Pacific_US_rbf, california_data2, filename = "rbf2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_mars <- sdm::ensemble(Pacific_US_mars, california_data2, filename = "mars2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_fda <- sdm::ensemble(Pacific_US_fda, california_data2, filename = "fda2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+map_brt <- sdm::ensemble(Pacific_US_brt, california_data2, filename = "brt2.grd", setting=list(method='weighted', stat='tss', opt = 2))
+
+
+ensembled <- sdm::ensemble(allmodels, california_data2, filename = "ensembled2.grd", setting=list(method='weighted', stat='tss', opt = 2)) 
+
+ensembled_entropy <- sdm::ensemble(allmodels, california_data2, filename = "ensemble_entropy2.grd", setting=list(method='entropy')) 
+
+```
+
+```{r}
+MIROC <- stack("MIROC6_ssp585_2041-2060.tif")
+
+california_data_MIROC <- california_data2
+
+california_data_MIROC[[1]] <- MIROC[[13]]
+california_data_MIROC[[2]] <- MIROC[[1]]
+california_data_MIROC[[3]] <- MIROC[[7]]
+california_data_MIROC[[4]] <- MIROC[[8]]
+california_data_MIROC[[5]] <- MIROC[[9]]
+california_data_MIROC[[6]] <- MIROC[[10]]
+california_data_MIROC[[7]] <- MIROC[[11]]
+california_data_MIROC[[8]] <- MIROC[[12]]
+california_data_MIROC[[9]] <- MIROC[[2]]
+california_data_MIROC[[10]] <- MIROC[[3]]
+california_data_MIROC[[11]] <- MIROC[[4]]
+california_data_MIROC[[12]] <- MIROC[[5]]
+california_data_MIROC[[13]] <- MIROC[[6]]
+
+```
+
+```{r}
+IPSL <- stack("IPSL-CM6A-LR_ssp585_2041-2060.tif")
+
+california_data_IPSL <- california_data2
+
+california_data_IPSL[[1]] <- IPSL[[13]]
+california_data_IPSL[[2]] <- IPSL[[1]]
+california_data_IPSL[[3]] <- IPSL[[7]]
+california_data_IPSL[[4]] <- IPSL[[8]]
+california_data_IPSL[[5]] <- IPSL[[9]]
+california_data_IPSL[[6]] <- IPSL[[10]]
+california_data_IPSL[[7]] <- IPSL[[11]]
+california_data_IPSL[[8]] <- IPSL[[12]]
+california_data_IPSL[[9]] <- IPSL[[2]]
+california_data_IPSL[[10]] <- IPSL[[3]]
+california_data_IPSL[[11]] <- IPSL[[4]]
+california_data_IPSL[[12]] <- IPSL[[5]]
+california_data_IPSL[[13]] <- IPSL[[6]]
+
+```
+
+
+```{r}
+GISS <- stack("GISS-E2-1-H_ssp585_2041-2060.tif")
+
+california_data_GISS <- california_data2
+
+california_data_GISS[[1]] <- GISS[[13]]
+california_data_GISS[[2]] <- GISS[[1]]
+california_data_GISS[[3]] <- GISS[[7]]
+california_data_GISS[[4]] <- GISS[[8]]
+california_data_GISS[[5]] <- GISS[[9]]
+california_data_GISS[[6]] <- GISS[[10]]
+california_data_GISS[[7]] <- GISS[[11]]
+california_data_GISS[[8]] <- GISS[[12]]
+california_data_GISS[[9]] <- GISS[[2]]
+california_data_GISS[[10]] <- GISS[[3]]
+california_data_GISS[[11]] <- GISS[[4]]
+california_data_GISS[[12]] <- GISS[[5]]
+california_data_GISS[[13]] <- GISS[[6]]
+
+```
+writeRaster(AWI, "")
+
+```{r}
+AWI <- stack("AWI-CM-1-1-MR_ssp585_2041-2060.tif")
+
+california_data_AWI <- california_data2
+
+california_data_AWI[[1]] <- AWI[[13]]
+california_data_AWI[[2]] <- AWI[[1]]
+california_data_AWI[[3]] <- AWI[[7]]
+california_data_AWI[[4]] <- AWI[[8]]
+california_data_AWI[[5]] <- AWI[[9]]
+california_data_AWI[[6]] <- AWI[[10]]
+california_data_AWI[[7]] <- AWI[[11]]
+california_data_AWI[[8]] <- AWI[[12]]
+california_data_AWI[[9]] <- AWI[[2]]
+california_data_AWI[[10]] <- AWI[[3]]
+california_data_AWI[[11]] <- AWI[[4]]
+california_data_AWI[[12]] <- AWI[[5]]
+california_data_AWI[[13]] <- AWI[[6]]
+
+```
+
+```{r}
+HadGEM <- stack("HadGEM3-GC31-LL_ssp585_2041-2060.tif")
+
+california_data_HadGEM <- california_data2
+
+california_data2[[1]] <- HadGEM[[13]]
+california_data2[[2]] <- HadGEM[[1]]
+california_data2[[3]] <- HadGEM[[7]]
+california_data2[[4]] <- HadGEM[[8]]
+california_data2[[5]] <- HadGEM[[9]]
+california_data2[[6]] <- HadGEM[[10]]
+california_data2[[7]] <- HadGEM[[11]]
+california_data2[[8]] <- HadGEM[[12]]
+california_data2[[9]] <- HadGEM[[2]]
+california_data2[[10]] <- HadGEM[[3]]
+california_data2[[11]] <- HadGEM[[4]]
+california_data2[[12]] <- HadGEM[[5]]
+california_data2[[13]] <- HadGEM[[6]]
+
+```
+
+```{r}
+CNRM <- stack("CNRM-CM6_ssp585_2041-2060.tif")
+
+california_data_CNRM <- california_data2
+
+california_data2[[1]] <- CNRM[[13]]
+california_data2[[2]] <- CNRM[[1]]
+california_data2[[3]] <- CNRM[[7]]
+california_data2[[4]] <- CNRM[[8]]
+california_data2[[5]] <- CNRM[[9]]
+california_data2[[6]] <- CNRM[[10]]
+california_data2[[7]] <- CNRM[[11]]
+california_data2[[8]] <- CNRM[[12]]
+california_data2[[9]] <- CNRM[[2]]
+california_data2[[10]] <- CNRM[[3]]
+california_data2[[11]] <- CNRM[[4]]
+california_data2[[12]] <- CNRM[[5]]
+california_data2[[13]] <- CNRM[[6]]
+
+```
+
+```{r}
+ACCESS <- stack("ACCESS-CM2_ssp585_2041-2060.tif")
+
+california_data_ACCESS <- california_data2
+
+california_data2[[1]] <- ACCESS[[13]]
+california_data2[[2]] <- ACCESS[[1]]
+california_data2[[3]] <- ACCESS[[7]]
+california_data2[[4]] <- ACCESS[[8]]
+california_data2[[5]] <- ACCESS[[9]]
+california_data2[[6]] <- ACCESS[[10]]
+california_data2[[7]] <- ACCESS[[11]]
+california_data2[[8]] <- ACCESS[[12]]
+california_data2[[9]] <- ACCESS[[2]]
+california_data2[[10]] <- ACCESS[[3]]
+california_data2[[11]] <- ACCESS[[4]]
+california_data2[[12]] <- ACCESS[[5]]
+california_data2[[13]] <- ACCESS[[6]]
+
+```
+
+```{r}
+CANES <- stack("CanESM5-CanOE_ssp585_2041-2060.tif")
+
+california_data_CANES <- california_data2
+
+california_data2[[1]] <- CANES[[13]]
+california_data2[[2]] <- CANES[[1]]
+california_data2[[3]] <- CANES[[7]]
+california_data2[[4]] <- CANES[[8]]
+california_data2[[5]] <- CANES[[9]]
+california_data2[[6]] <- CANES[[10]]
+california_data2[[7]] <- CANES[[11]]
+california_data2[[8]] <- CANES[[12]]
+california_data2[[9]] <- CANES[[2]]
+california_data2[[10]] <- CANES[[3]]
+california_data2[[11]] <- CANES[[4]]
+california_data2[[12]] <- CANES[[5]]
+california_data2[[13]] <- CANES[[6]]
+
+```
+
+
+MexUS <- sdm(species~., d, methods=c("rf"), replication=c("sub","boot"), test.p=30, n=3, parallelSettings=list(ncore=3,method="parallel"))
+             #methods = c('glm', 'rf'), replication = c('boot'), n = 100)
+#'fda','bioclim', 'bioclim.dismo', 'brt', 'CART', 'domainDismo', 'mahal.dismo', 'mars', 'rbf', 'rf', 'svm', 'mda', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'), replication = c('boot'), n = 100)
+#), replication = c('boot'), n = 2)
+MexUS
+
+
+PacUS <- sdm(species~., d_global, methods=c("maxlike", "maxent"), replication=c("sub","boot"), test.p=30, n=3, parallelSettings=list(ncore=3,method="parallel"))
+             #methods = c('glm', 'rf'), replication = c('boot'), n = 100)
+#'fda','bioclim', 'bioclim.dismo', 'brt', 'CART', 'domainDismo', 'mahal.dismo', 'mars', 'rbf', 'rf', 'svm', 'mda', 'mlp', 'glm','glmnet','maxlike','rpart','glmpoly', 'gam', 'maxent'), replication = c('boot'), n = 100)
+#), replication = c('boot'), n = 2)
+PacUS
+
+
+p <- predict(MexUS, californias_data2)
+
+en <- ensemble(MexUS, californias_data2, nc = x, setting = list(method= 'weighted', stat = "TSS", opt = 2))
+
+```{r}
+cl <- colorRampPalette(c("#3E49BB", "yellow", "orange", "red", "darkred"))
+mexico <- readOGR("C:/Users/gusta/Downloads/mex_admbnda_govmex_20210618_shp/mex_admbnda_govmex_20210618_SHP/mex_admbnda_adm1_govmex_20210618.shp")
+california <- readOGR("C:/Users/gusta/Documents/Californias_shp.shp")
+
+png(file="saving_plot4.png",
+width=14, height=12, units="in", res=600)
+plot(en, col=cl(200), zlim = c(0,1))
+plot(mexico, add=TRUE)
+plot(readOGR("C:/Users/gusta/Documents/Californias_shp.shp"), add=TRUE)
+dev.off()
+```
+

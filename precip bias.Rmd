@@ -1,0 +1,104 @@
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(readr)
+```
+```{r}
+Livneh <- read_csv("C:/Users/gusta/Box/VICE Lab/RESEARCH/PROJECTS/CERC-WET/Task7_San_Joaquin_Model/pywr_models/data/Tuolumne River/hydrology/historical/Livneh/precipitation/precipitation_Hetch_Hetchy_mm_no_bias_correction.csv")%>% 
+  mutate(date = as.Date(date, '%d/%m/%Y'),
+         ym = format(date, '%Y-%m'))
+Livneh
+
+```
+
+```{r}
+Obs <- readxl::read_xlsx("C:/Users/gusta/Desktop/PhD/Precip_HetchHetchy_ObsVsSim.xlsx", sheet= 2)%>% 
+  mutate(Date = as.Date(Date)) %>% 
+  mutate(ym = format(Date, '%Y-%m')) %>% 
+  group_by(ym) %>% 
+  summarize(Date = mean(Date), 
+              Obs = sum(Obs),
+            Sim = sum(Sim),
+            month = as.numeric(lubridate::month(Date)),
+            ym = format(Date, '%Y-%m'))
+
+Obs
+
+
+Obs2 <- Obs[,c(2,3,5,1)] #%>% tidyr::drop_na()
+Obs2[is.na(Obs2)] <- 0
+
+Obs2
+write.csv(Obs2[,c(1,2)] ,file=paste("C:/Users/gusta/Desktop/precip_add4.csv", sep=""),row.names=F)
+
+
+dates <- Obs2$ym
+
+Sim <- Obs[,c(2,4,5,1)]
+Sim
+
+```
+
+
+```{r}
+#Bias Correction
+#new_df <- list()
+#bc_df <- list()
+#fin_df <- list()
+
+for (i in dates){
+  print(i)
+  obs <- Obs2[which(Obs2$ym == i),]
+  hind <- Sim[which(Sim$ym == i),]
+
+  bF <- getBiasFactor(hindcast = as.data.frame(hind[,c(-3,-4)]), obs = as.data.frame(obs[,c(-3,-4)]),method = "scaling", scaleType = "multi",preci = TRUE, extrapolate = "no")
+
+    new_df <- filter(as.data.frame(Livneh), Livneh$ym ==i)
+    bc_df <- applyBiasFactor(new_df[,-3], bF)
+    if (i=="1950-01"){
+      fin_df <- bc_df %>% mutate(`precip (mm)` = `precip (mm)`/30)
+    }
+    else {
+      fin_df <- bind_rows(fin_df,bc_df)
+     
+    }
+  }
+
+
+fin_df <- arrange(fin_df, date)
+
+write.csv(fin_df,file=paste("C:/Users/gusta/Desktop/precip_add3.csv", sep=""),row.names=F)
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
