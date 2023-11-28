@@ -1,0 +1,205 @@
+```{r}
+library(arrow)
+library(stringr)
+
+```
+
+```{r}
+# Establish a connection to the AWS s3 bucket
+bucket <- arrow::s3_bucket("ketchbrook-public-usda-nass-csb")
+
+# List the paths to the first few .parquet files in the `year=2022` directory
+bucket$ls(path = "year=2022", recursive = TRUE) |> 
+    stringr::str_subset(pattern = ".parquet$") |> 
+    head()
+```
+
+```{r}
+library(sfarrow)
+library(dplyr)
+
+# This code should only take a few seconds to run -- try it yourself!
+raw <- arrow::open_dataset(bucket) |>
+  dplyr::filter(STATEFIPS == 6) |>  # California
+ # dplyr::filter(CNTYFIPS == "003") |>  # specify county
+  sfarrow::read_sf_dataset()  # interpret `geometry` column as an `sf` object
+
+# List the columns, types, and first few values in each column
+dplyr::glimpse(raw)
+```
+
+```{r}
+library(knitr)
+
+# Read in the crop codes lookup table
+lookup <- read.csv(
+  file = "https://raw.githubusercontent.com/ketchbrookanalytics/usda-csb-data/main/data/crop_types.csv",
+  colClasses = c("integer", "character"),
+  strip.white = TRUE
+)
+
+# Take a look at the first few rows of the crop codes lookup table
+head(lookup) |> 
+  knitr::kable(align = c("c", "l"))
+```
+
+```{r}
+# Create a helper function to replace the crop code integer values with the 
+# plain-English descriptions
+lookup_codes <- function(var, codes) {
+
+  codes$land_cover[match(x = {{ var }}, table = codes$categorization_code)]
+
+}
+
+# Replace the integer codes in the crop rotation columns with the plain-English
+# descriptions of the cover
+clean <- raw |> 
+  dplyr::mutate(
+    dplyr::across(
+      .cols = tidyselect::matches("R[0-9][0-9]"),
+      .fns = function(x) lookup_codes(var = x, codes = lookup)
+    )
+  ) |> 
+  # Rename the "R*" columns to the full year
+  dplyr::rename_with(
+    .fn = function(x) stringr::str_replace(x, "R", "20"),
+    .cols = tidyselect::matches("R[0-9][0-9]")
+  )
+```
+
+```{r}
+clean |> 
+  sf::st_drop_geometry() |> 
+  dplyr::select(CSBID, `2022`) |> 
+  dplyr::slice(6:10) |> 
+  knitr::kable()
+```
+
+```{r}
+library(ggplot2)
+
+clean |> 
+  ggplot2::ggplot(
+    ggplot2::aes(fill = `2022`)
+  ) + 
+  ggplot2::geom_sf() + 
+  ggplot2::labs(
+    title = "Crop Cover Map (2022)",
+    subtitle = "California"
+  ) +
+  ggplot2::theme(
+    legend.position = "top",
+    legend.title = ggplot2::element_blank()
+  )
+```
+
+```{r}
+#find most prevalent crops
+top_5 <- clean |> 
+  sf::st_drop_geometry() |> 
+  dplyr::count(Crop = `2022`, name = "Count", sort = TRUE) |> 
+  dplyr::slice_head(n = 5)
+
+top_5 |> 
+  knitr::kable(
+    format.arg = list(NULL, big.mark = ","),
+    caption = "Top 20 Crop Types in California (2022)"
+  )
+```
+
+```{r}
+for_leaflet <- clean |> 
+  dplyr::filter(
+    `2022` %in% top_5$Crop
+  ) |> 
+  dplyr::select(
+    CSBID, 
+    Crop = `2022`, 
+    Shape_Area
+  ) |> 
+  
+ # dplyr::mutate(Shape_Area = round(Shape_Area / 4046.85642)) |> # convert sq. meters to acres
+  sf::st_transform(4326)
+```
+
+```{r}
+# Create palettes for map
+#pal_grapes <- leaflet::colorNumeric(
+#  palette = "viridis",
+#  domain = for_leaflet$Shape_Area
+#)
+
+# Create HTML popups
+popup_grapes <- paste0(
+  "Crop: ", "Grapes", "<br>",
+  "Acres: ", for_leaflet$Shape_Area
+)
+
+# Create the leaflet map
+leaflet::leaflet() |> 
+  leaflet::addProviderTiles(
+    provider = leaflet::providers$Esri.WorldTopoMap
+  ) |> 
+  leaflet::addPolygons(
+    data = for_leaflet, 
+    fillColor = "purple", #~pal_grapes(Shape_Area), 
+    color = "#b2aeae", # you need to use hex colors
+    fillOpacity = 0.8, 
+    weight = 1, 
+    smoothFactor = 0.2,
+    group = "Grapes",
+    popup = popup_grapes
+  )
+```
+
+```{r}
+library(tidyr)
+
+clean |> 
+  sf::st_drop_geometry() |> 
+  tidyr::pivot_longer(
+    cols = starts_with("20"),
+    names_to = "crop_year",
+    values_to = "crop"
+  ) |> 
+  dplyr::filter(
+    crop_year >= 2019
+  ) |> 
+  dplyr::group_by(crop_year, crop) |> 
+  dplyr::summarise(
+    `Total Area` = round(sum(Shape_Area)),
+    .groups = "drop"
+  ) |> 
+  dplyr::arrange(crop_year, dplyr::desc(`Total Area`)) |> 
+  dplyr::slice_head(n = 5L, by = crop_year) |> 
+  ggplot2::ggplot(
+    ggplot2::aes(
+      x = reorder(crop, `Total Area`),
+      y = `Total Area`,
+      fill = crop
+    )
+  ) + 
+  ggplot2::geom_col() + 
+  ggplot2::scale_y_continuous(
+    labels = scales::label_comma(
+      scale = 1 / 1000000, 
+      suffix = "M"
+    ),
+  ) +
+  ggplot2::scale_color_brewer(palette = "viridis") +
+  ggplot2::coord_flip() + 
+  ggplot2::facet_wrap(~ crop_year, scales = "free_y") + 
+  ggplot2::labs(
+    title = "Top 5 Crops by Year",
+    subtitle = "Based upon Total CSB Area (in sqm)"
+  ) + 
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 60, vjust = 1, hjust=1),
+    axis.title.y = ggplot2::element_blank(),
+    legend.position = "none",
+    panel.background = ggplot2::element_blank(),
+    panel.border = ggplot2::element_rect(fill = NA, color = "black")
+  )
+```
+
